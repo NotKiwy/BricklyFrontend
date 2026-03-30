@@ -71,8 +71,7 @@ fun MeetingsScreen(
     }
 
     val upcoming = filteredMeetings
-        .filter { parseDateSafe(it.date) != null }
-        .sortedBy { parseDateSafe(it.date) }
+        .sortedWith(compareBy(nullsLast()) { parseDateSafe(it.date) })
 
     Scaffold(
         containerColor = Background,
@@ -236,8 +235,8 @@ private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color.Transparent,
             unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = Accent.copy(alpha = 0.5f),
-            unfocusedContainerColor = Accent.copy(alpha = 0.5f),
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White.copy(alpha = 0.92f),
             cursorColor = TextPrimary
         ),
         singleLine = true,
@@ -313,7 +312,13 @@ private fun parseDateSafe(dateStr: String?): OffsetDateTime? {
     return try {
         OffsetDateTime.parse(dateStr)
     } catch (e: Exception) {
-        null
+        try {
+            // Fallback: no timezone offset (e.g. "2025-03-30T10:00:00")
+            val local = java.time.LocalDateTime.parse(dateStr)
+            local.atOffset(java.time.ZoneOffset.UTC)
+        } catch (e2: Exception) {
+            null
+        }
     }
 }
 
