@@ -7,14 +7,16 @@ object UserPreferences {
     private const val PREFS_NAME = "brickly_prefs"
     private const val KEY_USER_ID = "user_id"
     private const val KEY_USERNAME = "username"
+    private const val KEY_PASSWORD = "password"
 
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun saveUser(context: Context, id: Long, username: String) {
+    fun saveUser(context: Context, id: Long, username: String, password: String = "") {
         prefs(context).edit()
             .putLong(KEY_USER_ID, id)
             .putString(KEY_USERNAME, username)
+            .putString(KEY_PASSWORD, password)
             .apply()
     }
 
@@ -23,6 +25,9 @@ object UserPreferences {
 
     fun getUsername(context: Context): String =
         prefs(context).getString(KEY_USERNAME, "") ?: ""
+
+    fun getPassword(context: Context): String =
+        prefs(context).getString(KEY_PASSWORD, "") ?: ""
 
     fun isLoggedIn(context: Context): Boolean =
         getUserId(context) != -1L

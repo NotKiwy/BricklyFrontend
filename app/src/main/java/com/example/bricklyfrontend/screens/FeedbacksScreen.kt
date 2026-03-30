@@ -230,8 +230,7 @@ fun FeedbacksScreen(
 
                 else -> {
                     LazyColumn(
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        contentPadding = PaddingValues(vertical = 8.dp)
                     ) {
                         items(feedbacks, key = { it.id }) { feedback ->
                             FeedbackCard(feedback = feedback)
@@ -404,63 +403,81 @@ fun FeedbacksScreen(
 
 @Composable
 private fun FeedbackCard(feedback: FeedbackDefaultDTO) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Divider)
+    // Стиль Авито: без рамки, разделитель снизу
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Accent.copy(alpha = 0.25f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val initial = (feedback.author?.name ?: feedback.author?.username ?: "?")
-                        .firstOrNull()?.uppercaseChar() ?: '?'
-                    Text(
-                        text = initial.toString(),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
-                    )
-                }
-
-                Spacer(Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = feedback.author?.name?.takeIf { it.isNotBlank() }
-                            ?: feedback.author?.username
-                            ?: "Аноним",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = TextPrimary
-                    )
-                    if (!feedback.author?.name.isNullOrBlank()) {
-                        Text(
-                            text = "@${feedback.author?.username}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
-                        )
-                    }
-                }
-
-                StarsRow(rating = feedback.rate.toFloat(), size = 14.dp)
-            }
-
-            if (!feedback.comment.isNullOrBlank()) {
-                Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Аватар с буквой
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(Accent.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) {
+                val initial = (feedback.author?.name ?: feedback.author?.username ?: "?")
+                    .firstOrNull()?.uppercaseChar() ?: '?'
                 Text(
-                    text = feedback.comment,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextPrimary,
-                    lineHeight = 20.sp
+                    text = initial.toString(),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = TextPrimary
                 )
             }
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = feedback.author?.name?.takeIf { it.isNotBlank() }
+                        ?: feedback.author?.username
+                        ?: "Аноним",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = TextPrimary
+                )
+                if (!feedback.author?.name.isNullOrBlank()) {
+                    Text(
+                        text = "@${feedback.author?.username}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
+                    )
+                }
+            }
+
+            // Оценка: цифра + звёздочки
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        tint = Accent,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        text = "${feedback.rate}",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = TextPrimary
+                    )
+                }
+                StarsRow(rating = feedback.rate.toFloat(), size = 12.dp)
+            }
         }
+
+        if (!feedback.comment.isNullOrBlank()) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = feedback.comment,
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextPrimary,
+                lineHeight = 20.sp
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+        HorizontalDivider(color = Divider, thickness = 1.dp)
     }
 }
 

@@ -115,7 +115,8 @@ fun RegisterScreen(
             Button(
                 onClick = {
                     if (AppConfig.debugMode) {
-                        UserPreferences.saveUser(context, 0L, username.ifBlank { "debug" })
+                        UserPreferences.saveUser(context, 0L, username.ifBlank { "debug" }, password)
+                        RetrofitClient.setCredentials(username.ifBlank { "debug" }, password)
                         onRegistered()
                         return@Button
                     }
@@ -128,26 +129,33 @@ fun RegisterScreen(
                                 isLoading = true
                                 errorMessage = null
                                 try {
+                                    val trimmed = username.trim()
                                     val now = ZonedDateTime.now()
                                         .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                                    val response = RetrofitClient.api.registerUser(
-                                        UserCreateDTO(
-                                            username = username.trim(),
-                                            password = password,
-                                            createdAt = now
+
+                                    // Регистрация тоже требует Basic Auth —
+                                    // передаём credentials нового пользователя
+                                    val response = RetrofitClient
+                                        .apiWithCredentials(trimmed, password)
+                                        .registerUser(
+                                            UserCreateDTO(
+                                                username = trimmed,
+                                                password = password,
+                                                createdAt = now
+                                            )
                                         )
-                                    )
+
                                     if (response.isSuccessful && response.body() != null) {
                                         val user = response.body()!!
-                                        UserPreferences.saveUser(context, user.id, user.username)
+                                        RetrofitClient.setCredentials(user.username, password)
+                                        UserPreferences.saveUser(context, user.id, user.username, password)
                                         onRegistered()
                                     } else {
-                                        val code = response.code()
-                                        errorMessage = when (code) {
+                                        errorMessage = when (response.code()) {
                                             409 -> "Никнейм уже занят. Попробуйте другой."
                                             400 -> "Неверные данные. Проверьте введённые поля."
                                             500 -> "Ошибка сервера. Попробуйте позже."
-                                            else -> "Ошибка регистрации (код $code)."
+                                            else -> "Ошибка регистрации (код ${response.code()})."
                                         }
                                     }
                                 } catch (e: Exception) {

@@ -1,7 +1,5 @@
 package com.example.bricklyfrontend.data
 
-import com.google.gson.annotations.SerializedName
-
 data class UserCreateDTO(
     val username: String,
     val password: String,
@@ -39,4 +37,59 @@ data class UserShortDTO(
     val id: Long,
     val username: String,
     val name: String?
+)
+
+// ── Feedback ─────────────────────────────────────────────────────────────────
+
+data class FeedbackDefaultDTO(
+    val id: Long,
+    val target_id: Long,
+    val author: UserShortDTO?,
+    val rate: Int,
+    val comment: String?
+)
+
+data class FeedbackCreateDTO(
+    val target_id: Long,
+    val author: UserShortDTO,
+    val rate: Int,
+    val comment: String?
+)
+
+// ── Meetings ─────────────────────────────────────────────────────────────────
+
+data class MeetingTypeDefaultDTO(
+    val id: Int,
+    val description: String?
+)
+
+data class MeetingDefaultDTO(
+    val id: Long,
+    val date: String?,
+    val address: String?,
+    val type: MeetingTypeDefaultDTO?,
+    val ticketPrice: Int?,
+    val description: String?,
+    val discountDuration: Int?,
+    val discountAmount: Int?,
+    val discountModifier: Int?
+)
+
+data class PageMetadata(
+    val size: Long,
+    val number: Long,
+    val totalElements: Long,
+    val totalPages: Long
+)
+
+data class PagedModelMeetingDefaultDTO(
+    val content: List<MeetingDefaultDTO>?,
+    val page: PageMetadata?
+)
+
+// ──────────────────────────────────────────────────────────────────────────────
+
+data class FeedbackUpdateDTO(
+    val rate: Int? = null,
+    val comment: String? = null
 )

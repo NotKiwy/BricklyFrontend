@@ -3,7 +3,6 @@ package com.example.bricklyfrontend.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,7 +44,7 @@ fun LoginScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(80.dp))
+            Spacer(Modifier.height(120.dp))
 
             Text(
                 text = "Добро пожаловать",
@@ -98,7 +97,8 @@ fun LoginScreen(
             Button(
                 onClick = {
                     if (AppConfig.debugMode) {
-                        UserPreferences.saveUser(context, 0L, username.ifBlank { "debug" })
+                        UserPreferences.saveUser(context, 0L, username.ifBlank { "debug" }, password)
+                        RetrofitClient.setCredentials(username.ifBlank { "debug" }, password)
                         onLoggedIn()
                         return@Button
                     }
@@ -110,19 +110,30 @@ fun LoginScreen(
                                 isLoading = true
                                 errorMessage = null
                                 try {
-                                    val existsResponse = RetrofitClient.api.checkUserExistence(username.trim())
-                                    if (existsResponse.isSuccessful) {
-                                        val existsBody = existsResponse.body() ?: ""
-                                        val userId = existsBody.toLongOrNull()
-                                        if (userId != null) {
-                                            UserPreferences.saveUser(context, userId, username.trim())
-                                            onLoggedIn()
-                                        } else {
-                                            errorMessage = "Пользователь не найден"
+                                    val trimmed = username.trim()
+
+                                    // Проверяем credentials через GET /by_username — требует Basic Auth.
+                                    // 200 = credentials верные, 401 = неверный пароль
+                                    val response = RetrofitClient
+                                        .apiWithCredentials(trimmed, password)
+                                        .getUserByUsername(trimmed)
+
+                                    when (response.code()) {
+                                        200 -> {
+                                            val user = response.body()
+                                            if (user != null) {
+                                                RetrofitClient.setCredentials(user.username, password)
+                                                UserPreferences.saveUser(context, user.id, user.username, password)
+                                                onLoggedIn()
+                                            } else {
+                                                errorMessage = "Пользователь не найден"
+                                            }
                                         }
-                                    } else {
-                                        errorMessage = "Неверный никнейм или пароль"
+                                        401 -> errorMessage = "Неверный никнейм или пароль"
+                                        404 -> errorMessage = "Пользователь не найден"
+                                        else -> errorMessage = "Ошибка сервера (${response.code()})"
                                     }
+
                                 } catch (e: Exception) {
                                     errorMessage = "Нет соединения с сервером"
                                 } finally {

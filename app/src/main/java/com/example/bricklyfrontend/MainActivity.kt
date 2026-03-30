@@ -4,11 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.screens.*
 import com.example.bricklyfrontend.ui.theme.BricklyFrontendTheme
@@ -16,6 +19,7 @@ import com.example.bricklyfrontend.ui.theme.BricklyFrontendTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        RetrofitClient.init(this)
         enableEdgeToEdge()
         setContent {
             BricklyFrontendTheme {
@@ -25,20 +29,61 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// Длительность анимаций переходов (мс)
+private const val NAV_ANIM_DURATION = 220
+
 @Composable
 fun BricklyApp() {
     val context = LocalContext.current
     val navController = rememberNavController()
 
-    val startDest = if (UserPreferences.isLoggedIn(context)) "profile" else "login"
+    var showSplash by remember { mutableStateOf(true) }
 
-    NavHost(navController = navController, startDestination = startDest) {
+    if (showSplash) {
+        SplashScreen(onFinished = { showSplash = false })
+        return
+    }
+
+    val startDest = if (UserPreferences.isLoggedIn(context)) "meetings" else "login"
+
+    NavHost(
+        navController = navController,
+        startDestination = startDest,
+        enterTransition = {
+            fadeIn(animationSpec = tween(NAV_ANIM_DURATION)) +
+                    slideInHorizontally(
+                        animationSpec = tween(NAV_ANIM_DURATION),
+                        initialOffsetX = { it / 6 }
+                    )
+        },
+        exitTransition = {
+            fadeOut(animationSpec = tween(NAV_ANIM_DURATION)) +
+                    slideOutHorizontally(
+                        animationSpec = tween(NAV_ANIM_DURATION),
+                        targetOffsetX = { -it / 6 }
+                    )
+        },
+        popEnterTransition = {
+            fadeIn(animationSpec = tween(NAV_ANIM_DURATION)) +
+                    slideInHorizontally(
+                        animationSpec = tween(NAV_ANIM_DURATION),
+                        initialOffsetX = { -it / 6 }
+                    )
+        },
+        popExitTransition = {
+            fadeOut(animationSpec = tween(NAV_ANIM_DURATION)) +
+                    slideOutHorizontally(
+                        animationSpec = tween(NAV_ANIM_DURATION),
+                        targetOffsetX = { it / 6 }
+                    )
+        }
+    ) {
 
         composable("login") {
             LoginScreen(
                 onNavigateToRegister = { navController.navigate("register") },
                 onLoggedIn = {
-                    navController.navigate("profile") {
+                    navController.navigate("meetings") {
                         popUpTo("login") { inclusive = true }
                     }
                 }
@@ -49,24 +94,44 @@ fun BricklyApp() {
             RegisterScreen(
                 onNavigateToLogin = { navController.popBackStack() },
                 onRegistered = {
-                    navController.navigate("profile") {
+                    navController.navigate("meetings") {
                         popUpTo("register") { inclusive = true }
                     }
                 }
             )
         }
 
+        composable("meetings") {
+            MeetingsScreen(
+                onNavigateToProfile = {
+                    navController.navigate("profile")
+                }
+            )
+        }
+
         composable("profile") {
             ProfileScreen(
-                onNavigateToMeetings = {},
+                onNavigateToMeetings = { navController.navigate("meetings") },
                 onNavigateToOrders = {},
                 onNavigateToShop = {},
                 onNavigateToEditProfile = {},
+                onNavigateToFeedbacks = {
+                    val userId = UserPreferences.getUserId(context)
+                    navController.navigate("feedbacks/$userId")
+                },
                 onLogout = {
                     navController.navigate("login") {
-                        popUpTo("profile") { inclusive = true }
+                        popUpTo("meetings") { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable("feedbacks/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toLongOrNull() ?: -1L
+            FeedbacksScreen(
+                targetUserId = userId,
+                onBack = { navController.popBackStack() }
             )
         }
     }

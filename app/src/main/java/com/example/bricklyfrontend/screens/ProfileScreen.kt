@@ -31,6 +31,7 @@ fun ProfileScreen(
     onNavigateToOrders: () -> Unit = {},
     onNavigateToShop: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
+    onNavigateToFeedbacks: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -59,7 +60,9 @@ fun ProfileScreen(
 
     Scaffold(
         containerColor = Background,
-        bottomBar = { BricklyBottomBar(currentRoute = "profile") }
+        bottomBar = { BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
+            if (route == "meetings") onNavigateToMeetings()
+        }) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -125,6 +128,12 @@ fun ProfileScreen(
                         icon = Icons.Outlined.Storefront,
                         text = "Мой магазин",
                         onClick = onNavigateToShop,
+                        showDivider = true
+                    )
+                    ProfileMenuItem(
+                        icon = Icons.Outlined.Star,
+                        text = "Отзывы",
+                        onClick = onNavigateToFeedbacks,
                         showDivider = true
                     )
                     ProfileMenuItem(
