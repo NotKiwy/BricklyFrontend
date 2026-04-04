@@ -446,23 +446,20 @@ private fun FeedbackCard(feedback: FeedbackDefaultDTO) {
                 }
             }
 
-            // Оценка: цифра + звёздочки
-            Column(horizontalAlignment = Alignment.End) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Filled.Star,
-                        contentDescription = null,
-                        tint = Accent,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(3.dp))
-                    Text(
-                        text = "${feedback.rate}",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
-                    )
-                }
-                StarsRow(rating = feedback.rate.toFloat(), size = 12.dp)
+            // Оценка: цифра + одна звезда
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = Accent,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "${feedback.rate}",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = TextPrimary
+                )
             }
         }
 

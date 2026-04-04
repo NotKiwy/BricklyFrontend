@@ -36,8 +36,22 @@ interface ApiService {
     @GET("/api/app/meetings")
     suspend fun getAllMeetings(): Response<List<MeetingDefaultDTO>>
 
+    @GET("/api/app/meetings/by_id/{id}")
+    suspend fun getMeetingById(@Path("id") id: Long): Response<MeetingDefaultDTO>
+
     @GET("/api/app/meetings/types")
     suspend fun getMeetingTypes(): Response<List<MeetingTypeDefaultDTO>>
+
+    @POST("/api/app/meetings/create")
+    suspend fun createMeeting(@Body dto: MeetingCreateDTO): Response<MeetingDefaultDTO>
+
+    // ── Tickets ──────────────────────────────────────────────────────────────
+
+    @POST("/api/app/tickets/create")
+    suspend fun createTicket(@Body dto: TicketCreateDTO): Response<TicketDefaultDTO>
+
+    @GET("/api/app/tickets/by_user_id/{userId}")
+    suspend fun getTicketsByUserId(@Path("userId") userId: Long): Response<List<TicketDefaultDTO>>
 
     // ── Feedbacks ─────────────────────────────────────────────────────────────
 

@@ -29,7 +29,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Длительность анимаций переходов (мс)
 private const val NAV_ANIM_DURATION = 220
 
 @Composable
@@ -103,9 +102,31 @@ fun BricklyApp() {
 
         composable("meetings") {
             MeetingsScreen(
-                onNavigateToProfile = {
-                    navController.navigate("profile")
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToMeetingDetail = { meetingId ->
+                    navController.navigate("meeting_detail/$meetingId")
+                },
+                onNavigateToCart = { navController.navigate("cart") },
+                onNavigateToHome = { navController.navigate("home") }
+            )
+        }
+
+        composable("home") {
+            CatalogScreen(
+                onNavigateToMeetings = { navController.navigate("meetings") },
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToCart = { navController.navigate("cart") },
+                onNavigateToMeetingDetail = { meetingId ->
+                    navController.navigate("meeting_detail/$meetingId")
                 }
+            )
+        }
+
+        composable("cart") {
+            CartScreen(
+                onNavigateToMeetings = { navController.navigate("meetings") },
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToHome = { navController.navigate("home") }
             )
         }
 
@@ -114,16 +135,40 @@ fun BricklyApp() {
                 onNavigateToMeetings = { navController.navigate("meetings") },
                 onNavigateToOrders = {},
                 onNavigateToShop = {},
-                onNavigateToEditProfile = {},
+                onNavigateToEditProfile = { navController.navigate("edit_profile") },
                 onNavigateToFeedbacks = {
                     val userId = UserPreferences.getUserId(context)
                     navController.navigate("feedbacks/$userId")
                 },
+                onNavigateToCreateMeeting = { navController.navigate("create_meeting") },
+                onNavigateToCart = { navController.navigate("cart") },
+                onNavigateToHome = { navController.navigate("home") },
                 onLogout = {
                     navController.navigate("login") {
                         popUpTo("meetings") { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable("edit_profile") {
+            EditProfileScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("create_meeting") {
+            CreateMeetingScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("meeting_detail/{meetingId}") { backStackEntry ->
+            val meetingId = backStackEntry.arguments?.getString("meetingId")?.toLongOrNull() ?: -1L
+            MeetingDetailScreen(
+                meetingId = meetingId,
+                onBack = { navController.popBackStack() },
+                onNavigateToCart = { navController.navigate("cart") }
             )
         }
 

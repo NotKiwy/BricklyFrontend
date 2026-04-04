@@ -32,12 +32,16 @@ fun ProfileScreen(
     onNavigateToShop: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToFeedbacks: () -> Unit = {},
+    onNavigateToCreateMeeting: () -> Unit = {},
+    onNavigateToCart: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
     val userId = remember { UserPreferences.getUserId(context) }
     val savedUsername = remember { UserPreferences.getUsername(context) }
+    val isAdmin = remember { UserPreferences.isAdmin(context) }
 
     var username by remember { mutableStateOf(savedUsername) }
     var name by remember { mutableStateOf<String?>(null) }
@@ -60,9 +64,15 @@ fun ProfileScreen(
 
     Scaffold(
         containerColor = Background,
-        bottomBar = { BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
-            if (route == "meetings") onNavigateToMeetings()
-        }) }
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
+                when (route) {
+                    "meetings" -> onNavigateToMeetings()
+                    "cart" -> onNavigateToCart()
+                    "home" -> onNavigateToHome()
+                }
+            })
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -140,8 +150,16 @@ fun ProfileScreen(
                         icon = Icons.Outlined.Edit,
                         text = "Изменить профиль",
                         onClick = onNavigateToEditProfile,
-                        showDivider = true
+                        showDivider = isAdmin
                     )
+                    if (isAdmin) {
+                        ProfileMenuItem(
+                            icon = Icons.Outlined.AddCircleOutline,
+                            text = "Создать сходку",
+                            onClick = onNavigateToCreateMeeting,
+                            showDivider = true
+                        )
+                    }
                     ProfileMenuItem(
                         icon = Icons.Outlined.Logout,
                         text = "Выйти из аккаунта",

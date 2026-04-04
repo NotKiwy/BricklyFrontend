@@ -93,3 +93,41 @@ data class FeedbackUpdateDTO(
     val rate: Int? = null,
     val comment: String? = null
 )
+
+// ── Meetings Create ─────────────────────────────────────────────────────────
+
+data class MeetingCreateDTO(
+    val date: String,
+    val address: String,
+    val typeId: Int,
+    val ticketPrice: Int,
+    val description: String?,
+    val discountDuration: Int? = null,
+    val discountAmount: Int? = null,
+    val discountModifier: Int? = null
+)
+
+// ── Tickets ─────────────────────────────────────────────────────────────────
+
+data class MeetingShortDTO(
+    val id: Long,
+    val date: String?,
+    val address: String?,
+    val description: String?,
+    val type: MeetingTypeDefaultDTO?
+)
+
+data class TicketDefaultDTO(
+    val id: Long,
+    val user: UserShortDTO?,
+    val meeting: MeetingShortDTO?,
+    val pricePaid: Int?,
+    val state: Int?
+)
+
+data class TicketCreateDTO(
+    val userId: Long,
+    val meetingId: Long,
+    val pricePaid: Int,
+    val state: Int = 0
+)

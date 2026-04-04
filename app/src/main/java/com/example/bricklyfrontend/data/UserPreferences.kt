@@ -8,15 +8,17 @@ object UserPreferences {
     private const val KEY_USER_ID = "user_id"
     private const val KEY_USERNAME = "username"
     private const val KEY_PASSWORD = "password"
+    private const val KEY_ROLE = "role"
 
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun saveUser(context: Context, id: Long, username: String, password: String = "") {
+    fun saveUser(context: Context, id: Long, username: String, password: String = "", role: String = "ROLE_USER") {
         prefs(context).edit()
             .putLong(KEY_USER_ID, id)
             .putString(KEY_USERNAME, username)
             .putString(KEY_PASSWORD, password)
+            .putString(KEY_ROLE, role)
             .apply()
     }
 
@@ -28,6 +30,12 @@ object UserPreferences {
 
     fun getPassword(context: Context): String =
         prefs(context).getString(KEY_PASSWORD, "") ?: ""
+
+    fun getRole(context: Context): String =
+        prefs(context).getString(KEY_ROLE, "ROLE_USER") ?: "ROLE_USER"
+
+    fun isAdmin(context: Context): Boolean =
+        getRole(context) == "ROLE_ADMIN"
 
     fun isLoggedIn(context: Context): Boolean =
         getUserId(context) != -1L
