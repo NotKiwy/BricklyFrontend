@@ -36,7 +36,6 @@ object RetrofitClient {
             .create(ApiService::class.java)
     }
 
-    // Текущий авторизованный клиент (обновляется после логина/регистрации)
     @Volatile
     private var _currentUsername: String = ""
     @Volatile
@@ -45,7 +44,6 @@ object RetrofitClient {
     val api: ApiService
         get() = makeApi(_currentUsername, _currentPassword)
 
-    /** Одноразовый клиент с указанными credentials — для регистрации и логина */
     fun apiWithCredentials(username: String, password: String): ApiService =
         makeApi(username, password)
 

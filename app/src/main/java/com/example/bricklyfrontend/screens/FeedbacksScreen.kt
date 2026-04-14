@@ -44,7 +44,6 @@ fun FeedbacksScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Leave feedback dialog state
     var showDialog by remember { mutableStateOf(false) }
     var dialogRate by remember { mutableIntStateOf(5) }
     var dialogComment by remember { mutableStateOf("") }
@@ -117,7 +116,6 @@ fun FeedbacksScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Rating summary card — показывается только когда есть отзывы
             if (!isLoading && feedbacks.isNotEmpty() && averageRating != null) {
                 Card(
                     modifier = Modifier
@@ -241,7 +239,6 @@ fun FeedbacksScreen(
         }
     }
 
-    // Leave feedback dialog
     if (showDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -399,18 +396,14 @@ fun FeedbacksScreen(
     }
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
 @Composable
 private fun FeedbackCard(feedback: FeedbackDefaultDTO) {
-    // Стиль Авито: без рамки, разделитель снизу
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Аватар с буквой
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -446,7 +439,6 @@ private fun FeedbackCard(feedback: FeedbackDefaultDTO) {
                 }
             }
 
-            // Оценка: цифра + одна звезда
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.Star,

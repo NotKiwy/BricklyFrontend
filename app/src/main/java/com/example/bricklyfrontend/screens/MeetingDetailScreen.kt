@@ -138,7 +138,6 @@ fun MeetingDetailScreen(
                         .padding(padding)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // Map placeholder
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -168,7 +167,6 @@ fun MeetingDetailScreen(
 
                     Spacer(Modifier.height(20.dp))
 
-                    // Info card
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -178,7 +176,6 @@ fun MeetingDetailScreen(
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
-                            // Title
                             Text(
                                 text = m.type?.description
                                     ?: m.description?.take(50)
@@ -191,7 +188,6 @@ fun MeetingDetailScreen(
 
                             Spacer(Modifier.height(16.dp))
 
-                            // Date
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     Icons.Outlined.CalendarMonth,
@@ -209,7 +205,6 @@ fun MeetingDetailScreen(
 
                             Spacer(Modifier.height(10.dp))
 
-                            // Address
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     Icons.Outlined.LocationOn,
@@ -227,7 +222,6 @@ fun MeetingDetailScreen(
 
                             Spacer(Modifier.height(10.dp))
 
-                            // Price
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     Icons.Outlined.ConfirmationNumber,
@@ -249,7 +243,6 @@ fun MeetingDetailScreen(
                         }
                     }
 
-                    // Description
                     if (!m.description.isNullOrBlank()) {
                         Spacer(Modifier.height(16.dp))
                         Card(
@@ -281,7 +274,6 @@ fun MeetingDetailScreen(
 
                     Spacer(Modifier.height(20.dp))
 
-                    // Ticket quantity selector + Add to cart
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -304,7 +296,6 @@ fun MeetingDetailScreen(
 
                             Spacer(Modifier.height(16.dp))
 
-                            // Counter
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center

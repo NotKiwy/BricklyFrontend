@@ -105,7 +105,6 @@ fun CatalogScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Yellow header with search
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -146,7 +145,6 @@ fun CatalogScreen(
                 )
             }
 
-            // Sort buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -255,7 +253,6 @@ private fun CatalogCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column {
-            // Photo placeholder
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

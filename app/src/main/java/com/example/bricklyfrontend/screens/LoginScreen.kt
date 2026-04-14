@@ -112,8 +112,6 @@ fun LoginScreen(
                                 try {
                                     val trimmed = username.trim()
 
-                                    // Проверяем credentials через GET /by_username — требует Basic Auth.
-                                    // 200 = credentials верные, 401 = неверный пароль
                                     val response = RetrofitClient
                                         .apiWithCredentials(trimmed, password)
                                         .getUserByUsername(trimmed)

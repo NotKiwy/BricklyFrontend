@@ -101,7 +101,6 @@ fun CartScreen(
                     }
                 }
 
-                // Bottom total + pay button
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -133,7 +132,7 @@ fun CartScreen(
                         Spacer(Modifier.height(14.dp))
 
                         Button(
-                            onClick = { /* No payment functionality yet */ },
+                            onClick = { },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(
@@ -186,7 +185,6 @@ private fun CartItemCard(item: CartItem) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ticket icon
             Box(
                 modifier = Modifier
                     .size(50.dp)

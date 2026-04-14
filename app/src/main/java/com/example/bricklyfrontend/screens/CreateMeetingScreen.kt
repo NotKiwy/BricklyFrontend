@@ -108,7 +108,6 @@ fun CreateMeetingScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // Type selector
             Text(
                 "Тип мероприятия",
                 style = MaterialTheme.typography.labelLarge,

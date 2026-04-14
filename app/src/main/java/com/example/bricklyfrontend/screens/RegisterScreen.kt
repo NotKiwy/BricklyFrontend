@@ -133,8 +133,6 @@ fun RegisterScreen(
                                     val now = ZonedDateTime.now()
                                         .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
-                                    // Регистрация тоже требует Basic Auth —
-                                    // передаём credentials нового пользователя
                                     val response = RetrofitClient
                                         .apiWithCredentials(trimmed, password)
                                         .registerUser(

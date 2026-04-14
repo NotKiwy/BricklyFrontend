@@ -3,8 +3,6 @@ package com.example.bricklyfrontend.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -16,10 +14,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.bricklyfrontend.data.MeetingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.ui.theme.*
@@ -92,7 +92,6 @@ fun MeetingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Yellow header with search
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -108,16 +107,6 @@ fun MeetingsScreen(
             }
 
             Spacer(Modifier.height(20.dp))
-
-            // Upcoming meetings - small cards
-            Text(
-                text = "Ближайшие мероприятия",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                color = TextPrimary,
-                modifier = Modifier.padding(horizontal = 20.dp)
-            )
-
-            Spacer(Modifier.height(14.dp))
 
             when {
                 isLoading -> {
@@ -172,22 +161,6 @@ fun MeetingsScreen(
                 }
 
                 else -> {
-                    // Small cards row
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        items(upcoming.take(10)) { meeting ->
-                            SmallMeetingCard(
-                                meeting = meeting,
-                                onClick = { onNavigateToMeetingDetail(meeting.id) }
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(28.dp))
-
-                    // Large cards section
                     Text(
                         text = "Все мероприятия",
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
@@ -205,6 +178,38 @@ fun MeetingsScreen(
                         Spacer(Modifier.height(12.dp))
                     }
                 }
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            Text(
+                text = "Фото с мероприятий",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                color = TextPrimary,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            val photoUrls = listOf(
+                "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600",
+                "https://images.unsplash.com/photo-1511578314322-379afb476865?w=600",
+                "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600",
+                "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=600"
+            )
+
+            photoUrls.forEach { url ->
+                AsyncImage(
+                    model = url,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(20.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(Modifier.height(12.dp))
             }
 
             Spacer(Modifier.height(24.dp))
@@ -247,81 +252,6 @@ private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
 }
 
 @Composable
-private fun SmallMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
-    val dateFormatted = formatMeetingDate(meeting.date)
-
-    Box(
-        modifier = Modifier
-            .width(180.dp)
-            .height(220.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-        )
-
-        // Yellow banner at bottom: Date, Address, Price
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
-                .background(Accent)
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-        ) {
-            Column {
-                // Date
-                Text(
-                    text = dateFormatted ?: "Дата не указана",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(2.dp))
-
-                // Address
-                Text(
-                    text = meeting.address?.let { addr ->
-                        addr.split(",").firstOrNull()?.trim() ?: addr.take(30)
-                    } ?: "Адрес не указан",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextPrimary.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                // Price
-                if (meeting.ticketPrice != null && meeting.ticketPrice > 0) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "${meeting.ticketPrice} \u20BD",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp
-                        ),
-                        color = TextPrimary.copy(alpha = 0.8f)
-                    )
-                } else {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "Бесплатно",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp
-                        ),
-                        color = TextPrimary.copy(alpha = 0.8f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
     val dateFormatted = formatMeetingDate(meeting.date)
 
@@ -335,7 +265,6 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column {
-            // Photo placeholder
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -354,7 +283,6 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                // Title
                 Text(
                     text = meeting.type?.description
                         ?: meeting.description?.take(40)
@@ -367,7 +295,6 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
 
                 Spacer(Modifier.height(8.dp))
 
-                // Date
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Outlined.CalendarMonth,
@@ -385,7 +312,6 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
 
                 Spacer(Modifier.height(4.dp))
 
-                // Address
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Outlined.LocationOn,
@@ -405,7 +331,6 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
 
                 Spacer(Modifier.height(4.dp))
 
-                // Price
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Outlined.ConfirmationNumber,

@@ -39,8 +39,6 @@ data class UserShortDTO(
     val name: String?
 )
 
-// ── Feedback ─────────────────────────────────────────────────────────────────
-
 data class FeedbackDefaultDTO(
     val id: Long,
     val target_id: Long,
@@ -55,8 +53,6 @@ data class FeedbackCreateDTO(
     val rate: Int,
     val comment: String?
 )
-
-// ── Meetings ─────────────────────────────────────────────────────────────────
 
 data class MeetingTypeDefaultDTO(
     val id: Int,
@@ -87,14 +83,10 @@ data class PagedModelMeetingDefaultDTO(
     val page: PageMetadata?
 )
 
-// ──────────────────────────────────────────────────────────────────────────────
-
 data class FeedbackUpdateDTO(
     val rate: Int? = null,
     val comment: String? = null
 )
-
-// ── Meetings Create ─────────────────────────────────────────────────────────
 
 data class MeetingCreateDTO(
     val date: String,
@@ -106,8 +98,6 @@ data class MeetingCreateDTO(
     val discountAmount: Int? = null,
     val discountModifier: Int? = null
 )
-
-// ── Tickets ─────────────────────────────────────────────────────────────────
 
 data class MeetingShortDTO(
     val id: Long,

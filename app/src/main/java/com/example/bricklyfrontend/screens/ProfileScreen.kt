@@ -16,10 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.bricklyfrontend.data.AppConfig
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
@@ -43,23 +45,26 @@ fun ProfileScreen(
     val savedUsername = remember { UserPreferences.getUsername(context) }
     val isAdmin = remember { UserPreferences.isAdmin(context) }
 
-    var username by remember { mutableStateOf(savedUsername) }
-    var name by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
+    var displayName by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(userId) {
         if (!AppConfig.debugMode && userId != -1L) {
-            isLoading = true
             try {
                 val response = RetrofitClient.api.getUserById(userId)
                 if (response.isSuccessful) {
                     val user = response.body()
-                    username = user?.username ?: savedUsername
-                    name = user?.name
+                    displayName = user?.name?.takeIf { it.isNotBlank() } ?: user?.username ?: savedUsername
+                } else {
+                    displayName = savedUsername
                 }
-            } catch (_: Exception) {}
-            isLoading = false
+            } catch (_: Exception) {
+                displayName = savedUsername
+            }
+        } else {
+            displayName = savedUsername
         }
+        isLoading = false
     }
 
     Scaffold(
@@ -83,32 +88,35 @@ fun ProfileScreen(
         ) {
             Spacer(Modifier.height(48.dp))
 
-            Box(
+            AsyncImage(
+                model = "https://ui-avatars.com/api/?name=B&background=FDDD0C&color=1A1A1A&size=180&bold=true&font-size=0.5",
+                contentDescription = null,
                 modifier = Modifier
                     .size(90.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFD9D9D9)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(32.dp),
-                        color = Accent,
-                        strokeWidth = 2.dp
-                    )
-                }
-            }
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
             Spacer(Modifier.height(14.dp))
 
-            Text(
-                text = if (!name.isNullOrBlank()) name!! else username,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 26.sp
-                ),
-                color = TextPrimary
-            )
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .width(120.dp)
+                        .height(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFE0E0E0))
+                )
+            } else {
+                Text(
+                    text = displayName ?: savedUsername,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 26.sp
+                    ),
+                    color = TextPrimary
+                )
+            }
 
             Spacer(Modifier.height(28.dp))
 

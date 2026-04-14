@@ -5,8 +5,6 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // ── Users ─────────────────────────────────────────────────────────────────
-
     @POST("/api/app/users/register")
     suspend fun registerUser(@Body dto: UserCreateDTO): Response<UserDefaultDTO>
 
@@ -24,8 +22,6 @@ interface ApiService {
         @Path("id") id: Long,
         @Body dto: UserUpdateDTO
     ): Response<UserFullDTO>
-
-    // ── Meetings ─────────────────────────────────────────────────────────────────
 
     @GET("/api/app/meetings/paginated")
     suspend fun getMeetingsPaginated(
@@ -45,15 +41,11 @@ interface ApiService {
     @POST("/api/app/meetings/create")
     suspend fun createMeeting(@Body dto: MeetingCreateDTO): Response<MeetingDefaultDTO>
 
-    // ── Tickets ──────────────────────────────────────────────────────────────
-
     @POST("/api/app/tickets/create")
     suspend fun createTicket(@Body dto: TicketCreateDTO): Response<TicketDefaultDTO>
 
     @GET("/api/app/tickets/by_user_id/{userId}")
     suspend fun getTicketsByUserId(@Path("userId") userId: Long): Response<List<TicketDefaultDTO>>
-
-    // ── Feedbacks ─────────────────────────────────────────────────────────────
 
     @GET("/api/app/feedbacks/by_target_id/{targetId}")
     suspend fun getFeedbacksByTargetId(

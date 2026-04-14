@@ -18,10 +18,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.ui.theme.TextPrimary
 
-/**
- * Splash screen: жёлтый фон + маскот по центру.
- * Длительность ~700мс, затем вызывает [onFinished].
- */
 @Composable
 fun SplashScreen(onFinished: () -> Unit) {
     val scale = remember { Animatable(0.6f) }
@@ -48,17 +44,12 @@ fun SplashScreen(onFinished: () -> Unit) {
     }
 }
 
-/**
- * Маскот Brickly — стилизованный LEGO-кирпичик с лицом.
- * Используется на сплэш-экране.
- */
 @Composable
 fun BricklyMascot(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.size(120.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Тело кирпичика
         Box(
             modifier = Modifier
                 .width(100.dp)
@@ -67,7 +58,6 @@ fun BricklyMascot(modifier: Modifier = Modifier) {
                 .background(Color(0xFF1A1A1A)),
             contentAlignment = Alignment.Center
         ) {
-            // Глаза
             Row(
                 modifier = Modifier
                     .padding(bottom = 8.dp)
@@ -76,7 +66,6 @@ fun BricklyMascot(modifier: Modifier = Modifier) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Spacer(Modifier.width(12.dp))
-                // Левый глаз
                 Box(
                     modifier = Modifier
                         .size(16.dp)
@@ -84,7 +73,6 @@ fun BricklyMascot(modifier: Modifier = Modifier) {
                         .background(Accent)
                 )
                 Spacer(Modifier.width(20.dp))
-                // Правый глаз
                 Box(
                     modifier = Modifier
                         .size(16.dp)
@@ -95,7 +83,6 @@ fun BricklyMascot(modifier: Modifier = Modifier) {
             }
         }
 
-        // Шишки (стады) кирпичика сверху
         Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
