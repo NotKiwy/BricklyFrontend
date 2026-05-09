@@ -34,7 +34,8 @@ fun MeetingsScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToMeetingDetail: (Long) -> Unit = {},
     onNavigateToCart: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {}
+    onNavigateToHome: () -> Unit = {},
+    onNavigateToBrickognize: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
 
@@ -82,8 +83,9 @@ fun MeetingsScreen(
                     "profile" -> onNavigateToProfile()
                     "cart" -> onNavigateToCart()
                     "home" -> onNavigateToHome()
+                    "brickognize" -> onNavigateToBrickognize()
                 }
-            })
+            }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
         Column(
@@ -296,53 +298,26 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Outlined.CalendarMonth,
-                        contentDescription = null,
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = dateFormatted ?: "Дата не указана",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
-                    )
+                    Text(text = dateFormatted ?: "Дата не указана", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 }
 
                 Spacer(Modifier.height(4.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Outlined.LocationOn,
-                        contentDescription = null,
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = meeting.address ?: "Адрес не указан",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text(text = meeting.address ?: "Адрес не указан", style = MaterialTheme.typography.bodyMedium, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
 
                 Spacer(Modifier.height(4.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Outlined.ConfirmationNumber,
-                        contentDescription = null,
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Icon(Icons.Outlined.ConfirmationNumber, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = if (meeting.ticketPrice != null && meeting.ticketPrice > 0)
-                            "${meeting.ticketPrice} \u20BD"
-                        else "Бесплатно",
+                        text = if (meeting.ticketPrice != null && meeting.ticketPrice > 0) "${meeting.ticketPrice} \u20BD" else "Бесплатно",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = TextPrimary
                     )
@@ -360,9 +335,7 @@ private fun parseDateSafe(dateStr: String?): OffsetDateTime? {
         try {
             val local = java.time.LocalDateTime.parse(dateStr)
             local.atOffset(java.time.ZoneOffset.UTC)
-        } catch (e2: Exception) {
-            null
-        }
+        } catch (e2: Exception) { null }
     }
 }
 

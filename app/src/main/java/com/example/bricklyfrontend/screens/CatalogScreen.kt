@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.data.MeetingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.ui.theme.*
@@ -43,7 +42,8 @@ fun CatalogScreen(
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
-    onNavigateToMeetingDetail: (Long) -> Unit = {}
+    onNavigateToMeetingDetail: (Long) -> Unit = {},
+    onNavigateToBrickognize: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
 
@@ -96,8 +96,9 @@ fun CatalogScreen(
                     "meetings" -> onNavigateToMeetings()
                     "profile" -> onNavigateToProfile()
                     "cart" -> onNavigateToCart()
+                    "brickognize" -> onNavigateToBrickognize()
                 }
-            })
+            }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
         Column(
@@ -189,7 +190,12 @@ fun CatalogScreen(
                 }
 
                 errorMessage != null -> {
-                    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(errorMessage!!, color = ErrorColor)
                             Spacer(Modifier.height(8.dp))
@@ -202,7 +208,12 @@ fun CatalogScreen(
                 }
 
                 sorted.isEmpty() -> {
-                    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             "Ничего не найдено",
                             style = MaterialTheme.typography.bodyLarge,
@@ -279,15 +290,9 @@ private fun CatalogCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(4.dp))
-
                 if (dateFormatted != null) {
-                    Text(
-                        dateFormatted,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
-                    )
+                    Text(dateFormatted, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 }
-
                 Text(
                     text = if (meeting.ticketPrice != null && meeting.ticketPrice > 0)
                         "${meeting.ticketPrice} \u20BD"

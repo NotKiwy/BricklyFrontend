@@ -15,7 +15,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.ui.theme.*
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -26,7 +25,8 @@ import java.util.Locale
 fun CartScreen(
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToHome: () -> Unit = {}
+    onNavigateToHome: () -> Unit = {},
+    onNavigateToBrickognize: () -> Unit = {}
 ) {
     val cartItems = CartState.items
 
@@ -50,8 +50,9 @@ fun CartScreen(
                     "meetings" -> onNavigateToMeetings()
                     "profile" -> onNavigateToProfile()
                     "home" -> onNavigateToHome()
+                    "brickognize" -> onNavigateToBrickognize()
                 }
-            })
+            }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
         if (cartItems.isEmpty()) {
@@ -72,9 +73,7 @@ fun CartScreen(
                     Spacer(Modifier.height(16.dp))
                     Text(
                         "Корзина пуста",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                         color = TextPrimary
                     )
                     Spacer(Modifier.height(6.dp))
@@ -107,9 +106,7 @@ fun CartScreen(
                     colors = CardDefaults.cardColors(containerColor = CardBackground),
                     elevation = CardDefaults.cardElevation(8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp)
-                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -122,9 +119,7 @@ fun CartScreen(
                             )
                             Text(
                                 "${CartState.totalPrice()} \u20BD",
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                                 color = TextPrimary
                             )
                         }
@@ -143,9 +138,7 @@ fun CartScreen(
                         ) {
                             Text(
                                 "Оплатить",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Bold
-                                )
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                         }
                     }
@@ -211,11 +204,7 @@ private fun CartItemCard(item: CartItem) {
                 )
                 if (dateFormatted != null) {
                     Spacer(Modifier.height(2.dp))
-                    Text(
-                        dateFormatted,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
-                    )
+                    Text(dateFormatted, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(

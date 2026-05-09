@@ -37,6 +37,7 @@ fun ProfileScreen(
     onNavigateToCreateMeeting: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
+    onNavigateToBrickognize: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -75,8 +76,9 @@ fun ProfileScreen(
                     "meetings" -> onNavigateToMeetings()
                     "cart" -> onNavigateToCart()
                     "home" -> onNavigateToHome()
+                    "brickognize" -> onNavigateToBrickognize()
                 }
-            })
+            }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
         Column(

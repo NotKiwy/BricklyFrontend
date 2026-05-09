@@ -1,0 +1,431 @@
+package com.example.bricklyfrontend.screens
+
+import android.Manifest
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
+import com.example.bricklyfrontend.data.BrickognizeClient
+import com.example.bricklyfrontend.data.BrickognizeItem
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okio.BufferedSink
+import java.io.File
+import java.io.InputStream
+
+// ─── Состояния экрана ────────────────────────────────────────────────────────
+
+private sealed class BrickState {
+    object Idle : BrickState()
+    data class Preview(val uri: Uri) : BrickState()
+    object Loading : BrickState()
+    data class Result(val items: List<BrickognizeItem>) : BrickState()
+    data class Error(val message: String) : BrickState()
+}
+
+// ─── Основной экран ──────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BrickognizeScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var state by remember { mutableStateOf<BrickState>(BrickState.Idle) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var pendingUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraUri = remember { mutableStateOf<Uri?>(null) }
+
+    // ── Лаунчеры ────────────────────────────────────────────────────────────
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            cameraUri.value?.let { uri ->
+                pendingUri = uri
+                showConfirmDialog = true
+            }
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            pendingUri = it
+            showConfirmDialog = true
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val uri = createCameraUri(context)
+            cameraUri.value = uri
+            cameraLauncher.launch(uri)
+        }
+    }
+
+    // ── Диалог подтверждения ────────────────────────────────────────────────
+
+    if (showConfirmDialog && pendingUri != null) {
+        ConfirmDialog(
+            imageUri = pendingUri!!,
+            onConfirm = {
+                showConfirmDialog = false
+                val uri = pendingUri!!
+                state = BrickState.Preview(uri)
+                scope.launch {
+                    state = BrickState.Loading
+                    state = uploadImage(context, uri)
+                }
+            },
+            onDismiss = {
+                showConfirmDialog = false
+                pendingUri = null
+            }
+        )
+    }
+
+    // ── UI ──────────────────────────────────────────────────────────────────
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Распознать деталь") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.Close, contentDescription = "Назад")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.Center
+        ) {
+            when (val s = state) {
+                is BrickState.Idle -> IdleContent(
+                    onCamera = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
+                    onGallery = { galleryLauncher.launch("image/*") }
+                )
+
+                is BrickState.Preview -> {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        AsyncImage(
+                            model = s.uri,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(240.dp)
+                                .clip(RoundedCornerShape(16.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        CircularProgressIndicator()
+                        Spacer(Modifier.height(8.dp))
+                        Text("Отправка...")
+                    }
+                }
+
+                is BrickState.Loading -> {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Spacer(Modifier.height(12.dp))
+                        Text("Распознаём деталь...")
+                    }
+                }
+
+                is BrickState.Result -> ResultContent(
+                    items = s.items,
+                    onReset = { state = BrickState.Idle }
+                )
+
+                is BrickState.Error -> ErrorContent(
+                    message = s.message,
+                    onReset = { state = BrickState.Idle }
+                )
+            }
+        }
+    }
+}
+
+// ─── Idle ─────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun IdleContent(onCamera: () -> Unit, onGallery: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(32.dp)
+    ) {
+        Text(
+            text = "Распознать LEGO-деталь",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Сфотографируйте деталь или выберите фото из галереи",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(40.dp))
+
+        Button(
+            onClick = onCamera,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.CameraAlt, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Сделать снимок")
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = onGallery,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.PhotoLibrary, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Выбрать из галереи")
+        }
+    }
+}
+
+// ─── Confirm Dialog ───────────────────────────────────────────────────────────
+
+@Composable
+private fun ConfirmDialog(imageUri: Uri, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            tonalElevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Отправить на распознавание?",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(16.dp))
+                AsyncImage(
+                    model = imageUri,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(220.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(Modifier.height(20.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    FilledIconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(56.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Отмена", modifier = Modifier.size(28.dp))
+                    }
+                    FilledIconButton(
+                        onClick = onConfirm,
+                        modifier = Modifier.size(56.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = "Отправить", modifier = Modifier.size(28.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Result ───────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ResultContent(items: List<BrickognizeItem>, onReset: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (items.isEmpty()) {
+            Text("Ничего не найдено", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            items.forEachIndexed { index, item ->
+                BrickResultCard(item = item, rank = index + 1)
+                Spacer(Modifier.height(12.dp))
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        OutlinedButton(onClick = onReset) {
+            Text("Распознать ещё")
+        }
+    }
+}
+
+@Composable
+private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (!item.img_url.isNullOrBlank()) {
+                AsyncImage(
+                    model = item.img_url,
+                    contentDescription = item.name,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Fit
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Text("$rank", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = item.name ?: item.id,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "ID: ${item.id}",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            val pct = (item.score * 100).toInt()
+            Text(
+                text = "Точность: $pct%",
+                fontSize = 13.sp,
+                color = if (pct >= 80) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            item.external_sites?.forEach { (site, url) ->
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "$site: $url",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+// ─── Error ────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ErrorContent(message: String, onReset: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(32.dp)
+    ) {
+        Text("Ошибка", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.error)
+        Spacer(Modifier.height(8.dp))
+        Text(message, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(24.dp))
+        Button(onClick = onReset) { Text("Попробовать снова") }
+    }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+private fun createCameraUri(context: Context): Uri {
+    val dir = File(context.cacheDir, "images").also { it.mkdirs() }
+    val file = File(dir, "camera_${System.currentTimeMillis()}.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+}
+
+private suspend fun uploadImage(context: Context, uri: Uri): BrickState {
+    return try {
+        val stream: InputStream = context.contentResolver.openInputStream(uri)
+            ?: return BrickState.Error("Не удалось открыть изображение")
+        val bytes = stream.readBytes()
+        stream.close()
+
+        val mediaType = "image/jpeg".toMediaTypeOrNull()
+        val requestBody = object : okhttp3.RequestBody() {
+            override fun contentType() = mediaType
+            override fun writeTo(sink: BufferedSink) { sink.write(bytes) }
+        }
+        val part = MultipartBody.Part.createFormData("image_file", "photo.jpg", requestBody)
+
+        val response = BrickognizeClient.api.predictPart(part)
+        if (response.isSuccessful) {
+            BrickState.Result(response.body()?.results ?: emptyList())
+        } else {
+            BrickState.Error("Сервер вернул ошибку: ${response.code()}")
+        }
+    } catch (e: Exception) {
+        BrickState.Error(e.message ?: "Неизвестная ошибка")
+    }
+}

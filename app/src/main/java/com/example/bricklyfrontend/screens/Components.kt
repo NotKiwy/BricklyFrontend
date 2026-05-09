@@ -2,6 +2,7 @@ package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -88,10 +89,16 @@ data class BottomNavItem(
 )
 
 @Composable
-fun BricklyBottomBar(currentRoute: String, onNavigate: (String) -> Unit = {}) {
+fun BricklyBottomBar(
+    currentRoute: String,
+    onNavigate: (String) -> Unit = {},
+    onScanClick: (() -> Unit)? = null
+) {
     val items = listOf(
         BottomNavItem("meetings", Icons.Outlined.Language, "Сходки"),
         BottomNavItem("home", Icons.Outlined.Home, "Главная"),
+        // "scan" — это псевдо-маршрут для центральной FAB-кнопки
+        BottomNavItem("scan", Icons.Outlined.DocumentScanner, "Сканер"),
         BottomNavItem("cart", Icons.Outlined.ShoppingBag, "Корзина"),
         BottomNavItem("profile", Icons.Outlined.Person, "Профиль"),
     )
@@ -103,45 +110,83 @@ fun BricklyBottomBar(currentRoute: String, onNavigate: (String) -> Unit = {}) {
         tonalElevation = 0.dp
     ) {
         items.forEach { item ->
-            val selected = currentRoute == item.route
-            NavigationBarItem(
-                selected = selected,
-                onClick = { onNavigate(item.route) },
-                icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.label,
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                label = {
-                    Text(
-                        text = item.label,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                },
-                modifier = if (selected) {
-                    Modifier.drawBehind {
-                        val strokeWidth = 3.dp.toPx()
-                        val y = size.height - strokeWidth / 2
-                        val paddingPx = 16.dp.toPx()
-                        drawLine(
-                            color = accentColor,
-                            start = Offset(paddingPx, y),
-                            end = Offset(size.width - paddingPx, y),
-                            strokeWidth = strokeWidth,
-                            cap = StrokeCap.Round
+            if (item.route == "scan") {
+                // Центральная выделенная кнопка сканера
+                NavigationBarItem(
+                    selected = currentRoute == "brickognize",
+                    onClick = { onScanClick?.invoke() ?: onNavigate("brickognize") },
+                    icon = {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(Accent),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.DocumentScanner,
+                                contentDescription = "Сканер",
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    },
+                    label = {
+                        Text(
+                            text = "Сканер",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (currentRoute == "brickognize") TextPrimary else IconInactive
                         )
-                    }
-                } else Modifier,
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = TextPrimary,
-                    selectedTextColor = TextPrimary,
-                    unselectedIconColor = IconInactive,
-                    unselectedTextColor = IconInactive,
-                    indicatorColor = Color.Transparent
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = TextPrimary,
+                        selectedTextColor = TextPrimary,
+                        unselectedIconColor = IconInactive,
+                        unselectedTextColor = IconInactive,
+                        indicatorColor = Color.Transparent
+                    )
                 )
-            )
+            } else {
+                val selected = currentRoute == item.route
+                NavigationBarItem(
+                    selected = selected,
+                    onClick = { onNavigate(item.route) },
+                    icon = {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = item.label,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = item.label,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    },
+                    modifier = if (selected) {
+                        Modifier.drawBehind {
+                            val strokeWidth = 3.dp.toPx()
+                            val y = size.height - strokeWidth / 2
+                            val paddingPx = 16.dp.toPx()
+                            drawLine(
+                                color = accentColor,
+                                start = Offset(paddingPx, y),
+                                end = Offset(size.width - paddingPx, y),
+                                strokeWidth = strokeWidth,
+                                cap = StrokeCap.Round
+                            )
+                        }
+                    } else Modifier,
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = TextPrimary,
+                        selectedTextColor = TextPrimary,
+                        unselectedIconColor = IconInactive,
+                        unselectedTextColor = IconInactive,
+                        indicatorColor = Color.Transparent
+                    )
+                )
+            }
         }
     }
 }

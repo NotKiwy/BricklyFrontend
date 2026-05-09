@@ -107,7 +107,8 @@ fun BricklyApp() {
                     navController.navigate("meeting_detail/$meetingId")
                 },
                 onNavigateToCart = { navController.navigate("cart") },
-                onNavigateToHome = { navController.navigate("home") }
+                onNavigateToHome = { navController.navigate("home") },
+                onNavigateToBrickognize = { navController.navigate("brickognize") }
             )
         }
 
@@ -118,7 +119,8 @@ fun BricklyApp() {
                 onNavigateToCart = { navController.navigate("cart") },
                 onNavigateToMeetingDetail = { meetingId ->
                     navController.navigate("meeting_detail/$meetingId")
-                }
+                },
+                onNavigateToBrickognize = { navController.navigate("brickognize") }
             )
         }
 
@@ -126,7 +128,8 @@ fun BricklyApp() {
             CartScreen(
                 onNavigateToMeetings = { navController.navigate("meetings") },
                 onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToHome = { navController.navigate("home") }
+                onNavigateToHome = { navController.navigate("home") },
+                onNavigateToBrickognize = { navController.navigate("brickognize") }
             )
         }
 
@@ -143,6 +146,7 @@ fun BricklyApp() {
                 onNavigateToCreateMeeting = { navController.navigate("create_meeting") },
                 onNavigateToCart = { navController.navigate("cart") },
                 onNavigateToHome = { navController.navigate("home") },
+                onNavigateToBrickognize = { navController.navigate("brickognize") },
                 onLogout = {
                     navController.navigate("login") {
                         popUpTo("meetings") { inclusive = true }
@@ -176,6 +180,12 @@ fun BricklyApp() {
             val userId = backStackEntry.arguments?.getString("userId")?.toLongOrNull() ?: -1L
             FeedbacksScreen(
                 targetUserId = userId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("brickognize") {
+            BrickognizeScreen(
                 onBack = { navController.popBackStack() }
             )
         }

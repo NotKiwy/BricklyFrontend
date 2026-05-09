@@ -1,5 +1,6 @@
 package com.example.bricklyfrontend.data
 
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -68,4 +69,13 @@ interface ApiService {
 
     @DELETE("/api/app/feedbacks/delete/{id}")
     suspend fun deleteFeedback(@Path("id") id: Long): Response<Unit>
+}
+
+// Brickognize API — отдельный интерфейс (другой base url)
+interface BrickognizeApiService {
+    @Multipart
+    @POST("v1/predict")
+    suspend fun predictPart(
+        @Part image: MultipartBody.Part
+    ): Response<BrickognizeResponse>
 }
