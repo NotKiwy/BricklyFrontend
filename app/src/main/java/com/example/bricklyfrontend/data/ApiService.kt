@@ -71,10 +71,9 @@ interface ApiService {
     suspend fun deleteFeedback(@Path("id") id: Long): Response<Unit>
 }
 
-// Brickognize API — отдельный интерфейс (другой base url)
 interface BrickognizeApiService {
     @Multipart
-    @POST("v1/predict")
+    @POST("/predict")
     suspend fun predictPart(
         @Part image: MultipartBody.Part
     ): Response<BrickognizeResponse>

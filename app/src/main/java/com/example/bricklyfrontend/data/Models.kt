@@ -121,18 +121,3 @@ data class TicketCreateDTO(
     val pricePaid: Int,
     val state: Int = 0
 )
-
-// ── Brickognize ──────────────────────────────────────────────────────────────
-
-data class BrickognizeItem(
-    val id: String,
-    val score: Float,
-    val name: String?,
-    val img_url: String?,
-    val external_sites: Map<String, String>?
-)
-
-data class BrickognizeResponse(
-    val id: String?,
-    val results: List<BrickognizeItem>
-)

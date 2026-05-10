@@ -33,14 +33,14 @@ import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.bricklyfrontend.data.BrickognizeClient
 import com.example.bricklyfrontend.data.BrickognizeItem
+import com.example.bricklyfrontend.ui.theme.Accent
+import com.example.bricklyfrontend.ui.theme.TextPrimary
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okio.BufferedSink
 import java.io.File
 import java.io.InputStream
-
-// ─── Состояния экрана ────────────────────────────────────────────────────────
 
 private sealed class BrickState {
     object Idle : BrickState()
@@ -49,8 +49,6 @@ private sealed class BrickState {
     data class Result(val items: List<BrickognizeItem>) : BrickState()
     data class Error(val message: String) : BrickState()
 }
-
-// ─── Основной экран ──────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,8 +60,6 @@ fun BrickognizeScreen(onBack: () -> Unit) {
     var showConfirmDialog by remember { mutableStateOf(false) }
     var pendingUri by remember { mutableStateOf<Uri?>(null) }
     val cameraUri = remember { mutableStateOf<Uri?>(null) }
-
-    // ── Лаунчеры ────────────────────────────────────────────────────────────
 
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -95,8 +91,6 @@ fun BrickognizeScreen(onBack: () -> Unit) {
         }
     }
 
-    // ── Диалог подтверждения ────────────────────────────────────────────────
-
     if (showConfirmDialog && pendingUri != null) {
         ConfirmDialog(
             imageUri = pendingUri!!,
@@ -116,17 +110,22 @@ fun BrickognizeScreen(onBack: () -> Unit) {
         )
     }
 
-    // ── UI ──────────────────────────────────────────────────────────────────
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Распознать деталь") },
+                title = {
+                    Text(
+                        "Распознать деталь",
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.Close, contentDescription = "Назад")
+                        Icon(Icons.Default.Close, contentDescription = "Назад", tint = TextPrimary)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Accent)
             )
         }
     ) { padding ->
@@ -153,7 +152,7 @@ fun BrickognizeScreen(onBack: () -> Unit) {
                             contentScale = ContentScale.Crop
                         )
                         Spacer(Modifier.height(16.dp))
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = Accent)
                         Spacer(Modifier.height(8.dp))
                         Text("Отправка...")
                     }
@@ -161,7 +160,7 @@ fun BrickognizeScreen(onBack: () -> Unit) {
 
                 is BrickState.Loading -> {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = Accent)
                         Spacer(Modifier.height(12.dp))
                         Text("Распознаём деталь...")
                     }
@@ -181,8 +180,6 @@ fun BrickognizeScreen(onBack: () -> Unit) {
     }
 }
 
-// ─── Idle ─────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun IdleContent(onCamera: () -> Unit, onGallery: () -> Unit) {
     Column(
@@ -194,7 +191,8 @@ private fun IdleContent(onCamera: () -> Unit, onGallery: () -> Unit) {
             text = "Распознать LEGO-деталь",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            color = TextPrimary
         )
         Spacer(Modifier.height(8.dp))
         Text(
@@ -210,11 +208,12 @@ private fun IdleContent(onCamera: () -> Unit, onGallery: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
         ) {
             Icon(Icons.Default.CameraAlt, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Сделать снимок")
+            Text("Сделать снимок", fontWeight = FontWeight.SemiBold)
         }
 
         Spacer(Modifier.height(16.dp))
@@ -232,8 +231,6 @@ private fun IdleContent(onCamera: () -> Unit, onGallery: () -> Unit) {
         }
     }
 }
-
-// ─── Confirm Dialog ───────────────────────────────────────────────────────────
 
 @Composable
 private fun ConfirmDialog(imageUri: Uri, onConfirm: () -> Unit, onDismiss: () -> Unit) {
@@ -263,9 +260,7 @@ private fun ConfirmDialog(imageUri: Uri, onConfirm: () -> Unit, onDismiss: () ->
                     contentScale = ContentScale.Crop
                 )
                 Spacer(Modifier.height(20.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     FilledIconButton(
                         onClick = onDismiss,
                         modifier = Modifier.size(56.dp),
@@ -280,8 +275,8 @@ private fun ConfirmDialog(imageUri: Uri, onConfirm: () -> Unit, onDismiss: () ->
                         onClick = onConfirm,
                         modifier = Modifier.size(56.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = Accent,
+                            contentColor = TextPrimary
                         )
                     ) {
                         Icon(Icons.Default.Check, contentDescription = "Отправить", modifier = Modifier.size(28.dp))
@@ -292,8 +287,6 @@ private fun ConfirmDialog(imageUri: Uri, onConfirm: () -> Unit, onDismiss: () ->
     }
 }
 
-// ─── Result ───────────────────────────────────────────────────────────────────
-
 @Composable
 private fun ResultContent(items: List<BrickognizeItem>, onReset: () -> Unit) {
     Column(
@@ -301,19 +294,41 @@ private fun ResultContent(items: List<BrickognizeItem>, onReset: () -> Unit) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = if (items.isEmpty()) Arrangement.Center else Arrangement.Top
     ) {
         if (items.isEmpty()) {
-            Text("Ничего не найдено", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.weight(1f))
+            Text(
+                "Ничего не найдено",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(20.dp))
+            Button(
+                onClick = onReset,
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(48.dp)
+            ) {
+                Text("Распознать ещё", fontWeight = FontWeight.SemiBold)
+            }
+            Spacer(Modifier.weight(1f))
         } else {
             items.forEachIndexed { index, item ->
                 BrickResultCard(item = item, rank = index + 1)
                 Spacer(Modifier.height(12.dp))
             }
-        }
-        Spacer(Modifier.height(16.dp))
-        OutlinedButton(onClick = onReset) {
-            Text("Распознать ещё")
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = onReset,
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.height(48.dp)
+            ) {
+                Text("Распознать ещё", fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
@@ -342,18 +357,19 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = Accent,
                     modifier = Modifier.size(28.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                        Text("$rank", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("$rank", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     }
                 }
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = item.name ?: item.id,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    color = TextPrimary
                 )
             }
 
@@ -369,10 +385,10 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
                 fontSize = 13.sp,
                 color = if (pct >= 80) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            item.external_sites?.forEach { (site, url) ->
+            item.external_sites?.forEach { link ->
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = "$site: $url",
+                    text = "${link.name}: ${link.url}",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -380,8 +396,6 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
         }
     }
 }
-
-// ─── Error ────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun ErrorContent(message: String, onReset: () -> Unit) {
@@ -393,11 +407,15 @@ private fun ErrorContent(message: String, onReset: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Text(message, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(24.dp))
-        Button(onClick = onReset) { Text("Попробовать снова") }
+        Button(
+            onClick = onReset,
+            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("Попробовать снова", fontWeight = FontWeight.SemiBold)
+        }
     }
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 private fun createCameraUri(context: Context): Uri {
     val dir = File(context.cacheDir, "images").also { it.mkdirs() }
@@ -417,11 +435,11 @@ private suspend fun uploadImage(context: Context, uri: Uri): BrickState {
             override fun contentType() = mediaType
             override fun writeTo(sink: BufferedSink) { sink.write(bytes) }
         }
-        val part = MultipartBody.Part.createFormData("image_file", "photo.jpg", requestBody)
+        val part = MultipartBody.Part.createFormData("query_image", "photo.jpg", requestBody)
 
         val response = BrickognizeClient.api.predictPart(part)
         if (response.isSuccessful) {
-            BrickState.Result(response.body()?.results ?: emptyList())
+            BrickState.Result(response.body()?.items ?: emptyList())
         } else {
             BrickState.Error("Сервер вернул ошибку: ${response.code()}")
         }
