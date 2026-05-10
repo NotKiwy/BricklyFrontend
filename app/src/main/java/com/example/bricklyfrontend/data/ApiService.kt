@@ -73,7 +73,7 @@ interface ApiService {
 
 interface BrickognizeApiService {
     @Multipart
-    @POST("/predict")
+    @POST("/predict/")
     suspend fun predictPart(
         @Part image: MultipartBody.Part
     ): Response<BrickognizeResponse>
