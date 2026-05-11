@@ -15,12 +15,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.ui.theme.*
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
     onNavigateToMeetings: () -> Unit = {},
@@ -33,16 +33,21 @@ fun CartScreen(
     Scaffold(
         containerColor = Background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Корзина",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Background)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                    .background(Accent)
+                    .statusBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 18.dp)
+            ) {
+                Text(
+                    text = "Корзина",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 26.sp
+                )
+            }
         },
         bottomBar = {
             BricklyBottomBar(currentRoute = "cart", onNavigate = { route ->
@@ -57,43 +62,30 @@ fun CartScreen(
     ) { padding ->
         if (cartItems.isEmpty()) {
             Box(
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(32.dp),
+                Modifier.fillMaxSize().padding(padding).padding(32.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Outlined.ShoppingCart,
-                        contentDescription = null,
-                        tint = IconInactive,
-                        modifier = Modifier.size(64.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Accent.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.ShoppingCart, null, tint = Accent, modifier = Modifier.size(36.dp))
+                    }
                     Spacer(Modifier.height(16.dp))
-                    Text(
-                        "Корзина пуста",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = TextPrimary
-                    )
+                    Text("Корзина пуста", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), color = TextPrimary)
                     Spacer(Modifier.height(6.dp))
-                    Text(
-                        "Добавьте билеты на мероприятия",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center
-                    )
+                    Text("Добавьте билеты на мероприятия", style = MaterialTheme.typography.bodyMedium, color = TextSecondary, textAlign = TextAlign.Center)
                 }
             }
         } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
+            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
                     items(cartItems, key = { it.meetingId }) { item ->
                         CartItemCard(item = item)
@@ -102,7 +94,7 @@ fun CartScreen(
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                     colors = CardDefaults.cardColors(containerColor = CardBackground),
                     elevation = CardDefaults.cardElevation(8.dp)
                 ) {
@@ -112,34 +104,30 @@ fun CartScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Column {
+                                Text("Итого", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                                Text(
+                                    "${CartState.totalPrice()} \u20BD",
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = TextPrimary
+                                )
+                            }
                             Text(
-                                "Итого (${CartState.totalTickets()} ${pluralTickets(CartState.totalTickets())})",
-                                style = MaterialTheme.typography.bodyLarge,
+                                "${CartState.totalTickets()} ${pluralTickets(CartState.totalTickets())}",
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = TextSecondary
-                            )
-                            Text(
-                                "${CartState.totalPrice()} \u20BD",
-                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                color = TextPrimary
                             )
                         }
 
-                        Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(16.dp))
 
                         Button(
-                            onClick = { },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Accent,
-                                contentColor = TextPrimary
-                            ),
-                            contentPadding = PaddingValues(vertical = 14.dp)
+                            onClick = {},
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
                         ) {
-                            Text(
-                                "Оплатить",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
+                            Text("Оплатить", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
                         }
                     }
                 }
@@ -153,77 +141,53 @@ private fun CartItemCard(item: CartItem) {
     val dateFormatted = item.meetingDate?.let {
         try {
             val dt = OffsetDateTime.parse(it)
-            val fmt = DateTimeFormatter.ofPattern("d MMM, HH:mm", Locale("ru"))
-            dt.format(fmt)
+            dt.format(DateTimeFormatter.ofPattern("d MMM, HH:mm", Locale("ru")))
         } catch (e: Exception) {
             try {
-                val local = java.time.LocalDateTime.parse(it)
-                val fmt = DateTimeFormatter.ofPattern("d MMM, HH:mm", Locale("ru"))
-                local.format(fmt)
+                java.time.LocalDateTime.parse(it)
+                    .format(DateTimeFormatter.ofPattern("d MMM, HH:mm", Locale("ru")))
             } catch (e2: Exception) { it }
         }
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Accent.copy(alpha = 0.2f)),
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Accent.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Outlined.ConfirmationNumber,
-                    contentDescription = null,
-                    tint = AccentDark,
-                    modifier = Modifier.size(24.dp)
-                )
+                Icon(Icons.Outlined.ConfirmationNumber, null, tint = Accent, modifier = Modifier.size(26.dp))
             }
 
             Spacer(Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    item.meetingTitle,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = TextPrimary,
-                    maxLines = 1
-                )
+                Text(item.meetingTitle, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = TextPrimary, maxLines = 1)
                 if (dateFormatted != null) {
                     Spacer(Modifier.height(2.dp))
                     Text(dateFormatted, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "${item.quantity} ${pluralTickets(item.quantity)} \u2022 ${item.ticketPrice * item.quantity} \u20BD",
+                    "${item.quantity} ${pluralTickets(item.quantity)} · ${item.ticketPrice * item.quantity} \u20BD",
                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                    color = TextPrimary
+                    color = TextSecondary
                 )
             }
 
-            IconButton(
-                onClick = { CartState.removeItem(item.meetingId) },
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Outlined.Close,
-                    contentDescription = "Удалить",
-                    tint = ErrorColor,
-                    modifier = Modifier.size(18.dp)
-                )
+            IconButton(onClick = { CartState.removeItem(item.meetingId) }, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.Outlined.Close, null, tint = ErrorColor, modifier = Modifier.size(18.dp))
             }
         }
     }

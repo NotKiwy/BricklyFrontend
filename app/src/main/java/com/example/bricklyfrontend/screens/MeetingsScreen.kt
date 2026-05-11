@@ -28,7 +28,6 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MeetingsScreen(
     onNavigateToProfile: () -> Unit = {},
@@ -50,11 +49,8 @@ fun MeetingsScreen(
             errorMessage = null
             try {
                 val response = RetrofitClient.api.getAllMeetings()
-                if (response.isSuccessful) {
-                    meetings = response.body() ?: emptyList()
-                } else {
-                    errorMessage = "Ошибка загрузки (${response.code()})"
-                }
+                if (response.isSuccessful) meetings = response.body() ?: emptyList()
+                else errorMessage = "Ошибка загрузки (${response.code()})"
             } catch (e: Exception) {
                 errorMessage = "Нет соединения с сервером"
             } finally {
@@ -72,8 +68,7 @@ fun MeetingsScreen(
                 it.type?.description?.contains(searchQuery, ignoreCase = true) == true
     }
 
-    val upcoming = filteredMeetings
-        .sortedWith(compareBy(nullsLast()) { parseDateSafe(it.date) })
+    val upcoming = filteredMeetings.sortedWith(compareBy(nullsLast()) { parseDateSafe(it.date) })
 
     Scaffold(
         containerColor = Background,
@@ -88,78 +83,61 @@ fun MeetingsScreen(
             }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
+                    .statusBarsPadding()
                     .padding(horizontal = 20.dp)
-                    .padding(top = 56.dp, bottom = 20.dp)
+                    .padding(top = 20.dp, bottom = 20.dp)
             ) {
-                SearchBar(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it }
-                )
+                Column {
+                    Text("Сходки", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Искать...", color = TextSecondary, style = MaterialTheme.typography.bodyLarge) },
+                        leadingIcon = { Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(20.dp)) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White.copy(alpha = 0.9f),
+                            cursorColor = TextPrimary
+                        ),
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
+                    )
+                }
             }
 
             Spacer(Modifier.height(20.dp))
 
             when {
-                isLoading -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Accent)
+                isLoading -> Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Accent)
+                }
+
+                errorMessage != null -> Column(
+                    Modifier.fillMaxWidth().padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(errorMessage!!, color = ErrorColor)
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = { loadMeetings() }, colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)) {
+                        Text("Повторить")
                     }
                 }
 
-                errorMessage != null -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(errorMessage!!, color = ErrorColor)
-                        Spacer(Modifier.height(8.dp))
-                        Button(
-                            onClick = { loadMeetings() },
-                            colors = ButtonDefaults.buttonColors(containerColor = Accent)
-                        ) {
-                            Text("Повторить", color = TextPrimary)
-                        }
-                    }
-                }
-
-                upcoming.isEmpty() -> {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Block,
-                            contentDescription = null,
-                            tint = IconInactive,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            text = "Мероприятий пока не запланировано",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = IconInactive
-                        )
-                    }
+                upcoming.isEmpty() -> Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Block, null, tint = IconInactive, modifier = Modifier.size(32.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text("Мероприятий пока не запланировано", style = MaterialTheme.typography.bodyLarge, color = IconInactive)
                 }
 
                 else -> {
@@ -169,20 +147,15 @@ fun MeetingsScreen(
                         color = TextPrimary,
                         modifier = Modifier.padding(horizontal = 20.dp)
                     )
-
                     Spacer(Modifier.height(14.dp))
-
                     upcoming.forEach { meeting ->
-                        LargeMeetingCard(
-                            meeting = meeting,
-                            onClick = { onNavigateToMeetingDetail(meeting.id) }
-                        )
+                        LargeMeetingCard(meeting = meeting, onClick = { onNavigateToMeetingDetail(meeting.id) })
                         Spacer(Modifier.height(12.dp))
                     }
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(20.dp))
 
             Text(
                 text = "Фото с мероприятий",
@@ -190,25 +163,18 @@ fun MeetingsScreen(
                 color = TextPrimary,
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
-
             Spacer(Modifier.height(14.dp))
 
-            val photoUrls = listOf(
+            listOf(
                 "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600",
                 "https://images.unsplash.com/photo-1511578314322-379afb476865?w=600",
                 "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600",
                 "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=600"
-            )
-
-            photoUrls.forEach { url ->
+            ).forEach { url ->
                 AsyncImage(
                     model = url,
                     contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(20.dp)),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(200.dp).clip(RoundedCornerShape(24.dp)),
                     contentScale = ContentScale.Crop
                 )
                 Spacer(Modifier.height(12.dp))
@@ -220,127 +186,75 @@ fun MeetingsScreen(
 }
 
 @Composable
-private fun SearchBar(value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
-        placeholder = {
-            Text(
-                "Искать...",
-                color = TextSecondary,
-                style = MaterialTheme.typography.bodyLarge
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = null,
-                tint = TextSecondary,
-                modifier = Modifier.size(20.dp)
-            )
-        },
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color.Transparent,
-            unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White.copy(alpha = 0.92f),
-            cursorColor = TextPrimary
-        ),
-        singleLine = true,
-        textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
-    )
-}
-
-@Composable
 private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
-    val dateFormatted = formatMeetingDate(meeting.date)
+    val dateFormatted = meeting.date?.let { formatMeetingDate(it) }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp)
-                    .background(Accent.copy(alpha = 0.15f)),
+                modifier = Modifier.fillMaxWidth().height(130.dp).background(Accent.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Event,
-                    contentDescription = null,
-                    tint = Accent,
-                    modifier = Modifier.size(48.dp)
-                )
+                Icon(Icons.Outlined.Event, null, tint = Accent, modifier = Modifier.size(48.dp))
             }
 
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
-            ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Text(
-                    text = meeting.type?.description
-                        ?: meeting.description?.take(40)
-                        ?: "Мероприятие",
+                    text = meeting.type?.description ?: meeting.description?.take(40) ?: "Мероприятие",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                Spacer(Modifier.height(10.dp))
 
-                Spacer(Modifier.height(8.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(text = dateFormatted ?: "Дата не указана", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-                }
-
-                Spacer(Modifier.height(4.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(text = meeting.address ?: "Адрес не указан", style = MaterialTheme.typography.bodyMedium, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-
-                Spacer(Modifier.height(4.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.ConfirmationNumber, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = if (meeting.ticketPrice != null && meeting.ticketPrice > 0) "${meeting.ticketPrice} \u20BD" else "Бесплатно",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = TextPrimary
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (dateFormatted != null) {
+                        InfoChip(icon = Icons.Outlined.CalendarMonth, text = dateFormatted)
+                    }
+                    InfoChip(
+                        icon = Icons.Outlined.ConfirmationNumber,
+                        text = if (meeting.ticketPrice != null && meeting.ticketPrice > 0) "${meeting.ticketPrice} \u20BD" else "Бесплатно"
                     )
+                }
+
+                if (!meeting.address.isNullOrBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.LocationOn, null, tint = TextSecondary, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(meeting.address, style = MaterialTheme.typography.bodySmall, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                 }
             }
         }
     }
 }
 
-private fun parseDateSafe(dateStr: String?): OffsetDateTime? {
-    if (dateStr.isNullOrBlank()) return null
-    return try {
-        OffsetDateTime.parse(dateStr)
-    } catch (e: Exception) {
-        try {
-            val local = java.time.LocalDateTime.parse(dateStr)
-            local.atOffset(java.time.ZoneOffset.UTC)
-        } catch (e2: Exception) { null }
+@Composable
+private fun InfoChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+    Surface(shape = RoundedCornerShape(10.dp), color = Accent.copy(alpha = 0.15f)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+            Icon(icon, null, tint = Accent, modifier = Modifier.size(13.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+        }
     }
 }
 
-private fun formatMeetingDate(dateStr: String?): String? {
+private fun parseDateSafe(dateStr: String?): OffsetDateTime? {
+    if (dateStr.isNullOrBlank()) return null
+    return try { OffsetDateTime.parse(dateStr) } catch (e: Exception) {
+        try { java.time.LocalDateTime.parse(dateStr).atOffset(java.time.ZoneOffset.UTC) } catch (e2: Exception) { null }
+    }
+}
+
+private fun formatMeetingDate(dateStr: String): String? {
     val dt = parseDateSafe(dateStr) ?: return null
-    val fmt = DateTimeFormatter.ofPattern("d MMM, HH:mm", Locale("ru"))
-    return dt.format(fmt)
+    return dt.format(DateTimeFormatter.ofPattern("d MMM, HH:mm", Locale("ru")))
 }

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.data.MeetingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.ui.theme.*
@@ -36,7 +37,6 @@ private enum class SortMode(val label: String) {
     FREE_FIRST("Бесплатные")
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     onNavigateToMeetings: () -> Unit = {},
@@ -59,11 +59,8 @@ fun CatalogScreen(
             errorMessage = null
             try {
                 val response = RetrofitClient.api.getAllMeetings()
-                if (response.isSuccessful) {
-                    meetings = response.body() ?: emptyList()
-                } else {
-                    errorMessage = "Ошибка загрузки (${response.code()})"
-                }
+                if (response.isSuccessful) meetings = response.body() ?: emptyList()
+                else errorMessage = "Ошибка загрузки (${response.code()})"
             } catch (e: Exception) {
                 errorMessage = "Нет соединения с сервером"
             }
@@ -101,70 +98,48 @@ fun CatalogScreen(
             }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
+                    .statusBarsPadding()
                     .padding(horizontal = 20.dp)
-                    .padding(top = 56.dp, bottom = 20.dp)
+                    .padding(top = 20.dp, bottom = 20.dp)
             ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text(
-                            "Искать...",
-                            color = TextSecondary,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = null,
-                            tint = TextSecondary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.92f),
-                        cursorColor = TextPrimary
-                    ),
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
-                )
+                Column {
+                    Text("Каталог", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Искать...", color = TextSecondary, style = MaterialTheme.typography.bodyLarge) },
+                        leadingIcon = { Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(20.dp)) },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White.copy(alpha = 0.9f),
+                            cursorColor = TextPrimary
+                        ),
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
+                    )
+                }
             }
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 SortMode.entries.forEach { mode ->
                     FilterChip(
                         selected = sortMode == mode,
                         onClick = { sortMode = mode },
-                        label = {
-                            Text(
-                                mode.label,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = if (sortMode == mode) FontWeight.Bold else FontWeight.Normal
-                                )
-                            )
-                        },
+                        label = { Text(mode.label, style = MaterialTheme.typography.bodySmall.copy(fontWeight = if (sortMode == mode) FontWeight.Bold else FontWeight.Normal)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Accent,
                             selectedLabelColor = TextPrimary,
@@ -172,69 +147,34 @@ fun CatalogScreen(
                             labelColor = TextSecondary
                         ),
                         shape = RoundedCornerShape(12.dp),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = Divider,
-                            selectedBorderColor = Accent,
-                            enabled = true,
-                            selected = sortMode == mode
-                        )
+                        border = FilterChipDefaults.filterChipBorder(borderColor = Divider, selectedBorderColor = Accent, enabled = true, selected = sortMode == mode)
                     )
                 }
             }
 
             when {
-                isLoading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Accent)
+                isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Accent) }
+
+                errorMessage != null -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(errorMessage!!, color = ErrorColor)
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { loadMeetings() }, colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)) { Text("Повторить") }
                     }
                 }
 
-                errorMessage != null -> {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(errorMessage!!, color = ErrorColor)
-                            Spacer(Modifier.height(8.dp))
-                            Button(
-                                onClick = { loadMeetings() },
-                                colors = ButtonDefaults.buttonColors(containerColor = Accent)
-                            ) { Text("Повторить", color = TextPrimary) }
-                        }
-                    }
+                sorted.isEmpty() -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text("Ничего не найдено", style = MaterialTheme.typography.bodyLarge, color = TextSecondary)
                 }
 
-                sorted.isEmpty() -> {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "Ничего не найдено",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = TextSecondary
-                        )
-                    }
-                }
-
-                else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(sorted) { meeting ->
-                            CatalogCard(
-                                meeting = meeting,
-                                onClick = { onNavigateToMeetingDetail(meeting.id) }
-                            )
-                        }
+                else -> LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(sorted) { meeting ->
+                        CatalogCard(meeting = meeting, onClick = { onNavigateToMeetingDetail(meeting.id) })
                     }
                 }
             }
@@ -245,45 +185,26 @@ fun CatalogScreen(
 @Composable
 private fun CatalogCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
     val dateFormatted = meeting.date?.let {
-        try {
-            val dt = parseDateSafeCatalog(it)
-            dt?.let { d ->
-                val fmt = DateTimeFormatter.ofPattern("d MMM", Locale("ru"))
-                d.format(fmt)
-            }
-        } catch (e: Exception) { null }
+        parseDateSafeCatalog(it)?.format(DateTimeFormatter.ofPattern("d MMM", Locale("ru")))
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(0.75f)
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().aspectRatio(0.78f).clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(Accent.copy(alpha = 0.08f)),
+                modifier = Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)).background(Accent.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Outlined.Event,
-                    null,
-                    tint = Accent.copy(alpha = 0.5f),
-                    modifier = Modifier.size(36.dp)
-                )
+                Icon(Icons.Outlined.Event, null, tint = Accent.copy(alpha = 0.6f), modifier = Modifier.size(36.dp))
             }
 
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = meeting.type?.description
-                        ?: meeting.description?.take(20)
-                        ?: "Мероприятие",
+                    text = meeting.type?.description ?: meeting.description?.take(20) ?: "Мероприятие",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = TextPrimary,
                     maxLines = 1,
@@ -292,14 +213,16 @@ private fun CatalogCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
                 Spacer(Modifier.height(4.dp))
                 if (dateFormatted != null) {
                     Text(dateFormatted, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                    Spacer(Modifier.height(2.dp))
                 }
-                Text(
-                    text = if (meeting.ticketPrice != null && meeting.ticketPrice > 0)
-                        "${meeting.ticketPrice} \u20BD"
-                    else "Бесплатно",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                    color = TextPrimary
-                )
+                Surface(shape = RoundedCornerShape(6.dp), color = Accent.copy(alpha = 0.15f)) {
+                    Text(
+                        text = if (meeting.ticketPrice != null && meeting.ticketPrice > 0) "${meeting.ticketPrice} \u20BD" else "Бесплатно",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = TextPrimary,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
             }
         }
     }
@@ -307,12 +230,7 @@ private fun CatalogCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
 
 private fun parseDateSafeCatalog(dateStr: String?): OffsetDateTime? {
     if (dateStr.isNullOrBlank()) return null
-    return try {
-        OffsetDateTime.parse(dateStr)
-    } catch (e: Exception) {
-        try {
-            val local = java.time.LocalDateTime.parse(dateStr)
-            local.atOffset(java.time.ZoneOffset.UTC)
-        } catch (e2: Exception) { null }
+    return try { OffsetDateTime.parse(dateStr) } catch (e: Exception) {
+        try { java.time.LocalDateTime.parse(dateStr).atOffset(java.time.ZoneOffset.UTC) } catch (e2: Exception) { null }
     }
 }

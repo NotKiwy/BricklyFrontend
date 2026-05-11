@@ -41,7 +41,6 @@ fun ProfileScreen(
     onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
-
     val userId = remember { UserPreferences.getUserId(context) }
     val savedUsername = remember { UserPreferences.getUsername(context) }
     val isAdmin = remember { UserPreferences.isAdmin(context) }
@@ -82,104 +81,65 @@ fun ProfileScreen(
         }
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(48.dp))
-
-            AsyncImage(
-                model = "https://ui-avatars.com/api/?name=B&background=FDDD0C&color=1A1A1A&size=180&bold=true&font-size=0.5",
-                contentDescription = null,
-                modifier = Modifier
-                    .size(90.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
-
-            Spacer(Modifier.height(14.dp))
-
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .width(120.dp)
-                        .height(28.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFE0E0E0))
-                )
-            } else {
-                Text(
-                    text = displayName ?: savedUsername,
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 26.sp
-                    ),
-                    color = TextPrimary
-                )
-            }
-
-            Spacer(Modifier.height(28.dp))
-
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = CardBackground),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, Accent)
+                    .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                    .background(Accent)
+                    .statusBarsPadding()
+                    .padding(bottom = 28.dp, top = 20.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Column {
-                    ProfileMenuItem(
-                        icon = Icons.Outlined.CalendarMonth,
-                        text = "Записи на мероприятия",
-                        onClick = onNavigateToMeetings,
-                        showDivider = true
-                    )
-                    ProfileMenuItem(
-                        icon = Icons.Outlined.ShoppingBag,
-                        text = "Заказы",
-                        onClick = onNavigateToOrders,
-                        showDivider = true
-                    )
-                    ProfileMenuItem(
-                        icon = Icons.Outlined.Storefront,
-                        text = "Мой магазин",
-                        onClick = onNavigateToShop,
-                        showDivider = true
-                    )
-                    ProfileMenuItem(
-                        icon = Icons.Outlined.Star,
-                        text = "Отзывы",
-                        onClick = onNavigateToFeedbacks,
-                        showDivider = true
-                    )
-                    ProfileMenuItem(
-                        icon = Icons.Outlined.Edit,
-                        text = "Изменить профиль",
-                        onClick = onNavigateToEditProfile,
-                        showDivider = isAdmin
-                    )
-                    if (isAdmin) {
-                        ProfileMenuItem(
-                            icon = Icons.Outlined.AddCircleOutline,
-                            text = "Создать сходку",
-                            onClick = onNavigateToCreateMeeting,
-                            showDivider = true
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(TextPrimary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = (displayName ?: savedUsername).take(1).uppercase(),
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Accent
                         )
                     }
-                    ProfileMenuItem(
-                        icon = Icons.Outlined.Logout,
-                        text = "Выйти из аккаунта",
-                        onClick = {
-                            UserPreferences.clear(context)
-                            onLogout()
-                        },
-                        showDivider = false,
-                        isDestructive = true
-                    )
+                    Spacer(Modifier.height(12.dp))
+                    if (isLoading) {
+                        Box(modifier = Modifier.width(120.dp).height(24.dp).clip(RoundedCornerShape(8.dp)).background(TextPrimary.copy(alpha = 0.2f)))
+                    } else {
+                        Text(
+                            text = displayName ?: savedUsername,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = TextPrimary
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                elevation = CardDefaults.cardElevation(0.dp)
+            ) {
+                Column {
+                    ProfileMenuItem(icon = Icons.Outlined.CalendarMonth, text = "Записи на мероприятия", onClick = onNavigateToMeetings, showDivider = true)
+                    ProfileMenuItem(icon = Icons.Outlined.ShoppingBag, text = "Заказы", onClick = onNavigateToOrders, showDivider = true)
+                    ProfileMenuItem(icon = Icons.Outlined.Storefront, text = "Мой магазин", onClick = onNavigateToShop, showDivider = true)
+                    ProfileMenuItem(icon = Icons.Outlined.Star, text = "Отзывы", onClick = onNavigateToFeedbacks, showDivider = true)
+                    ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = isAdmin)
+                    if (isAdmin) {
+                        ProfileMenuItem(icon = Icons.Outlined.AddCircleOutline, text = "Создать сходку", onClick = onNavigateToCreateMeeting, showDivider = true)
+                    }
+                    ProfileMenuItem(icon = Icons.Outlined.Logout, text = "Выйти из аккаунта", onClick = { UserPreferences.clear(context); onLogout() }, showDivider = false, isDestructive = true)
                 }
             }
 
@@ -200,53 +160,24 @@ private fun ProfileMenuItem(
 
     Column {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        if (isDestructive) ErrorColor.copy(alpha = 0.08f)
-                        else Accent.copy(alpha = 0.15f)
-                    ),
+                    .background(if (isDestructive) ErrorColor.copy(alpha = 0.08f) else Accent.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(18.dp)
-                )
+                Icon(imageVector = icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))
             }
-
             Spacer(Modifier.width(14.dp))
-
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = contentColor,
-                modifier = Modifier.weight(1f)
-            )
-
-            Icon(
-                imageVector = Icons.Outlined.ChevronRight,
-                contentDescription = null,
-                tint = if (isDestructive) ErrorColor.copy(alpha = 0.4f) else TextSecondary,
-                modifier = Modifier.size(20.dp)
-            )
+            Text(text = text, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = contentColor, modifier = Modifier.weight(1f))
+            Icon(imageVector = Icons.Outlined.ChevronRight, contentDescription = null, tint = if (isDestructive) ErrorColor.copy(alpha = 0.4f) else TextSecondary, modifier = Modifier.size(20.dp))
         }
-
         if (showDivider) {
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 70.dp, end = 20.dp),
-                color = Divider,
-                thickness = 1.dp
-            )
+            HorizontalDivider(modifier = Modifier.padding(start = 70.dp, end = 20.dp), color = Divider, thickness = 1.dp)
         }
     }
 }
