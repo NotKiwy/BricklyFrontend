@@ -6,7 +6,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,7 +21,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -55,9 +53,14 @@ private sealed class BrickState {
     data class Error(val message: String) : BrickState()
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BrickognizeScreen(onBack: () -> Unit) {
+fun BrickognizeScreen(
+    onBack: () -> Unit,
+    onNavigateToMeetings: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
+    onNavigateToCart: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -104,7 +107,6 @@ fun BrickognizeScreen(onBack: () -> Unit) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
                     .padding(horizontal = 8.dp, vertical = 12.dp)
@@ -120,6 +122,20 @@ fun BrickognizeScreen(onBack: () -> Unit) {
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
+        },
+        bottomBar = {
+            BricklyBottomBar(
+                currentRoute = "brickognize",
+                onNavigate = { route ->
+                    when (route) {
+                        "meetings" -> onNavigateToMeetings()
+                        "home" -> onNavigateToHome()
+                        "cart" -> onNavigateToCart()
+                        "profile" -> onNavigateToProfile()
+                    }
+                },
+                onScanClick = {}
+            )
         }
     ) { padding ->
         Box(
@@ -135,14 +151,19 @@ fun BrickognizeScreen(onBack: () -> Unit) {
                 )
 
                 is BrickState.Preview -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(24.dp)
+                    ) {
                         AsyncImage(
                             model = s.uri,
                             contentDescription = null,
-                            modifier = Modifier.size(240.dp).clip(RoundedCornerShape(24.dp)),
-                            contentScale = ContentScale.Crop
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(24.dp)),
+                            contentScale = ContentScale.FillWidth
                         )
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(24.dp))
                         CircularProgressIndicator(color = Accent)
                         Spacer(Modifier.height(8.dp))
                         Text("Отправка...", color = TextSecondary)
@@ -173,10 +194,7 @@ private fun IdleContent(onCamera: () -> Unit, onGallery: () -> Unit) {
         modifier = Modifier.padding(32.dp)
     ) {
         Box(
-            modifier = Modifier
-                .size(100.dp)
-                .clip(CircleShape)
-                .background(Accent),
+            modifier = Modifier.size(100.dp).clip(CircleShape).background(Accent),
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Default.CameraAlt, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(48.dp))
@@ -200,28 +218,27 @@ private fun IdleContent(onCamera: () -> Unit, onGallery: () -> Unit) {
         )
         Spacer(Modifier.height(40.dp))
 
-        Button(
-            onClick = onCamera,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(Icons.Default.CameraAlt, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Сделать снимок", fontWeight = FontWeight.SemiBold)
-        }
+            Button(
+                onClick = onCamera,
+                modifier = Modifier.weight(1f).height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
+            ) {
+                Icon(Icons.Default.CameraAlt, contentDescription = "Камера", modifier = Modifier.size(26.dp))
+            }
 
-        Spacer(Modifier.height(12.dp))
-
-        Button(
-            onClick = onGallery,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = TextPrimary, contentColor = Color.White)
-        ) {
-            Icon(Icons.Default.PhotoLibrary, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Выбрать из галереи", fontWeight = FontWeight.SemiBold)
+            Button(
+                onClick = onGallery,
+                modifier = Modifier.weight(1f).height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TextPrimary, contentColor = Color.White)
+            ) {
+                Icon(Icons.Default.PhotoLibrary, contentDescription = "Галерея", modifier = Modifier.size(26.dp))
+            }
         }
     }
 }
@@ -251,9 +268,8 @@ private fun ConfirmDialog(imageUri: Uri, onConfirm: () -> Unit, onDismiss: () ->
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(240.dp)
                         .clip(RoundedCornerShape(20.dp)),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.FillWidth
                 )
                 Spacer(Modifier.height(20.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -263,9 +279,7 @@ private fun ConfirmDialog(imageUri: Uri, onConfirm: () -> Unit, onDismiss: () ->
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Отмена", fontWeight = FontWeight.SemiBold)
+                        Icon(Icons.Default.Close, contentDescription = "Отмена", modifier = Modifier.size(24.dp))
                     }
                     Button(
                         onClick = onConfirm,
@@ -273,9 +287,7 @@ private fun ConfirmDialog(imageUri: Uri, onConfirm: () -> Unit, onDismiss: () ->
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Отправить", fontWeight = FontWeight.SemiBold)
+                        Icon(Icons.Default.Check, contentDescription = "Отправить", modifier = Modifier.size(24.dp))
                     }
                 }
             }
@@ -343,12 +355,14 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
     ) {
         Column {
             if (!item.img_url.isNullOrBlank()) {
-                Box(modifier = Modifier.fillMaxWidth().height(220.dp)) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     AsyncImage(
                         model = item.img_url,
                         contentDescription = item.name,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
-                        contentScale = ContentScale.Fit
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+                        contentScale = ContentScale.FillWidth
                     )
                     Box(
                         modifier = Modifier
@@ -365,30 +379,14 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
             }
 
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = item.name ?: item.id,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = TextPrimary
-                )
+                Text(text = item.name ?: item.id, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFFF0F0F0)
-                    ) {
-                        Text(
-                            text = "ID: ${item.id}",
-                            fontSize = 12.sp,
-                            color = TextSecondary,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
+                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF0F0F0)) {
+                        Text("ID: ${item.id}", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                     }
                     val pct = (item.score * 100).toInt()
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (pct >= 80) Color(0xFFE8F5E9) else Color(0xFFF0F0F0)
-                    ) {
+                    Surface(shape = RoundedCornerShape(8.dp), color = if (pct >= 80) Color(0xFFE8F5E9) else Color(0xFFF0F0F0)) {
                         Text(
                             text = "$pct% совпадение",
                             fontSize = 12.sp,

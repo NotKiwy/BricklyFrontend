@@ -68,7 +68,7 @@ interface ApiService {
     ): Response<FeedbackDefaultDTO>
 
     @DELETE("/api/app/feedbacks/delete/{id}")
-    suspend fun deleteFeedback(@Path("id") id: Long): Response<Unit>
+    suspend fun deleteFeedback(@Path(п"id") id: Long): Response<Unit>
 }
 
 interface BrickognizeApiService {
