@@ -2,7 +2,9 @@ package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,14 +39,16 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Background)
+            .imePadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(120.dp))
+            Spacer(Modifier.height(140.dp))
 
             Text(
                 text = "Добро пожаловать",
@@ -111,7 +115,6 @@ fun LoginScreen(
                                 errorMessage = null
                                 try {
                                     val trimmed = username.trim()
-
                                     val response = RetrofitClient
                                         .apiWithCredentials(trimmed, password)
                                         .getUserByUsername(trimmed)
@@ -131,7 +134,6 @@ fun LoginScreen(
                                         404 -> errorMessage = "Пользователь не найден"
                                         else -> errorMessage = "Ошибка сервера (${response.code()})"
                                     }
-
                                 } catch (e: Exception) {
                                     errorMessage = "Нет соединения с сервером"
                                 } finally {
@@ -141,44 +143,30 @@ fun LoginScreen(
                         }
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Accent,
-                    contentColor = TextPrimary
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
                 enabled = !isLoading
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = TextPrimary,
-                        strokeWidth = 2.dp
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = TextPrimary, strokeWidth = 2.dp)
                 } else {
-                    Text(
-                        text = "Войти",
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)
-                    )
+                    Text(text = "Войти", style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp))
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
             TextButton(onClick = onNavigateToRegister) {
-                Text(
-                    text = "Нет аккаунта? ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary
-                )
+                Text(text = "Нет аккаунта? ", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 Text(
                     text = "Зарегистрироваться",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = TextPrimary
                 )
             }
+
+            Spacer(Modifier.height(32.dp))
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.bricklyfrontend.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,25 +11,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.data.UserUpdateDTO
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSaved: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val userId = remember { UserPreferences.getUserId(context) }
 
-    var username by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
@@ -36,14 +38,12 @@ fun EditProfileScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var successMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(userId) {
         try {
             val response = RetrofitClient.api.getUserById(userId)
             if (response.isSuccessful) {
                 val user = response.body()
-                username = user?.username ?: ""
                 name = user?.name ?: ""
                 email = user?.email ?: ""
                 city = user?.city ?: ""
@@ -57,25 +57,27 @@ fun EditProfileScreen(
     Scaffold(
         containerColor = Background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Изменить профиль",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Outlined.ArrowBackIosNew,
-                            contentDescription = "Назад",
-                            tint = TextPrimary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Background)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Accent)
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+            ) {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    Icon(Icons.Outlined.ArrowBackIosNew, contentDescription = "Назад", tint = TextPrimary)
+                }
+                Text(
+                    text = "Изменить профиль",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
         }
     ) { padding ->
         if (isLoading) {
@@ -90,11 +92,11 @@ fun EditProfileScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp)
             ) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(16.dp))
 
                 BricklyTextField(
                     value = name,
-                    onValueChange = { name = it; successMessage = null },
+                    onValueChange = { name = it; errorMessage = null },
                     label = "Имя",
                     placeholder = "Введите имя"
                 )
@@ -103,7 +105,7 @@ fun EditProfileScreen(
 
                 BricklyTextField(
                     value = email,
-                    onValueChange = { email = it; successMessage = null },
+                    onValueChange = { email = it; errorMessage = null },
                     label = "Email",
                     placeholder = "Введите email"
                 )
@@ -112,7 +114,7 @@ fun EditProfileScreen(
 
                 BricklyTextField(
                     value = city,
-                    onValueChange = { city = it; successMessage = null },
+                    onValueChange = { city = it; errorMessage = null },
                     label = "Город",
                     placeholder = "Введите город"
                 )
@@ -128,42 +130,34 @@ fun EditProfileScreen(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                if (successMessage != null) {
-                    Text(
-                        successMessage!!,
-                        color = AccentDark,
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-
                 Button(
                     onClick = {
                         scope.launch {
                             isSaving = true
                             errorMessage = null
-                            successMessage = null
                             try {
                                 val dto = UserUpdateDTO(
-                                    username = username.ifBlank { null },
                                     name = name.ifBlank { null },
                                     email = email.ifBlank { null },
                                     city = city.ifBlank { null }
                                 )
                                 val response = RetrofitClient.api.updateUser(userId, dto)
                                 if (response.isSuccessful) {
-                                    successMessage = "Профиль обновлён"
+                                    onSaved()
                                 } else {
                                     errorMessage = "Ошибка обновления (${response.code()})"
+                                    isSaving = false
                                 }
                             } catch (e: Exception) {
                                 errorMessage = "Нет соединения с сервером"
+                                isSaving = false
                             }
-                            isSaving = false
                         }
                     },
                     enabled = !isSaving,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Accent,
@@ -171,11 +165,7 @@ fun EditProfileScreen(
                     )
                 ) {
                     if (isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            color = TextPrimary,
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = TextPrimary, strokeWidth = 2.dp)
                     } else {
                         Text("Сохранить", fontWeight = FontWeight.SemiBold)
                     }

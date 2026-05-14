@@ -1,18 +1,30 @@
 package com.example.bricklyfrontend.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.bricklyfrontend.data.MeetingCreateDTO
 import com.example.bricklyfrontend.data.MeetingTypeDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
@@ -24,6 +36,7 @@ import kotlinx.coroutines.launch
 fun CreateMeetingScreen(
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     var date by remember { mutableStateOf("") }
@@ -33,6 +46,7 @@ fun CreateMeetingScreen(
     var discountDuration by remember { mutableStateOf("") }
     var discountAmount by remember { mutableStateOf("") }
     var discountModifier by remember { mutableStateOf("") }
+    var coverImageUri by remember { mutableStateOf<Uri?>(null) }
 
     var meetingTypes by remember { mutableStateOf<List<MeetingTypeDefaultDTO>>(emptyList()) }
     var selectedTypeId by remember { mutableIntStateOf(-1) }
@@ -41,6 +55,10 @@ fun CreateMeetingScreen(
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { coverImageUri = it }
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -55,21 +73,24 @@ fun CreateMeetingScreen(
     Scaffold(
         containerColor = Background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Создать сходку",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Background)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Accent)
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
+                    Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
+                }
+                Text(
+                    text = "Создать сходку",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 20.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
         }
     ) { padding ->
         Column(
@@ -79,7 +100,38 @@ fun CreateMeetingScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
         ) {
+            Spacer(Modifier.height(16.dp))
+
+            // Обложка
+            Text("Обложка", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
             Spacer(Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(CardBackground)
+                    .border(1.5.dp, if (coverImageUri != null) Accent else Divider, RoundedCornerShape(16.dp))
+                    .clickable { imagePicker.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                if (coverImageUri != null) {
+                    AsyncImage(
+                        model = coverImageUri,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Outlined.AddPhotoAlternate, null, tint = IconInactive, modifier = Modifier.size(40.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text("Выбрать обложку", color = TextSecondary, fontSize = 14.sp)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
 
             BricklyTextField(
                 value = date,
@@ -108,11 +160,7 @@ fun CreateMeetingScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            Text(
-                "Тип мероприятия",
-                style = MaterialTheme.typography.labelLarge,
-                color = TextPrimary
-            )
+            Text("Тип мероприятия", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
             Spacer(Modifier.height(6.dp))
 
             ExposedDropdownMenuBox(
@@ -123,7 +171,7 @@ fun CreateMeetingScreen(
                     value = meetingTypes.find { it.id == selectedTypeId }?.description ?: "Выберите тип",
                     onValueChange = {},
                     readOnly = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -134,17 +182,11 @@ fun CreateMeetingScreen(
                     ),
                     textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
                 )
-                ExposedDropdownMenu(
-                    expanded = typeExpanded,
-                    onDismissRequest = { typeExpanded = false }
-                ) {
+                ExposedDropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
                     meetingTypes.forEach { type ->
                         DropdownMenuItem(
                             text = { Text(type.description ?: "Тип #${type.id}") },
-                            onClick = {
-                                selectedTypeId = type.id
-                                typeExpanded = false
-                            }
+                            onClick = { selectedTypeId = type.id; typeExpanded = false }
                         )
                     }
                 }
@@ -162,33 +204,38 @@ fun CreateMeetingScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            BricklyTextField(
-                value = discountDuration,
-                onValueChange = { discountDuration = it.filter { c -> c.isDigit() } },
-                label = "Длительность скидки (дней)",
-                placeholder = "0",
-                keyboardType = KeyboardType.Number
-            )
+            Text("Скидка (необязательно)", style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+            Spacer(Modifier.height(8.dp))
 
-            Spacer(Modifier.height(16.dp))
-
-            BricklyTextField(
-                value = discountAmount,
-                onValueChange = { discountAmount = it.filter { c -> c.isDigit() } },
-                label = "Размер скидки",
-                placeholder = "0",
-                keyboardType = KeyboardType.Number
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            BricklyTextField(
-                value = discountModifier,
-                onValueChange = { discountModifier = it.filter { c -> c.isDigit() } },
-                label = "Модификатор скидки",
-                placeholder = "0",
-                keyboardType = KeyboardType.Number
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(modifier = Modifier.weight(1f)) {
+                    BricklyTextField(
+                        value = discountDuration,
+                        onValueChange = { discountDuration = it.filter { c -> c.isDigit() } },
+                        label = "Дней",
+                        placeholder = "0",
+                        keyboardType = KeyboardType.Number
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    BricklyTextField(
+                        value = discountAmount,
+                        onValueChange = { discountAmount = it.filter { c -> c.isDigit() } },
+                        label = "Размер",
+                        placeholder = "0",
+                        keyboardType = KeyboardType.Number
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    BricklyTextField(
+                        value = discountModifier,
+                        onValueChange = { discountModifier = it.filter { c -> c.isDigit() } },
+                        label = "Модиф.",
+                        placeholder = "0",
+                        keyboardType = KeyboardType.Number
+                    )
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
 
@@ -197,11 +244,7 @@ fun CreateMeetingScreen(
                 Spacer(Modifier.height(8.dp))
             }
             if (successMessage != null) {
-                Text(
-                    successMessage!!,
-                    color = AccentDark,
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
-                )
+                Text(successMessage!!, color = AccentDark, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold))
                 Spacer(Modifier.height(8.dp))
             }
 
@@ -228,6 +271,7 @@ fun CreateMeetingScreen(
                                 date = ""; address = ""; description = ""
                                 ticketPrice = ""; discountDuration = ""
                                 discountAmount = ""; discountModifier = ""
+                                coverImageUri = null
                             } else {
                                 errorMessage = "Ошибка создания (${response.code()})"
                             }
@@ -238,25 +282,18 @@ fun CreateMeetingScreen(
                     }
                 },
                 enabled = !isSaving && date.isNotBlank() && address.isNotBlank() && selectedTypeId != -1,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Accent,
-                    contentColor = TextPrimary
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
             ) {
                 if (isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        color = TextPrimary,
-                        strokeWidth = 2.dp
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = TextPrimary, strokeWidth = 2.dp)
                 } else {
-                    Text("Создать", fontWeight = FontWeight.SemiBold)
+                    Text("Создать", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(32.dp))
         }
     }
 }

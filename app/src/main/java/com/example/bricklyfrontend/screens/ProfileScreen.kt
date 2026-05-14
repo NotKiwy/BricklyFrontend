@@ -14,14 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.bricklyfrontend.data.AppConfig
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
@@ -38,15 +35,26 @@ fun ProfileScreen(
     onNavigateToCart: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    // Toast-сообщение, которое показывается при входе на экран (например после сохранения профиля)
+    toastMessage: String? = null
 ) {
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
     val userId = remember { UserPreferences.getUserId(context) }
     val savedUsername = remember { UserPreferences.getUsername(context) }
-    val isAdmin = remember { UserPreferences.isAdmin(context) }
+    val role = remember { UserPreferences.getRole(context) }
+    val canCreateMeeting = remember { role == "ROLE_ADMIN" || role == "ROLE_MEETING_CREATOR" }
 
     var displayName by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(toastMessage) {
+        if (!toastMessage.isNullOrBlank()) {
+            snackbarHostState.showSnackbar(toastMessage)
+        }
+    }
 
     LaunchedEffect(userId) {
         if (!AppConfig.debugMode && userId != -1L) {
@@ -69,6 +77,7 @@ fun ProfileScreen(
 
     Scaffold(
         containerColor = Background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
                 when (route) {
@@ -84,33 +93,40 @@ fun ProfileScreen(
             modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Шапка — аватар + имя, того же стиля что и на других экранах
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(bottom = 28.dp, top = 20.dp),
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 18.dp, bottom = 24.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(72.dp)
                             .clip(CircleShape)
                             .background(TextPrimary),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = (displayName ?: savedUsername).take(1).uppercase(),
-                            fontSize = 32.sp,
+                            fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = Accent
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
                     if (isLoading) {
-                        Box(modifier = Modifier.width(120.dp).height(24.dp).clip(RoundedCornerShape(8.dp)).background(TextPrimary.copy(alpha = 0.2f)))
+                        Box(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .height(22.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(TextPrimary.copy(alpha = 0.2f))
+                        )
                     } else {
                         Text(
                             text = displayName ?: savedUsername,
@@ -135,11 +151,17 @@ fun ProfileScreen(
                     ProfileMenuItem(icon = Icons.Outlined.ShoppingBag, text = "Заказы", onClick = onNavigateToOrders, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.Storefront, text = "Мой магазин", onClick = onNavigateToShop, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.Star, text = "Отзывы", onClick = onNavigateToFeedbacks, showDivider = true)
-                    ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = isAdmin)
-                    if (isAdmin) {
+                    ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = canCreateMeeting)
+                    if (canCreateMeeting) {
                         ProfileMenuItem(icon = Icons.Outlined.AddCircleOutline, text = "Создать сходку", onClick = onNavigateToCreateMeeting, showDivider = true)
                     }
-                    ProfileMenuItem(icon = Icons.Outlined.Logout, text = "Выйти из аккаунта", onClick = { UserPreferences.clear(context); onLogout() }, showDivider = false, isDestructive = true)
+                    ProfileMenuItem(
+                        icon = Icons.Outlined.Logout,
+                        text = "Выйти из аккаунта",
+                        onClick = { UserPreferences.clear(context); onLogout() },
+                        showDivider = false,
+                        isDestructive = true
+                    )
                 }
             }
 
@@ -160,24 +182,38 @@ private fun ProfileMenuItem(
 
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (isDestructive) ErrorColor.copy(alpha = 0.08f) else Accent.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(imageVector = icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(18.dp))
-            }
-            Spacer(Modifier.width(14.dp))
-            Text(text = text, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = contentColor, modifier = Modifier.weight(1f))
-            Icon(imageVector = Icons.Outlined.ChevronRight, contentDescription = null, tint = if (isDestructive) ErrorColor.copy(alpha = 0.4f) else TextSecondary, modifier = Modifier.size(20.dp))
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isDestructive) ErrorColor else IconInactive,
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(Modifier.width(16.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = contentColor,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = if (isDestructive) ErrorColor.copy(alpha = 0.4f) else IconInactive,
+                modifier = Modifier.size(20.dp)
+            )
         }
         if (showDivider) {
-            HorizontalDivider(modifier = Modifier.padding(start = 70.dp, end = 20.dp), color = Divider, thickness = 1.dp)
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 58.dp, end = 20.dp),
+                color = Divider,
+                thickness = 1.dp
+            )
         }
     }
 }

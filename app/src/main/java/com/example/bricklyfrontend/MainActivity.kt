@@ -2,25 +2,34 @@ package com.example.bricklyfrontend
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.screens.*
+import com.example.bricklyfrontend.ui.theme.Accent
 import com.example.bricklyfrontend.ui.theme.BricklyFrontendTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         RetrofitClient.init(this)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                scrim = Accent.toArgb(),
+                darkScrim = Accent.toArgb()
+            )
+        )
         setContent {
             BricklyFrontendTheme {
                 BricklyApp()
@@ -45,42 +54,39 @@ fun BricklyApp() {
 
     val startDest = if (UserPreferences.isLoggedIn(context)) "meetings" else "login"
 
+    fun navToTab(route: String) {
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDest,
         enterTransition = {
             fadeIn(animationSpec = tween(NAV_ANIM_DURATION)) +
-                    slideInHorizontally(
-                        animationSpec = tween(NAV_ANIM_DURATION),
-                        initialOffsetX = { it / 6 }
-                    )
+                    slideInHorizontally(animationSpec = tween(NAV_ANIM_DURATION), initialOffsetX = { it / 6 })
         },
         exitTransition = {
             fadeOut(animationSpec = tween(NAV_ANIM_DURATION)) +
-                    slideOutHorizontally(
-                        animationSpec = tween(NAV_ANIM_DURATION),
-                        targetOffsetX = { -it / 6 }
-                    )
+                    slideOutHorizontally(animationSpec = tween(NAV_ANIM_DURATION), targetOffsetX = { -it / 6 })
         },
         popEnterTransition = {
             fadeIn(animationSpec = tween(NAV_ANIM_DURATION)) +
-                    slideInHorizontally(
-                        animationSpec = tween(NAV_ANIM_DURATION),
-                        initialOffsetX = { -it / 6 }
-                    )
+                    slideInHorizontally(animationSpec = tween(NAV_ANIM_DURATION), initialOffsetX = { -it / 6 })
         },
         popExitTransition = {
             fadeOut(animationSpec = tween(NAV_ANIM_DURATION)) +
-                    slideOutHorizontally(
-                        animationSpec = tween(NAV_ANIM_DURATION),
-                        targetOffsetX = { it / 6 }
-                    )
+                    slideOutHorizontally(animationSpec = tween(NAV_ANIM_DURATION), targetOffsetX = { it / 6 })
         }
     ) {
-
         composable("login") {
             LoginScreen(
-                onNavigateToRegister = { navController.navigate("register") },
+                onNavigateToRegister = { navController.navigate("register") { launchSingleTop = true } },
                 onLoggedIn = {
                     navController.navigate("meetings") {
                         popUpTo("login") { inclusive = true }
@@ -102,69 +108,88 @@ fun BricklyApp() {
 
         composable("meetings") {
             MeetingsScreen(
-                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToProfile = { navToTab("profile") },
                 onNavigateToMeetingDetail = { meetingId ->
-                    navController.navigate("meeting_detail/$meetingId")
+                    navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
                 },
-                onNavigateToCart = { navController.navigate("cart") },
-                onNavigateToHome = { navController.navigate("home") },
-                onNavigateToBrickognize = { navController.navigate("brickognize") }
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToHome = { navToTab("home") },
+                onNavigateToBrickognize = { navToTab("brickognize") }
             )
         }
 
         composable("home") {
             CatalogScreen(
-                onNavigateToMeetings = { navController.navigate("meetings") },
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToCart = { navController.navigate("cart") },
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToProfile = { navToTab("profile") },
+                onNavigateToCart = { navToTab("cart") },
                 onNavigateToMeetingDetail = { meetingId ->
-                    navController.navigate("meeting_detail/$meetingId")
+                    navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
                 },
-                onNavigateToBrickognize = { navController.navigate("brickognize") }
+                onNavigateToBrickognize = { navToTab("brickognize") }
             )
         }
 
         composable("cart") {
             CartScreen(
-                onNavigateToMeetings = { navController.navigate("meetings") },
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToHome = { navController.navigate("home") },
-                onNavigateToBrickognize = { navController.navigate("brickognize") }
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToProfile = { navToTab("profile") },
+                onNavigateToHome = { navToTab("home") },
+                onNavigateToBrickognize = { navToTab("brickognize") }
             )
         }
 
         composable("profile") {
+            // Читаем toast-аргумент из savedStateHandle (кладём туда из edit_profile)
+            val savedState = navController.currentBackStackEntry?.savedStateHandle
+            val toast = savedState?.get<String>("toast")
+            // После показа сбрасываем чтобы не показывался повторно
+            LaunchedEffect(toast) {
+                if (!toast.isNullOrBlank()) {
+                    savedState?.remove<String>("toast")
+                }
+            }
             ProfileScreen(
-                onNavigateToMeetings = { navController.navigate("meetings") },
+                onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToOrders = {},
                 onNavigateToShop = {},
-                onNavigateToEditProfile = { navController.navigate("edit_profile") },
+                onNavigateToEditProfile = {
+                    navController.navigate("edit_profile") { launchSingleTop = true }
+                },
                 onNavigateToFeedbacks = {
                     val userId = UserPreferences.getUserId(context)
-                    navController.navigate("feedbacks/$userId")
+                    navController.navigate("feedbacks/$userId") { launchSingleTop = true }
                 },
-                onNavigateToCreateMeeting = { navController.navigate("create_meeting") },
-                onNavigateToCart = { navController.navigate("cart") },
-                onNavigateToHome = { navController.navigate("home") },
-                onNavigateToBrickognize = { navController.navigate("brickognize") },
+                onNavigateToCreateMeeting = {
+                    navController.navigate("create_meeting") { launchSingleTop = true }
+                },
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToHome = { navToTab("home") },
+                onNavigateToBrickognize = { navToTab("brickognize") },
                 onLogout = {
                     navController.navigate("login") {
-                        popUpTo("meetings") { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
-                }
+                },
+                toastMessage = toast
             )
         }
 
         composable("edit_profile") {
             EditProfileScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onSaved = {
+                    // Кладём toast в предыдущий экран (profile) и возвращаемся
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("toast", "Профиль обновлён")
+                    navController.popBackStack()
+                }
             )
         }
 
         composable("create_meeting") {
-            CreateMeetingScreen(
-                onBack = { navController.popBackStack() }
-            )
+            CreateMeetingScreen(onBack = { navController.popBackStack() })
         }
 
         composable("meeting_detail/{meetingId}") { backStackEntry ->
@@ -172,7 +197,7 @@ fun BricklyApp() {
             MeetingDetailScreen(
                 meetingId = meetingId,
                 onBack = { navController.popBackStack() },
-                onNavigateToCart = { navController.navigate("cart") }
+                onNavigateToCart = { navToTab("cart") }
             )
         }
 
@@ -186,7 +211,10 @@ fun BricklyApp() {
 
         composable("brickognize") {
             BrickognizeScreen(
-                onBack = { navController.popBackStack() }
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToHome = { navToTab("home") },
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToProfile = { navToTab("profile") }
             )
         }
     }
