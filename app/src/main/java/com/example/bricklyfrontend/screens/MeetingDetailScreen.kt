@@ -58,6 +58,8 @@ fun MeetingDetailScreen(
     onBack: () -> Unit,
     onNavigateToCart: () -> Unit
 ) {
+    SetStatusBarColor(Accent)
+    
     var meeting by remember { mutableStateOf<MeetingDefaultDTO?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }

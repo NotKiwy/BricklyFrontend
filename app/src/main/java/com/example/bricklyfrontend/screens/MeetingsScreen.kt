@@ -36,6 +36,8 @@ fun MeetingsScreen(
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {}
 ) {
+    SetStatusBarColor(Accent)
+    
     val scope = rememberCoroutineScope()
 
     var meetings by remember { mutableStateOf<List<MeetingDefaultDTO>>(emptyList()) }
@@ -83,7 +85,7 @@ fun MeetingsScreen(
             }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -116,7 +118,8 @@ fun MeetingsScreen(
                 }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                Spacer(Modifier.height(20.dp))
 
             when {
                 isLoading -> Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
@@ -180,7 +183,8 @@ fun MeetingsScreen(
                 Spacer(Modifier.height(12.dp))
             }
 
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
+            }
         }
     }
 }

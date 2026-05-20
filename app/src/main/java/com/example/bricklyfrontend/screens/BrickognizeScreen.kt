@@ -60,6 +60,8 @@ fun BrickognizeScreen(
     onNavigateToCart: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}
 ) {
+    SetStatusBarColor(Accent)
+    
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -106,6 +108,7 @@ fun BrickognizeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 18.dp)
@@ -285,10 +288,10 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
             if (!item.img_url.isNullOrBlank()) {
                 Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
                     AsyncImage(
-                        model = item.img_url,
-                        contentDescription = item.name,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
-                        contentScale = ContentScale.Fit
+                    model = item.img_url,
+                    contentDescription = item.name,
+                    modifier = Modifier.fillMaxSize().padding(top = 12.dp).clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+                    contentScale = ContentScale.Fit
                     )
                     Box(
                         modifier = Modifier.padding(12.dp).size(32.dp).clip(CircleShape).background(Accent).align(Alignment.TopStart),

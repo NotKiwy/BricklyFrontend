@@ -45,6 +45,8 @@ fun CatalogScreen(
     onNavigateToMeetingDetail: (Long) -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {}
 ) {
+    SetStatusBarColor(Accent)
+    
     val scope = rememberCoroutineScope()
 
     var meetings by remember { mutableStateOf<List<MeetingDefaultDTO>>(emptyList()) }

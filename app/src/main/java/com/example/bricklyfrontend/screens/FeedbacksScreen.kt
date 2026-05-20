@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +35,8 @@ fun FeedbacksScreen(
     targetUserId: Long,
     onBack: () -> Unit
 ) {
+    SetStatusBarColor(Color.White)
+    
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -94,7 +97,9 @@ fun FeedbacksScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Background),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Background
+                ),
                 actions = {
                     if (currentUserId != targetUserId) {
                         TextButton(onClick = { showDialog = true }) {

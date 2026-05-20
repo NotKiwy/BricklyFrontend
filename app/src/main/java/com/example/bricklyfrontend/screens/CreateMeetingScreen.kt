@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +37,8 @@ import kotlinx.coroutines.launch
 fun CreateMeetingScreen(
     onBack: () -> Unit
 ) {
+    SetStatusBarColor(Color.White)
+    
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -73,24 +76,29 @@ fun CreateMeetingScreen(
     Scaffold(
         containerColor = Background,
         topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Accent)
-                    .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
-            ) {
-                IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
-                    Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
-                }
-                Text(
-                    text = "Создать сходку",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 20.sp,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Создать сходку",
+                        color = TextPrimary,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 20.sp
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.Outlined.ArrowBackIosNew,
+                            contentDescription = "Назад",
+                            tint = TextPrimary
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Background
+                ),
+                modifier = Modifier.statusBarsPadding()
+            )
         }
     ) { padding ->
         Column(

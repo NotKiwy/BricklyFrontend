@@ -24,12 +24,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         RetrofitClient.init(this)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(
-                scrim = Accent.toArgb(),
-                darkScrim = Accent.toArgb()
-            )
-        )
+        enableEdgeToEdge()
         setContent {
             BricklyFrontendTheme {
                 BricklyApp()

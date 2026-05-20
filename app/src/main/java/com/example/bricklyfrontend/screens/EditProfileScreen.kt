@@ -1,5 +1,6 @@
 package com.example.bricklyfrontend.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,11 +24,14 @@ import com.example.bricklyfrontend.data.UserUpdateDTO
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit = {}
 ) {
+    SetStatusBarColor(Color.White)
+    
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val userId = remember { UserPreferences.getUserId(context) }
@@ -57,27 +62,29 @@ fun EditProfileScreen(
     Scaffold(
         containerColor = Background,
         topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Accent)
-                    .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
-            ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.align(Alignment.CenterStart)
-                ) {
-                    Icon(Icons.Outlined.ArrowBackIosNew, contentDescription = "Назад", tint = TextPrimary)
-                }
-                Text(
-                    text = "Изменить профиль",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 20.sp,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Изменить профиль",
+                        color = TextPrimary,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 20.sp
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.Outlined.ArrowBackIosNew,
+                            contentDescription = "Назад",
+                            tint = TextPrimary
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Background
+                ),
+                modifier = Modifier.statusBarsPadding()
+            )
         }
     ) { padding ->
         if (isLoading) {
@@ -143,6 +150,11 @@ fun EditProfileScreen(
                                 )
                                 val response = RetrofitClient.api.updateUser(userId, dto)
                                 if (response.isSuccessful) {
+                                    Toast.makeText(
+                                        context,
+                                        "Профиль успешно изменен",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                     onSaved()
                                 } else {
                                     errorMessage = "Ошибка обновления (${response.code()})"

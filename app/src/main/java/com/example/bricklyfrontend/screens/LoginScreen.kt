@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,6 +27,8 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onLoggedIn: () -> Unit
 ) {
+    SetStatusBarColor(Color.White)
+    
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -39,6 +42,7 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Background)
+            .statusBarsPadding()
             .imePadding()
     ) {
         Column(
