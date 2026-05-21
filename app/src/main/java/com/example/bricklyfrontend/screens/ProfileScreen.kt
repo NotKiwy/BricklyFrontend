@@ -42,6 +42,8 @@ fun ProfileScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
+    SetStatusBarColor(Accent)
+
     val userId = remember { UserPreferences.getUserId(context) }
     val savedUsername = remember { UserPreferences.getUsername(context) }
     val role = remember { UserPreferences.getRole(context) }
@@ -78,22 +80,7 @@ fun ProfileScreen(
     Scaffold(
         containerColor = Background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
-                when (route) {
-                    "meetings" -> onNavigateToMeetings()
-                    "cart" -> onNavigateToCart()
-                    "home" -> onNavigateToHome()
-                    "brickognize" -> onNavigateToBrickognize()
-                }
-            }, onScanClick = onNavigateToBrickognize)
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Шапка — аватар + имя, того же стиля что и на других экранах
+        topBar = {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -138,7 +125,22 @@ fun ProfileScreen(
                     }
                 }
             }
-
+        },
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
+                when (route) {
+                    "meetings" -> onNavigateToMeetings()
+                    "cart" -> onNavigateToCart()
+                    "home" -> onNavigateToHome()
+                    "brickognize" -> onNavigateToBrickognize()
+                }
+            }, onScanClick = onNavigateToBrickognize)
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Spacer(Modifier.height(20.dp))
 
             Card(

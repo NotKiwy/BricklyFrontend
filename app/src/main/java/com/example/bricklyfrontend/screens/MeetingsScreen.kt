@@ -74,18 +74,7 @@ fun MeetingsScreen(
 
     Scaffold(
         containerColor = Background,
-        bottomBar = {
-            BricklyBottomBar(currentRoute = "meetings", onNavigate = { route ->
-                when (route) {
-                    "profile" -> onNavigateToProfile()
-                    "cart" -> onNavigateToCart()
-                    "home" -> onNavigateToHome()
-                    "brickognize" -> onNavigateToBrickognize()
-                }
-            }, onScanClick = onNavigateToBrickognize)
-        }
-    ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        topBar = {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -117,7 +106,19 @@ fun MeetingsScreen(
                     )
                 }
             }
-
+        },
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "meetings", onNavigate = { route ->
+                when (route) {
+                    "profile" -> onNavigateToProfile()
+                    "cart" -> onNavigateToCart()
+                    "home" -> onNavigateToHome()
+                    "brickognize" -> onNavigateToBrickognize()
+                }
+            }, onScanClick = onNavigateToBrickognize)
+        }
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 Spacer(Modifier.height(20.dp))
 

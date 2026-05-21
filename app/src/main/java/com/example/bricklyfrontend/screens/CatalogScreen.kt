@@ -46,7 +46,7 @@ fun CatalogScreen(
     onNavigateToBrickognize: () -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
-    
+
     val scope = rememberCoroutineScope()
 
     var meetings by remember { mutableStateOf<List<MeetingDefaultDTO>>(emptyList()) }
@@ -89,18 +89,7 @@ fun CatalogScreen(
 
     Scaffold(
         containerColor = Background,
-        bottomBar = {
-            BricklyBottomBar(currentRoute = "home", onNavigate = { route ->
-                when (route) {
-                    "meetings" -> onNavigateToMeetings()
-                    "profile" -> onNavigateToProfile()
-                    "cart" -> onNavigateToCart()
-                    "brickognize" -> onNavigateToBrickognize()
-                }
-            }, onScanClick = onNavigateToBrickognize)
-        }
-    ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        topBar = {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -132,7 +121,19 @@ fun CatalogScreen(
                     )
                 }
             }
-
+        },
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "home", onNavigate = { route ->
+                when (route) {
+                    "meetings" -> onNavigateToMeetings()
+                    "profile" -> onNavigateToProfile()
+                    "cart" -> onNavigateToCart()
+                    "brickognize" -> onNavigateToBrickognize()
+                }
+            }, onScanClick = onNavigateToBrickognize)
+        }
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             Row(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
