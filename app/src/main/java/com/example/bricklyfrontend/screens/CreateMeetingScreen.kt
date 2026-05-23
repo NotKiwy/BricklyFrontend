@@ -516,16 +516,16 @@ fun CreateMeetingScreen(
                 enabled = !isSaving && isFormValid,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
             ) {
                 if (isSaving) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = Color.White,
+                        color = TextPrimary,
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Создать мероприятие", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Text("Создать мероприятие", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = TextPrimary)
                 }
             }
 
