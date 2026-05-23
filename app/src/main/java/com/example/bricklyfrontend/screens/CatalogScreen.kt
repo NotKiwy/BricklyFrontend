@@ -89,6 +89,7 @@ fun CatalogScreen(
 
     Scaffold(
         containerColor = Background,
+        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
         topBar = {
             Box(
                 modifier = Modifier
