@@ -35,12 +35,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.LocalDate
-import java.time.LocalTime
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,8 +49,9 @@ fun CreateMeetingScreen(
 
     // === STATE ===
     var title by remember { mutableStateOf("") }
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
+    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
+    var selectedHour by remember { mutableStateOf<Int?>(null) }
+    var selectedMinute by remember { mutableStateOf<Int?>(null) }
     var duration by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -188,23 +184,36 @@ fun CreateMeetingScreen(
                     .background(CardBackground)
                     .border(1.dp, Divider, RoundedCornerShape(12.dp))
                     .clickable {
-                        val now = LocalDate.now()
-                        DatePickerDialog(
+                        val calendar = Calendar.getInstance()
+                        if (selectedDateMillis != null) {
+                            calendar.timeInMillis = selectedDateMillis!!
+                        }
+                        android.app.DatePickerDialog(
                             context,
                             { _, year, month, day ->
-                                selectedDate = LocalDate.of(year, month + 1, day)
+                                val cal = Calendar.getInstance()
+                                cal.set(year, month, day)
+                                selectedDateMillis = cal.timeInMillis
                             },
-                            selectedDate?.year ?: now.year,
-                            (selectedDate?.monthValue ?: now.monthValue) - 1,
-                            selectedDate?.dayOfMonth ?: now.dayOfMonth
+                            calendar.get(Calendar.YEAR),
+                            calendar.get(Calendar.MONTH),
+                            calendar.get(Calendar.DAY_OF_MONTH)
                         ).show()
                     }
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = selectedDate?.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) ?: "Выберите дату",
-                    color = if (selectedDate != null) TextPrimary else TextSecondary,
+                    text = if (selectedDateMillis != null) {
+                        val cal = Calendar.getInstance()
+                        cal.timeInMillis = selectedDateMillis!!
+                        "%02d.%02d.%04d".format(
+                            cal.get(Calendar.DAY_OF_MONTH),
+                            cal.get(Calendar.MONTH) + 1,
+                            cal.get(Calendar.YEAR)
+                        )
+                    } else "Выберите дату",
+                    color = if (selectedDateMillis != null) TextPrimary else TextSecondary,
                     fontSize = 16.sp
                 )
             }
@@ -221,14 +230,15 @@ fun CreateMeetingScreen(
                     .background(CardBackground)
                     .border(1.dp, Divider, RoundedCornerShape(12.dp))
                     .clickable {
-                        val now = LocalTime.now()
-                        TimePickerDialog(
+                        val calendar = Calendar.getInstance()
+                        android.app.TimePickerDialog(
                             context,
                             { _, hour, minute ->
-                                selectedTime = LocalTime.of(hour, minute)
+                                selectedHour = hour
+                                selectedMinute = minute
                             },
-                            selectedTime?.hour ?: now.hour,
-                            selectedTime?.minute ?: now.minute,
+                            selectedHour ?: calendar.get(Calendar.HOUR_OF_DAY),
+                            selectedMinute ?: calendar.get(Calendar.MINUTE),
                             true
                         ).show()
                     }
@@ -236,8 +246,10 @@ fun CreateMeetingScreen(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = selectedTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Выберите время",
-                    color = if (selectedTime != null) TextPrimary else TextSecondary,
+                    text = if (selectedHour != null && selectedMinute != null) {
+                        "%02d:%02d".format(selectedHour, selectedMinute)
+                    } else "Выберите время",
+                    color = if (selectedHour != null) TextPrimary else TextSecondary,
                     fontSize = 16.sp
                 )
             }
@@ -399,8 +411,9 @@ fun CreateMeetingScreen(
             // === КНОПКА СОЗДАТЬ ===
             val isFormValid = title.isNotBlank() &&
                     address.isNotBlank() &&
-                    selectedDate != null &&
-                    selectedTime != null &&
+                    selectedDateMillis != null &&
+                    selectedHour != null &&
+                    selectedMinute != null &&
                     duration.isNotBlank() &&
                     selectedType != null &&
                     (!isPaidEntry || ticketPrice.isNotBlank()) &&
@@ -413,21 +426,42 @@ fun CreateMeetingScreen(
                         errorMessage = null
                         successMessage = null
                         try {
-                            // Изображение опциональное - если нет, используем null
-                            val imagePart = selectedImageUri?.let { uri ->
-                                val imageFile = uriToFile(context, uri)
+                            // Создаём изображение - если нет, используем пустую заглушку
+                            val imagePart = if (selectedImageUri != null) {
+                                val imageFile = uriToFile(context, selectedImageUri!!)
                                 MultipartBody.Part.createFormData(
                                     "previewImage",
                                     imageFile.name,
                                     imageFile.asRequestBody("image/*".toMediaTypeOrNull())
                                 )
+                            } else {
+                                // Создаём пустую часть для изображения
+                                MultipartBody.Part.createFormData(
+                                    "previewImage",
+                                    "",
+                                    "".toRequestBody("text/plain".toMediaTypeOrNull())
+                                )
                             }
 
-                            // Объединяем дату и время
-                            val meetingDateTime = LocalDateTime.of(selectedDate!!, selectedTime!!)
-                            val dateIso = meetingDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                            // Объединяем дату и время в ISO формат
+                            val calendar = Calendar.getInstance()
+                            calendar.timeInMillis = selectedDateMillis!!
+                            calendar.set(Calendar.HOUR_OF_DAY, selectedHour!!)
+                            calendar.set(Calendar.MINUTE, selectedMinute!!)
+                            calendar.set(Calendar.SECOND, 0)
+                            calendar.set(Calendar.MILLISECOND, 0)
                             
-                            val announceDate = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                            val dateIso = java.text.SimpleDateFormat(
+                                "yyyy-MM-dd'T'HH:mm:ss",
+                                java.util.Locale.getDefault()
+                            ).format(calendar.time)
+                            
+                            val announceCalendar = Calendar.getInstance()
+                            val announceDate = java.text.SimpleDateFormat(
+                                "yyyy-MM-dd'T'HH:mm:ss",
+                                java.util.Locale.getDefault()
+                            ).format(announceCalendar.time)
+                            
                             val priceValue = if (isPaidEntry) ticketPrice.toIntOrNull() ?: 0 else 0
                             
                             // Конвертируем часы в минуты
@@ -457,8 +491,9 @@ fun CreateMeetingScreen(
                                 // Сброс формы
                                 title = ""
                                 address = ""
-                                selectedDate = null
-                                selectedTime = null
+                                selectedDateMillis = null
+                                selectedHour = null
+                                selectedMinute = null
                                 duration = ""
                                 description = ""
                                 selectedImageUri = null
