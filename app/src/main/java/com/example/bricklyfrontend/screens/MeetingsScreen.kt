@@ -125,10 +125,15 @@ fun MeetingsScreen(
             if (UserPreferences.isMeetingCreator(context)) {
                 FloatingActionButton(
                     onClick = onNavigateToCreateMeeting,
-                    containerColor = Color(0xFFFFD54F),
-                    contentColor = Color.Black
+                    containerColor = Color(0xFFFFF59D),
+                    contentColor = Color.Black,
+                    modifier = Modifier.size(64.dp)
                 ) {
-                    Icon(Icons.Outlined.Add, contentDescription = "Создать мероприятие")
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = "Создать мероприятие",
+                        modifier = Modifier.size(28.dp)
+                    )
                 }
             }
         }

@@ -67,7 +67,7 @@ fun BricklyTextField(
                 Text(
                     text = placeholder,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = TextSecondary
+                    color = TextSecondary.copy(alpha = 0.4f)
                 )
             },
             visualTransformation = visualTransformation,

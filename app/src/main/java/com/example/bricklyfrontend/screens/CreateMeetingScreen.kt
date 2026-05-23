@@ -442,7 +442,7 @@ fun CreateMeetingScreen(
                                 imageFile.asRequestBody("image/*".toMediaTypeOrNull())
                             )
 
-                            // Объединяем дату и время в ISO формат
+                            // Объединяем дату и время в ISO формат с часовым поясом
                             val calendar = Calendar.getInstance()
                             calendar.timeInMillis = selectedDateMillis!!
                             calendar.set(Calendar.HOUR_OF_DAY, selectedHour!!)
@@ -450,16 +450,17 @@ fun CreateMeetingScreen(
                             calendar.set(Calendar.SECOND, 0)
                             calendar.set(Calendar.MILLISECOND, 0)
                             
-                            val dateIso = java.text.SimpleDateFormat(
-                                "yyyy-MM-dd'T'HH:mm:ss",
-                                java.util.Locale.getDefault()
-                            ).format(calendar.time)
+                            // Используем ISO_OFFSET_DATE_TIME формат для полной совместимости
+                            val dateIso = java.time.ZonedDateTime.ofInstant(
+                                java.time.Instant.ofEpochMilli(calendar.timeInMillis),
+                                java.time.ZoneId.systemDefault()
+                            ).format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
                             
                             val announceCalendar = Calendar.getInstance()
-                            val announceDate = java.text.SimpleDateFormat(
-                                "yyyy-MM-dd'T'HH:mm:ss",
-                                java.util.Locale.getDefault()
-                            ).format(announceCalendar.time)
+                            val announceDate = java.time.ZonedDateTime.ofInstant(
+                                java.time.Instant.ofEpochMilli(announceCalendar.timeInMillis),
+                                java.time.ZoneId.systemDefault()
+                            ).format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
                             
                             val priceValue = if (isPaidEntry) ticketPrice.toIntOrNull() ?: 0 else 0
                             
