@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.bricklyfrontend.data.MeetingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
+import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
@@ -34,10 +36,12 @@ fun MeetingsScreen(
     onNavigateToMeetingDetail: (Long) -> Unit = {},
     onNavigateToCart: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
-    onNavigateToBrickognize: () -> Unit = {}
+    onNavigateToBrickognize: () -> Unit = {},
+    onNavigateToCreateMeeting: () -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
     
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     var meetings by remember { mutableStateOf<List<MeetingDefaultDTO>>(emptyList()) }
@@ -116,6 +120,17 @@ fun MeetingsScreen(
                     "brickognize" -> onNavigateToBrickognize()
                 }
             }, onScanClick = onNavigateToBrickognize)
+        },
+        floatingActionButton = {
+            if (UserPreferences.isMeetingCreator(context)) {
+                FloatingActionButton(
+                    onClick = onNavigateToCreateMeeting,
+                    containerColor = Color(0xFFFFD54F),
+                    contentColor = Color.Black
+                ) {
+                    Icon(Icons.Outlined.Add, contentDescription = "Создать митинг")
+                }
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {

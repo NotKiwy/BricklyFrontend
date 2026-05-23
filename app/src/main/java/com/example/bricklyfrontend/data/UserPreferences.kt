@@ -37,6 +37,9 @@ object UserPreferences {
     fun isAdmin(context: Context): Boolean =
         getRole(context) == "ROLE_ADMIN"
 
+    fun isMeetingCreator(context: Context): Boolean =
+        getRole(context) == "ROLE_MEETING_CREATOR" || isAdmin(context)
+
     fun isLoggedIn(context: Context): Boolean =
         getUserId(context) != -1L
 

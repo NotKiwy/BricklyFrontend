@@ -20,7 +20,13 @@ data class UserDefaultDTO(
     val name: String?,
     val createdAt: String?,
     val email: String?,
-    val city: String?
+    val city: String?,
+    val balance: Int?,
+    val authorities: List<AuthorityShortDTO>?
+)
+
+data class AuthorityShortDTO(
+    val authority: String
 )
 
 data class UserFullDTO(
@@ -62,6 +68,10 @@ data class MeetingTypeDefaultDTO(
 data class MeetingDefaultDTO(
     val id: Long,
     val date: String?,
+    val title: String?,
+    val announceDate: String?,
+    val previewImagePath: String?,
+    val duration: Int?,
     val address: String?,
     val type: MeetingTypeDefaultDTO?,
     val ticketPrice: Int?,
@@ -86,17 +96,6 @@ data class PagedModelMeetingDefaultDTO(
 data class FeedbackUpdateDTO(
     val rate: Int? = null,
     val comment: String? = null
-)
-
-data class MeetingCreateDTO(
-    val date: String,
-    val address: String,
-    val typeId: Int,
-    val ticketPrice: Int,
-    val description: String?,
-    val discountDuration: Int? = null,
-    val discountAmount: Int? = null,
-    val discountModifier: Int? = null
 )
 
 data class MeetingShortDTO(

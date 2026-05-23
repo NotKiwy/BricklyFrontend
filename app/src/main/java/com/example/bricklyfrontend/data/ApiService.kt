@@ -1,6 +1,7 @@
 package com.example.bricklyfrontend.data
 
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -39,8 +40,22 @@ interface ApiService {
     @GET("/api/app/meetings/types")
     suspend fun getMeetingTypes(): Response<List<MeetingTypeDefaultDTO>>
 
+    @Multipart
     @POST("/api/app/meetings/create")
-    suspend fun createMeeting(@Body dto: MeetingCreateDTO): Response<MeetingDefaultDTO>
+    suspend fun createMeeting(
+        @Part("date") date: RequestBody,
+        @Part("title") title: RequestBody,
+        @Part("announceDate") announceDate: RequestBody,
+        @Part("duration") duration: RequestBody,
+        @Part("address") address: RequestBody,
+        @Part("typeId") typeId: RequestBody,
+        @Part("ticketPrice") ticketPrice: RequestBody,
+        @Part("description") description: RequestBody?,
+        @Part("discountDuration") discountDuration: RequestBody?,
+        @Part("discountAmount") discountAmount: RequestBody?,
+        @Part("discountModifier") discountModifier: RequestBody?,
+        @Part previewImage: MultipartBody.Part
+    ): Response<MeetingDefaultDTO>
 
     @POST("/api/app/tickets/create")
     suspend fun createTicket(@Body dto: TicketCreateDTO): Response<TicketDefaultDTO>

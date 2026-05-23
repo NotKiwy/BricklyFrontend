@@ -109,7 +109,10 @@ fun BricklyApp() {
                 },
                 onNavigateToCart = { navToTab("cart") },
                 onNavigateToHome = { navToTab("home") },
-                onNavigateToBrickognize = { navToTab("brickognize") }
+                onNavigateToBrickognize = { navToTab("brickognize") },
+                onNavigateToCreateMeeting = {
+                    navController.navigate("create_meeting") { launchSingleTop = true }
+                }
             )
         }
 
