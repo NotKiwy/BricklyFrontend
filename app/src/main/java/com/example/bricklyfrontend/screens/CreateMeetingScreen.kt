@@ -42,7 +42,7 @@ import java.util.Calendar
 fun CreateMeetingScreen(
     onBack: () -> Unit
 ) {
-    SetStatusBarColor(Color.White)
+    SetStatusBarColor(Accent)
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -90,27 +90,34 @@ fun CreateMeetingScreen(
     Scaffold(
         containerColor = Background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Создать мероприятие",
-                        color = Color(0xFF1A1A1A),
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 20.sp
-                    )
-                },
-                navigationIcon = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                    .background(Accent)
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.Outlined.ArrowBackIosNew,
                             contentDescription = "Назад",
-                            tint = Color(0xFF1A1A1A)
+                            tint = TextPrimary
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Accent),
-                modifier = Modifier.statusBarsPadding()
-            )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "Создать мероприятие",
+                        color = TextPrimary,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 20.sp
+                    )
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -123,7 +130,7 @@ fun CreateMeetingScreen(
             Spacer(Modifier.height(16.dp))
 
             // === ИЗОБРАЖЕНИЕ (необязательное с заглушкой) ===
-            Text("Изображение", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
+            Text("Изображение *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
             Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
@@ -416,6 +423,7 @@ fun CreateMeetingScreen(
                     selectedMinute != null &&
                     duration.isNotBlank() &&
                     selectedType != null &&
+                    selectedImageUri != null &&
                     (!isPaidEntry || ticketPrice.isNotBlank()) &&
                     (!hasDiscount || (discountDuration.isNotBlank() && discountAmount.isNotBlank()))
 
@@ -426,22 +434,13 @@ fun CreateMeetingScreen(
                         errorMessage = null
                         successMessage = null
                         try {
-                            // Создаём изображение - если нет, используем пустую заглушку
-                            val imagePart = if (selectedImageUri != null) {
-                                val imageFile = uriToFile(context, selectedImageUri!!)
-                                MultipartBody.Part.createFormData(
-                                    "previewImage",
-                                    imageFile.name,
-                                    imageFile.asRequestBody("image/*".toMediaTypeOrNull())
-                                )
-                            } else {
-                                // Создаём пустую часть для изображения
-                                MultipartBody.Part.createFormData(
-                                    "previewImage",
-                                    "",
-                                    "".toRequestBody("text/plain".toMediaTypeOrNull())
-                                )
-                            }
+                            // Изображение обязательно (иначе 400 от бэка)
+                            val imageFile = uriToFile(context, selectedImageUri!!)
+                            val imagePart = MultipartBody.Part.createFormData(
+                                "previewImage",
+                                imageFile.name,
+                                imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+                            )
 
                             // Объединяем дату и время в ISO формат
                             val calendar = Calendar.getInstance()

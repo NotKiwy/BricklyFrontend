@@ -145,20 +145,33 @@ fun RegisterScreen(
                                          )
                                      )
 
-                                    if (response.isSuccessful && response.body() != null) {
-                                         val user = response.body()!!
-                                         RetrofitClient.setCredentials(user.username, password)
-                                         val role = UserPreferences.extractRole(user.authorities)
-                                         UserPreferences.saveUser(context, user.id, user.username, password, role)
-                                         onRegistered()
-                                    } else {
-                                        errorMessage = when (response.code()) {
-                                            409 -> "Никнейм уже занят. Попробуйте другой."
-                                            400 -> "Неверные данные. Проверьте введённые поля."
-                                            500 -> "Ошибка сервера. Попробуйте позже."
-                                            else -> "Ошибка регистрации (код ${response.code()})."
-                                        }
-                                    }
+                                     if (response.isSuccessful && response.body() != null) {
+                                         // После успешной регистрации обязательно верифицируем пароль через Basic Auth,
+                                         // иначе последующие запросы будут падать с 401 (как было)
+                                         try {
+                                             val verifyResp = RetrofitClient.apiWithCredentials(trimmed, password)
+                                                 .getUserByUsername(trimmed)
+
+                                             if (verifyResp.isSuccessful && verifyResp.body() != null) {
+                                                 val verifiedUser = verifyResp.body()!!
+                                                 RetrofitClient.setCredentials(verifiedUser.username, password)
+                                                 val role = UserPreferences.extractRole(verifiedUser.authorities)
+                                                 UserPreferences.saveUser(context, verifiedUser.id, verifiedUser.username, password, role)
+                                                 onRegistered()
+                                             } else {
+                                                 errorMessage = "Аккаунт создан, но войти не получилось (401). Попробуйте войти вручную."
+                                             }
+                                         } catch (e: Exception) {
+                                             errorMessage = "Аккаунт создан, но проблема с автоматическим входом. Перезапустите и войдите."
+                                         }
+                                     } else {
+                                         errorMessage = when (response.code()) {
+                                             409 -> "Никнейм уже занят. Попробуйте другой."
+                                             400 -> "Неверные данные. Проверьте введённые поля."
+                                             500 -> "Ошибка сервера. Попробуйте позже."
+                                             else -> "Ошибка регистрации (код ${response.code()})."
+                                         }
+                                     }
                                 } catch (e: Exception) {
                                     errorMessage = "Нет соединения с сервером"
                                 } finally {
