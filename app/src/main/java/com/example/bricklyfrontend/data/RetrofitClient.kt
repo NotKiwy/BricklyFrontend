@@ -16,7 +16,7 @@ object RetrofitClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    private     private fun makeApi(u: String, p: String): ApiService {
+    private fun makeApi(u: String, p: String): ApiService {
         val authInterceptor = Interceptor { chain ->
             chain.proceed(
                 chain.request().newBuilder()

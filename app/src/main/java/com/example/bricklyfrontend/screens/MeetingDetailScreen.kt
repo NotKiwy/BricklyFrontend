@@ -91,13 +91,13 @@ fun MeetingDetailScreen(
                 IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
                     Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
                 }
-                Text(
-                    text = "Подробности",
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                    Text(
+                        text = "Подробности",
+                        color = Color(0xFF1A1A1A),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
             }
         }
     ) { padding ->
@@ -141,7 +141,7 @@ fun MeetingDetailScreen(
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Text(
-                                text = m.type?.description ?: m.description?.take(50) ?: "Мероприятие",
+                                text = m.title?.takeIf { it.isNotBlank() } ?: m.type?.description ?: m.description?.take(50) ?: "Без названия",
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
                                 color = TextPrimary
                             )
@@ -224,7 +224,7 @@ fun MeetingDetailScreen(
                             } else {
                                 Button(
                                     onClick = {
-                                        CartState.addItem(CartItem(meetingId = m.id, meetingTitle = m.type?.description ?: m.description?.take(30) ?: "Мероприятие", meetingDate = m.date, meetingAddress = m.address, ticketPrice = m.ticketPrice ?: 0, quantity = ticketCount))
+                                    CartState.addItem(CartItem(meetingId = m.id, meetingTitle = m.title?.takeIf { it.isNotBlank() } ?: m.type?.description ?: m.description?.take(30) ?: "Без названия", meetingDate = m.date, meetingAddress = m.address, ticketPrice = m.ticketPrice ?: 0, quantity = ticketCount))
                                         addedToCart = true
                                     },
                                     modifier = Modifier.fillMaxWidth().height(52.dp),

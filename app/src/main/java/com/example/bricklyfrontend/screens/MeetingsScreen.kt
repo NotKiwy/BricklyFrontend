@@ -89,7 +89,7 @@ fun MeetingsScreen(
                     .padding(top = 20.dp, bottom = 20.dp)
             ) {
                 Column {
-                    Text("Сходки", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
+                    Text("Сходки", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1A1A1A))
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = searchQuery,
@@ -128,7 +128,7 @@ fun MeetingsScreen(
                     containerColor = Color(0xFFFFD54F),
                     contentColor = Color.Black
                 ) {
-                    Icon(Icons.Outlined.Add, contentDescription = "Создать митинг")
+                    Icon(Icons.Outlined.Add, contentDescription = "Создать мероприятие")
                 }
             }
         }
@@ -242,13 +242,13 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
             }
 
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                Text(
-                    text = meeting.title?.takeIf { it.isNotBlank() } ?: meeting.type?.description ?: meeting.description?.take(40) ?: "Мероприятие",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                    Text(
+                        text = meeting.title?.takeIf { it.isNotBlank() } ?: meeting.type?.description ?: meeting.description?.take(40) ?: "Без названия",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = TextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 Spacer(Modifier.height(10.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

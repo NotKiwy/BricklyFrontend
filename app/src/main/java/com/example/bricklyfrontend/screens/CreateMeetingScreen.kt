@@ -37,6 +37,10 @@ import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.LocalDate
+import java.time.LocalTime
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +54,8 @@ fun CreateMeetingScreen(
 
     // === STATE ===
     var title by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
     var duration by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -92,8 +97,8 @@ fun CreateMeetingScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Создать митинг",
-                        color = TextPrimary,
+                        text = "Создать мероприятие",
+                        color = Color(0xFF1A1A1A),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 20.sp
                     )
@@ -103,11 +108,11 @@ fun CreateMeetingScreen(
                         Icon(
                             Icons.Outlined.ArrowBackIosNew,
                             contentDescription = "Назад",
-                            tint = TextPrimary
+                            tint = Color(0xFF1A1A1A)
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Background),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Accent),
                 modifier = Modifier.statusBarsPadding()
             )
         }
@@ -121,19 +126,19 @@ fun CreateMeetingScreen(
         ) {
             Spacer(Modifier.height(16.dp))
 
-            // === ИЗОБРАЖЕНИЕ (ОБЯЗАТЕЛЬНОЕ) ===
-            Text("Изображение *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
+            // === ИЗОБРАЖЕНИЕ (необязательное с заглушкой) ===
+            Text("Изображение", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
             Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(CardBackground)
                     .border(
-                        1.5.dp,
-                        if (selectedImageUri != null) Accent else Divider,
-                        RoundedCornerShape(16.dp)
+                        1.dp,
+                        Divider,
+                        RoundedCornerShape(12.dp)
                     )
                     .clickable { imagePicker.launch("image/*") },
                 contentAlignment = Alignment.Center
@@ -142,24 +147,24 @@ fun CreateMeetingScreen(
                     AsyncImage(
                         model = selectedImageUri,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)),
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Outlined.AddPhotoAlternate, null, tint = IconInactive, modifier = Modifier.size(48.dp))
+                        Icon(Icons.Outlined.AddPhotoAlternate, null, tint = IconInactive, modifier = Modifier.size(40.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text("Выбрать изображение", color = TextSecondary, fontSize = 14.sp)
+                        Text("Нажмите для выбора фото", color = TextSecondary, fontSize = 13.sp)
                     }
                 }
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
 
             // === ПОЛЯ ===
             BricklyTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = "Название",
+                label = "Название *",
                 placeholder = "Встреча любителей LEGO"
             )
             Spacer(Modifier.height(16.dp))
@@ -167,24 +172,82 @@ fun CreateMeetingScreen(
             BricklyTextField(
                 value = address,
                 onValueChange = { address = it },
-                label = "Адрес",
-                placeholder = "ул. Примерная, 1"
+                label = "Адрес *",
+                placeholder = "примерная улица 1"
             )
             Spacer(Modifier.height(16.dp))
 
-            BricklyTextField(
-                value = date,
-                onValueChange = { date = it },
-                label = "Дата начала (ISO)",
-                placeholder = "2026-06-15T18:00:00"
-            )
+            // === ДАТА ===
+            Text("Дата *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
+            Spacer(Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(CardBackground)
+                    .border(1.dp, Divider, RoundedCornerShape(12.dp))
+                    .clickable {
+                        val now = LocalDate.now()
+                        DatePickerDialog(
+                            context,
+                            { _, year, month, day ->
+                                selectedDate = LocalDate.of(year, month + 1, day)
+                            },
+                            selectedDate?.year ?: now.year,
+                            (selectedDate?.monthValue ?: now.monthValue) - 1,
+                            selectedDate?.dayOfMonth ?: now.dayOfMonth
+                        ).show()
+                    }
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(
+                    text = selectedDate?.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) ?: "Выберите дату",
+                    color = if (selectedDate != null) TextPrimary else TextSecondary,
+                    fontSize = 16.sp
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+
+            // === ВРЕМЯ ===
+            Text("Время *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
+            Spacer(Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(CardBackground)
+                    .border(1.dp, Divider, RoundedCornerShape(12.dp))
+                    .clickable {
+                        val now = LocalTime.now()
+                        TimePickerDialog(
+                            context,
+                            { _, hour, minute ->
+                                selectedTime = LocalTime.of(hour, minute)
+                            },
+                            selectedTime?.hour ?: now.hour,
+                            selectedTime?.minute ?: now.minute,
+                            true
+                        ).show()
+                    }
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(
+                    text = selectedTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Выберите время",
+                    color = if (selectedTime != null) TextPrimary else TextSecondary,
+                    fontSize = 16.sp
+                )
+            }
             Spacer(Modifier.height(16.dp))
 
             BricklyTextField(
                 value = duration,
                 onValueChange = { duration = it.filter { c -> c.isDigit() } },
-                label = "Длительность (минуты)",
-                placeholder = "120",
+                label = "Длительность (часы) *",
+                placeholder = "2",
                 keyboardType = KeyboardType.Number
             )
             Spacer(Modifier.height(16.dp))
@@ -192,18 +255,18 @@ fun CreateMeetingScreen(
             BricklyTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = "Описание (необязательно)",
+                label = "Описание",
                 placeholder = "Детали мероприятия"
             )
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // === ТИП МЕРОПРИЯТИЯ (ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ) ===
+            // === ТИП МЕРОПРИЯТИЯ ===
             Text("Тип мероприятия *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
             Spacer(Modifier.height(8.dp))
 
             if (meetingTypes.isNotEmpty()) {
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(meetingTypes) { type ->
@@ -215,20 +278,21 @@ fun CreateMeetingScreen(
                     }
                 }
             } else {
-                Text("Загрузка типов...", color = TextSecondary, fontSize = 14.sp)
+                Text("Загрузка...", color = TextSecondary, fontSize = 14.sp)
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
 
             // === ПЛАТНЫЙ ВХОД ===
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(10.dp))
                     .background(CardBackground)
+                    .border(1.dp, Divider, RoundedCornerShape(10.dp))
                     .clickable { isPaidEntry = !isPaidEntry }
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
                 Checkbox(
                     checked = isPaidEntry,
@@ -236,7 +300,7 @@ fun CreateMeetingScreen(
                     colors = CheckboxDefaults.colors(checkedColor = Accent)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Платный вход", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                Text("Платный вход", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Normal)
             }
 
             if (isPaidEntry) {
@@ -256,10 +320,11 @@ fun CreateMeetingScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(10.dp))
                         .background(CardBackground)
+                        .border(1.dp, Divider, RoundedCornerShape(10.dp))
                         .clickable { hasDiscount = !hasDiscount }
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
                 ) {
                     Checkbox(
                         checked = hasDiscount,
@@ -267,7 +332,7 @@ fun CreateMeetingScreen(
                         colors = CheckboxDefaults.colors(checkedColor = Accent)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Добавить скидку", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text("Добавить скидку", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Normal)
                 }
 
                 if (hasDiscount) {
@@ -332,10 +397,10 @@ fun CreateMeetingScreen(
             }
 
             // === КНОПКА СОЗДАТЬ ===
-            val isFormValid = selectedImageUri != null &&
-                    title.isNotBlank() &&
+            val isFormValid = title.isNotBlank() &&
                     address.isNotBlank() &&
-                    date.isNotBlank() &&
+                    selectedDate != null &&
+                    selectedTime != null &&
                     duration.isNotBlank() &&
                     selectedType != null &&
                     (!isPaidEntry || ticketPrice.isNotBlank()) &&
@@ -348,21 +413,31 @@ fun CreateMeetingScreen(
                         errorMessage = null
                         successMessage = null
                         try {
-                            val imageFile = uriToFile(context, selectedImageUri!!)
-                            val imagePart = MultipartBody.Part.createFormData(
-                                "previewImage",
-                                imageFile.name,
-                                imageFile.asRequestBody("image/*".toMediaTypeOrNull())
-                            )
+                            // Изображение опциональное - если нет, используем null
+                            val imagePart = selectedImageUri?.let { uri ->
+                                val imageFile = uriToFile(context, uri)
+                                MultipartBody.Part.createFormData(
+                                    "previewImage",
+                                    imageFile.name,
+                                    imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+                                )
+                            }
 
+                            // Объединяем дату и время
+                            val meetingDateTime = LocalDateTime.of(selectedDate!!, selectedTime!!)
+                            val dateIso = meetingDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                            
                             val announceDate = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                             val priceValue = if (isPaidEntry) ticketPrice.toIntOrNull() ?: 0 else 0
+                            
+                            // Конвертируем часы в минуты
+                            val durationInMinutes = (duration.toIntOrNull() ?: 0) * 60
 
                             val response = RetrofitClient.api.createMeeting(
-                                date = date.toRequestBody("text/plain".toMediaTypeOrNull()),
+                                date = dateIso.toRequestBody("text/plain".toMediaTypeOrNull()),
                                 title = title.toRequestBody("text/plain".toMediaTypeOrNull()),
                                 announceDate = announceDate.toRequestBody("text/plain".toMediaTypeOrNull()),
-                                duration = duration.toRequestBody("text/plain".toMediaTypeOrNull()),
+                                duration = durationInMinutes.toString().toRequestBody("text/plain".toMediaTypeOrNull()),
                                 address = address.toRequestBody("text/plain".toMediaTypeOrNull()),
                                 typeId = selectedType!!.id.toString().toRequestBody("text/plain".toMediaTypeOrNull()),
                                 ticketPrice = priceValue.toString().toRequestBody("text/plain".toMediaTypeOrNull()),
@@ -378,11 +453,12 @@ fun CreateMeetingScreen(
                             )
 
                             if (response.isSuccessful) {
-                                successMessage = "Митинг успешно создан!"
+                                successMessage = "Мероприятие успешно создано!"
                                 // Сброс формы
                                 title = ""
                                 address = ""
-                                date = ""
+                                selectedDate = null
+                                selectedTime = null
                                 duration = ""
                                 description = ""
                                 selectedImageUri = null
@@ -414,7 +490,7 @@ fun CreateMeetingScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Создать митинг", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Text("Создать мероприятие", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 }
             }
 
@@ -431,24 +507,24 @@ fun MeetingTypeCard(
 ) {
     Box(
         modifier = Modifier
-            .width(160.dp)
-            .height(100.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .width(140.dp)
+            .height(90.dp)
+            .clip(RoundedCornerShape(10.dp))
             .background(if (isSelected) Accent else CardBackground)
             .border(
-                width = if (isSelected) 2.dp else 1.dp,
+                width = 1.dp,
                 color = if (isSelected) AccentDark else Divider,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(10.dp)
             )
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(10.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = type.description ?: "Тип #${type.id}",
-            color = if (isSelected) Color.White else TextPrimary,
-            fontSize = 14.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = if (isSelected) Color(0xFF1A1A1A) else TextPrimary,
+            fontSize = 13.sp,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
     }
@@ -464,21 +540,21 @@ fun DiscountModifierButton(
     Box(
         modifier = modifier
             .height(48.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(if (isSelected) Accent else CardBackground)
             .border(
-                width = if (isSelected) 2.dp else 1.dp,
+                width = 1.dp,
                 color = if (isSelected) AccentDark else Divider,
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(8.dp)
             )
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
-            color = if (isSelected) Color.White else TextPrimary,
+            color = if (isSelected) Color(0xFF1A1A1A) else TextPrimary,
             fontSize = 14.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
         )
     }
 }
