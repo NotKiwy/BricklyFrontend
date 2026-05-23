@@ -84,6 +84,19 @@ interface ApiService {
 
     @DELETE("/api/app/feedbacks/delete/{id}")
     suspend fun deleteFeedback(@Path("id") id: Long): Response<Unit>
+
+    @GET("/api/app/listings/paginated")
+    suspend fun getListingsPaginated(
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PagedModelListingDefaultDTO>
+
+    @GET("/api/app/listings/by_status/{status}")
+    suspend fun getListingsByStatus(
+        @Path("status") status: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PagedModelListingDefaultDTO>
 }
 
 interface BrickognizeApiService {

@@ -22,6 +22,7 @@ data class UserDefaultDTO(
     val email: String?,
     val city: String?,
     val balance: Int?,
+    val cartItems: List<CartItemDefaultDTO>?,
     val authorities: List<AuthorityShortDTO>?
 )
 
@@ -119,4 +120,38 @@ data class TicketCreateDTO(
     val meetingId: Long,
     val pricePaid: Int,
     val state: Int = 0
+)
+
+data class ListingImageDefaultDTO(
+    val id: Long,
+    val positionId: Int,
+    val imagePath: String?
+)
+
+data class ListingDefaultDTO(
+    val id: Long,
+    val seller: UserShortDTO?,
+    val status: String?,
+    val itemType: String?,
+    val itemId: String?,
+    val quantity: Int?,
+    val description: String?,
+    val condition: String?,
+    val conditionRate: Int?,
+    val price: Int?,
+    val viewsCount: Int?,
+    val listingImage: List<ListingImageDefaultDTO>?
+)
+
+data class CartItemDefaultDTO(
+    val id: Long,
+    val userId: Long,
+    val itemType: String?,
+    val itemId: Int?,
+    val quantity: Int?
+)
+
+data class PagedModelListingDefaultDTO(
+    val content: List<ListingDefaultDTO>?,
+    val page: PageMetadata?
 )

@@ -2,12 +2,10 @@ package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -17,25 +15,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.bricklyfrontend.data.MeetingDefaultDTO
+import coil.compose.SubcomposeAsyncImage
+import com.example.bricklyfrontend.data.ListingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
-private enum class SortMode(val label: String) {
-    DATE_ASC("По дате \u2191"),
-    DATE_DESC("По дате \u2193"),
-    PRICE_ASC("Сначала дешёвые"),
-    PRICE_DESC("Сначала дорогие"),
-    FREE_FIRST("Бесплатные")
-}
 
 @Composable
 fun CatalogScreen(
@@ -48,48 +37,41 @@ fun CatalogScreen(
     SetStatusBarColor(Accent)
 
     val scope = rememberCoroutineScope()
-
-    var meetings by remember { mutableStateOf<List<MeetingDefaultDTO>>(emptyList()) }
+    
+    var listings by remember { mutableStateOf<List<ListingDefaultDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
-    var sortMode by remember { mutableStateOf(SortMode.DATE_ASC) }
 
-    fun loadMeetings() {
+    fun loadListings() {
         scope.launch {
             isLoading = true
             errorMessage = null
             try {
-                val response = RetrofitClient.api.getAllMeetings()
-                if (response.isSuccessful) meetings = response.body() ?: emptyList()
-                else errorMessage = "Ошибка загрузки (${response.code()})"
+                val response = RetrofitClient.api.getListingsPaginated(page = 0, size = 50)
+                if (response.isSuccessful) {
+                    listings = response.body()?.content ?: emptyList()
+                } else {
+                    errorMessage = "Ошибка загрузки (${response.code()})"
+                }
             } catch (e: Exception) {
-                errorMessage = "Нет соединения с сервером"
+                errorMessage = "Нет соединения: ${e.message}"
+            } finally {
+                isLoading = false
             }
-            isLoading = false
         }
     }
 
-    LaunchedEffect(Unit) { loadMeetings() }
+    LaunchedEffect(Unit) { loadListings() }
 
-    val filtered = if (searchQuery.isBlank()) meetings
-    else meetings.filter {
-        it.address?.contains(searchQuery, ignoreCase = true) == true ||
-                it.description?.contains(searchQuery, ignoreCase = true) == true ||
-                it.type?.description?.contains(searchQuery, ignoreCase = true) == true
-    }
-
-    val sorted = when (sortMode) {
-        SortMode.DATE_ASC -> filtered.sortedWith(compareBy(nullsLast()) { parseDateSafeCatalog(it.date) })
-        SortMode.DATE_DESC -> filtered.sortedWith(compareByDescending(nullsLast()) { parseDateSafeCatalog(it.date) })
-        SortMode.PRICE_ASC -> filtered.sortedBy { it.ticketPrice ?: 0 }
-        SortMode.PRICE_DESC -> filtered.sortedByDescending { it.ticketPrice ?: 0 }
-        SortMode.FREE_FIRST -> filtered.sortedBy { if (it.ticketPrice == null || it.ticketPrice == 0) 0 else 1 }
+    val filteredListings = if (searchQuery.isBlank()) listings
+    else listings.filter {
+        it.description?.contains(searchQuery, ignoreCase = true) == true ||
+                it.itemId?.contains(searchQuery, ignoreCase = true) == true
     }
 
     Scaffold(
         containerColor = Background,
-        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
         topBar = {
             Box(
                 modifier = Modifier
@@ -101,7 +83,7 @@ fun CatalogScreen(
                     .padding(top = 20.dp, bottom = 20.dp)
             ) {
                 Column {
-                    Text("Каталог", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
+                    Text("Каталог", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1A1A1A))
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = searchQuery,
@@ -126,59 +108,61 @@ fun CatalogScreen(
         bottomBar = {
             BricklyBottomBar(currentRoute = "home", onNavigate = { route ->
                 when (route) {
-                    "meetings" -> onNavigateToMeetings()
                     "profile" -> onNavigateToProfile()
                     "cart" -> onNavigateToCart()
+                    "meetings" -> onNavigateToMeetings()
                     "brickognize" -> onNavigateToBrickognize()
                 }
             }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        when {
+            isLoading -> Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
             ) {
-                SortMode.entries.forEach { mode ->
-                    FilterChip(
-                        selected = sortMode == mode,
-                        onClick = { sortMode = mode },
-                        label = { Text(mode.label, style = MaterialTheme.typography.bodySmall.copy(fontWeight = if (sortMode == mode) FontWeight.Bold else FontWeight.Normal)) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Accent,
-                            selectedLabelColor = TextPrimary,
-                            containerColor = CardBackground,
-                            labelColor = TextSecondary
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        border = FilterChipDefaults.filterChipBorder(borderColor = Divider, selectedBorderColor = Accent, enabled = true, selected = sortMode == mode)
+                CircularProgressIndicator(color = Accent)
+            }
+
+            errorMessage != null -> Column(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(errorMessage!!, color = ErrorColor)
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = { loadListings() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Accent,
+                        contentColor = TextPrimary
                     )
+                ) {
+                    Text("Повторить")
                 }
             }
 
-            when {
-                isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Accent) }
-
-                errorMessage != null -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(errorMessage!!, color = ErrorColor)
-                        Spacer(Modifier.height(8.dp))
-                        Button(onClick = { loadMeetings() }, colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)) { Text("Повторить") }
-                    }
+            filteredListings.isEmpty() -> Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Outlined.Inventory2, null, tint = IconInactive, modifier = Modifier.size(64.dp))
+                    Spacer(Modifier.height(16.dp))
+                    Text("Объявлений пока нет", style = MaterialTheme.typography.titleMedium, color = IconInactive)
                 }
+            }
 
-                sorted.isEmpty() -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-                    Text("Ничего не найдено", style = MaterialTheme.typography.bodyLarge, color = TextSecondary)
-                }
-
-                else -> LazyVerticalGrid(
+            else -> {
+                LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(vertical = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(sorted) { meeting ->
-                        CatalogCard(meeting = meeting, onClick = { onNavigateToMeetingDetail(meeting.id) })
+                    items(filteredListings) { listing ->
+                        ListingCard(listing = listing, onClick = { /* TODO: навигация */ })
                     }
                 }
             }
@@ -187,54 +171,102 @@ fun CatalogScreen(
 }
 
 @Composable
-private fun CatalogCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
-    val dateFormatted = meeting.date?.let {
-        parseDateSafeCatalog(it)?.format(DateTimeFormatter.ofPattern("d MMM", Locale("ru")))
+private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
+    val imageUrl = listing.listingImage?.firstOrNull()?.imagePath?.let { path ->
+        if (path.startsWith("http", ignoreCase = true)) path 
+        else "${RetrofitClient.BASE_URL}${if (path.startsWith("/")) path else "/$path"}"
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth().aspectRatio(0.78f).clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column {
+            // Изображение
             Box(
-                modifier = Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)).background(Accent.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.2f)
             ) {
-                Icon(Icons.Outlined.Event, null, tint = Accent.copy(alpha = 0.6f), modifier = Modifier.size(36.dp))
+                if (imageUrl != null) {
+                    SubcomposeAsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit,
+                        error = {
+                            Box(
+                                modifier = Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Outlined.ImageNotSupported, null, tint = Accent, modifier = Modifier.size(32.dp))
+                            }
+                        },
+                        loading = {
+                            Box(
+                                modifier = Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = Accent, modifier = Modifier.size(24.dp))
+                            }
+                        }
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.Image, null, tint = Accent, modifier = Modifier.size(32.dp))
+                    }
+                }
             }
 
+            // Информация
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = meeting.type?.description ?: meeting.description?.take(20) ?: "Мероприятие",
+                    text = listing.description?.takeIf { it.isNotBlank() } ?: "Без описания",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    minLines = 2
                 )
-                Spacer(Modifier.height(4.dp))
-                if (dateFormatted != null) {
-                    Text(dateFormatted, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                    Spacer(Modifier.height(2.dp))
-                }
-                Surface(shape = RoundedCornerShape(6.dp), color = Accent.copy(alpha = 0.15f)) {
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = if (meeting.ticketPrice != null && meeting.ticketPrice > 0) "${meeting.ticketPrice} \u20BD" else "Бесплатно",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        text = "${listing.price ?: 0} ₽",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Accent
                     )
+
+                    listing.quantity?.let { qty ->
+                        if (qty > 0) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Accent.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = "×$qty",
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
-    }
-}
-
-private fun parseDateSafeCatalog(dateStr: String?): OffsetDateTime? {
-    if (dateStr.isNullOrBlank()) return null
-    return try { OffsetDateTime.parse(dateStr) } catch (e: Exception) {
-        try { java.time.LocalDateTime.parse(dateStr).atOffset(java.time.ZoneOffset.UTC) } catch (e2: Exception) { null }
     }
 }

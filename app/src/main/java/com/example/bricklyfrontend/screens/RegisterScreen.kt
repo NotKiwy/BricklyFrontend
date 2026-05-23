@@ -133,6 +133,9 @@ fun RegisterScreen(
                                 isLoading = true
                                 errorMessage = null
                                 try {
+                                    // Очищаем любые существующие креды перед регистрацией
+                                    RetrofitClient.clearCredentials()
+                                    
                                     val trimmed = username.trim()
                                     val now = ZonedDateTime.now()
                                         .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
