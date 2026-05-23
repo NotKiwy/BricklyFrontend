@@ -216,16 +216,34 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column {
+            val previewUrl = meeting.previewImagePath?.let { path ->
+                if (path.startsWith("http", ignoreCase = true)) path else "${RetrofitClient.BASE_URL}${if (path.startsWith("/")) path else "/$path"}"
+            }
+
             Box(
-                modifier = Modifier.fillMaxWidth().height(130.dp).background(Accent.copy(alpha = 0.12f)),
+                modifier = Modifier.fillMaxWidth().height(130.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Outlined.Event, null, tint = Accent, modifier = Modifier.size(48.dp))
+                if (previewUrl != null) {
+                    AsyncImage(
+                        model = previewUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.Event, null, tint = Accent, modifier = Modifier.size(48.dp))
+                    }
+                }
             }
 
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Text(
-                    text = meeting.type?.description ?: meeting.description?.take(40) ?: "Мероприятие",
+                    text = meeting.title?.takeIf { it.isNotBlank() } ?: meeting.type?.description ?: meeting.description?.take(40) ?: "Мероприятие",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = TextPrimary,
                     maxLines = 1,

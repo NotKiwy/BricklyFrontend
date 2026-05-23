@@ -10,13 +10,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://195.133.49.96:8080"
+    const val BASE_URL = "http://195.133.49.96:8080"
 
     private val logger = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    private fun makeApi(u: String, p: String): ApiService {
+    private     private fun makeApi(u: String, p: String): ApiService {
         val authInterceptor = Interceptor { chain ->
             chain.proceed(
                 chain.request().newBuilder()
@@ -34,6 +34,21 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
+    }
+
+    private val publicRetrofit by lazy {
+        val client = OkHttpClient.Builder()
+            .addInterceptor(logger)
+            .build()
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    val publicApi: ApiService by lazy {
+        publicRetrofit.create(ApiService::class.java)
     }
 
     @Volatile

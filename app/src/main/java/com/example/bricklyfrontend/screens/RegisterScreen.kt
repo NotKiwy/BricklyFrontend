@@ -137,21 +137,20 @@ fun RegisterScreen(
                                     val now = ZonedDateTime.now()
                                         .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
-                                    val response = RetrofitClient
-                                        .apiWithCredentials(trimmed, password)
-                                        .registerUser(
-                                            UserCreateDTO(
-                                                username = trimmed,
-                                                password = password,
-                                                createdAt = now
-                                            )
-                                        )
+                                     val response = RetrofitClient.publicApi.registerUser(
+                                         UserCreateDTO(
+                                             username = trimmed,
+                                             password = password,
+                                             createdAt = now
+                                         )
+                                     )
 
                                     if (response.isSuccessful && response.body() != null) {
-                                        val user = response.body()!!
-                                        RetrofitClient.setCredentials(user.username, password)
-                                        UserPreferences.saveUser(context, user.id, user.username, password)
-                                        onRegistered()
+                                         val user = response.body()!!
+                                         RetrofitClient.setCredentials(user.username, password)
+                                         val role = UserPreferences.extractRole(user.authorities)
+                                         UserPreferences.saveUser(context, user.id, user.username, password, role)
+                                         onRegistered()
                                     } else {
                                         errorMessage = when (response.code()) {
                                             409 -> "Никнейм уже занят. Попробуйте другой."

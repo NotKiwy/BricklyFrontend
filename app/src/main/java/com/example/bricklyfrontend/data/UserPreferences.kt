@@ -40,6 +40,15 @@ object UserPreferences {
     fun isMeetingCreator(context: Context): Boolean =
         getRole(context) == "ROLE_MEETING_CREATOR" || isAdmin(context)
 
+    fun extractRole(authorities: List<AuthorityShortDTO>?): String {
+        val list = authorities?.map { it.authority } ?: emptyList()
+        return when {
+            "ROLE_ADMIN" in list -> "ROLE_ADMIN"
+            "ROLE_MEETING_CREATOR" in list -> "ROLE_MEETING_CREATOR"
+            else -> list.firstOrNull() ?: "ROLE_USER"
+        }
+    }
+
     fun isLoggedIn(context: Context): Boolean =
         getUserId(context) != -1L
 

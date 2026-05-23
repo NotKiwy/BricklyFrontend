@@ -125,13 +125,13 @@ fun LoginScreen(
 
                                     when (response.code()) {
                                         200 -> {
-                                            val user = response.body()
-                                            if (user != null) {
-                                                RetrofitClient.setCredentials(user.username, password)
-                                                val role = user.authorities?.firstOrNull()?.authority ?: "ROLE_USER"
-                                                UserPreferences.saveUser(context, user.id, user.username, password, role)
-                                                onLoggedIn()
-                                            } else {
+                                             val user = response.body()
+                                             if (user != null) {
+                                                 RetrofitClient.setCredentials(user.username, password)
+                                                 val role = UserPreferences.extractRole(user.authorities)
+                                                 UserPreferences.saveUser(context, user.id, user.username, password, role)
+                                                 onLoggedIn()
+                                             } else {
                                                 errorMessage = "Пользователь не найден"
                                             }
                                         }
