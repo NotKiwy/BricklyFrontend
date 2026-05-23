@@ -223,7 +223,10 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
     ) {
         Column {
             val previewUrl = meeting.previewImagePath?.let { path ->
-                if (path.startsWith("http", ignoreCase = true)) path else "${RetrofitClient.BASE_URL}${if (path.startsWith("/")) path else "/$path"}"
+                val url = if (path.startsWith("http", ignoreCase = true)) path 
+                else "${RetrofitClient.BASE_URL}${if (path.startsWith("/")) path else "/$path"}"
+                android.util.Log.d("MeetingCard", "Meeting ${meeting.id}: path=$path, url=$url")
+                url
             }
 
             Box(

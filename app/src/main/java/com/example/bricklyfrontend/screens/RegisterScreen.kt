@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.data.AppConfig
+import com.example.bricklyfrontend.data.PasswordUtils
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserCreateDTO
 import com.example.bricklyfrontend.data.UserPreferences
@@ -140,10 +141,12 @@ fun RegisterScreen(
                                     val now = ZonedDateTime.now()
                                         .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
+                                    val hashedPassword = PasswordUtils.hashPassword(password)
+
                                      val response = RetrofitClient.publicApi.registerUser(
                                          UserCreateDTO(
                                              username = trimmed,
-                                             password = password,
+                                             password = hashedPassword,
                                              createdAt = now
                                          )
                                      )

@@ -246,7 +246,7 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
                     Text(
                         text = "${listing.price ?: 0} ₽",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Accent
+                        color = TextPrimary
                     )
 
                     listing.quantity?.let { qty ->
