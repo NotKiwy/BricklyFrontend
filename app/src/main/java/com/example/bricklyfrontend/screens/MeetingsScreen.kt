@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.example.bricklyfrontend.data.MeetingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
@@ -125,7 +126,7 @@ fun MeetingsScreen(
             if (UserPreferences.isMeetingCreator(context)) {
                 FloatingActionButton(
                     onClick = onNavigateToCreateMeeting,
-                    containerColor = Color(0xFFFFF59D),
+                    containerColor = Accent,
                     contentColor = Color.Black,
                     modifier = Modifier.size(64.dp)
                 ) {
@@ -230,11 +231,27 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 if (previewUrl != null) {
-                    AsyncImage(
+                    SubcomposeAsyncImage(
                         model = previewUrl,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
+                        error = {
+                            Box(
+                                modifier = Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Outlined.Event, null, tint = Accent, modifier = Modifier.size(48.dp))
+                            }
+                        },
+                        loading = {
+                            Box(
+                                modifier = Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = Accent, modifier = Modifier.size(32.dp))
+                            }
+                        }
                     )
                 } else {
                     Box(
