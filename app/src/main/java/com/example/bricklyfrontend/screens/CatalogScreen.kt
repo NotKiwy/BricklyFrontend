@@ -20,9 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.SubcomposeAsyncImage
 import com.example.bricklyfrontend.data.ListingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
+import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -32,10 +34,12 @@ fun CatalogScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
     onNavigateToMeetingDetail: (Long) -> Unit = {},
-    onNavigateToBrickognize: () -> Unit = {}
+    onNavigateToBrickognize: () -> Unit = {},
+    onNavigateToCreateListing: () -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     
     var listings by remember { mutableStateOf<List<ListingDefaultDTO>>(emptyList()) }
@@ -114,6 +118,22 @@ fun CatalogScreen(
                     "brickognize" -> onNavigateToBrickognize()
                 }
             }, onScanClick = onNavigateToBrickognize)
+        },
+        floatingActionButton = {
+            if (UserPreferences.isSeller(context)) {
+                FloatingActionButton(
+                    onClick = onNavigateToCreateListing,
+                    containerColor = Accent,
+                    contentColor = Color.Black,
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = "Создать товар",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
         }
     ) { padding ->
         when {
@@ -173,8 +193,10 @@ fun CatalogScreen(
 @Composable
 private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
     val imageUrl = listing.listingImage?.firstOrNull()?.imagePath?.let { path ->
-        if (path.startsWith("http", ignoreCase = true)) path 
+        val url = if (path.startsWith("http", ignoreCase = true)) path 
         else "${RetrofitClient.BASE_URL}${if (path.startsWith("/")) path else "/$path"}"
+        android.util.Log.d("ListingCard", "Listing ${listing.id}: path=$path, url=$url")
+        url
     }
 
     Card(

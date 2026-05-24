@@ -124,7 +124,10 @@ fun BricklyApp() {
                 onNavigateToMeetingDetail = { meetingId ->
                     navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
                 },
-                onNavigateToBrickognize = { navToTab("brickognize") }
+                onNavigateToBrickognize = { navToTab("brickognize") },
+                onNavigateToCreateListing = {
+                    navController.navigate("create_listing") { launchSingleTop = true }
+                }
             )
         }
 
@@ -191,7 +194,13 @@ fun BricklyApp() {
         }
 
         composable("create_listing") {
-            CreateListingScreen(onBack = { navController.popBackStack() })
+            CreateListingScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onListingCreated = {
+                    navController.popBackStack()
+                    navToTab("home")
+                }
+            )
         }
 
         composable("meeting_detail/{meetingId}") { backStackEntry ->
