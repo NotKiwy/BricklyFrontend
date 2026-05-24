@@ -21,7 +21,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import coil.ImageLoader
 import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
+import okhttp3.Credentials
+import okhttp3.OkHttpClient
 import com.example.bricklyfrontend.data.ListingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
@@ -92,7 +96,7 @@ fun CatalogScreen(
                     .padding(top = 20.dp, bottom = 20.dp)
             ) {
                 Column {
-                    Text("Каталог", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1A1A1A))
+                    Text("Маркет", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1A1A1A))
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = searchQuery,
@@ -196,11 +200,35 @@ fun CatalogScreen(
 
 @Composable
 private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
+    val context = LocalContext.current
+    
+    val imageLoader = remember {
+        val username = UserPreferences.getUsername(context)
+        val password = UserPreferences.getPassword(context)
+        
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("Authorization", Credentials.basic(username, password))
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
+        
+        ImageLoader.Builder(context)
+            .okHttpClient(okHttpClient)
+            .build()
+    }
+    
     val imageUrl = listing.listingImage?.firstOrNull { it.positionId == 0 }?.imagePath?.let { path ->
-        val url = if (path.startsWith("http", ignoreCase = true)) path 
-        else "${RetrofitClient.BASE_URL}${if (path.startsWith("/")) path else "/$path"}"
-        android.util.Log.d("ListingCard", "Listing ${listing.id}: path=$path, url=$url")
-        url
+        if (path.isBlank()) {
+            null
+        } else {
+            val cleanPath = path.trimStart('/')
+            val url = "${RetrofitClient.BASE_URL}/$cleanPath"
+            android.util.Log.d("ListingCard", "Listing ${listing.id}: path=$path, finalURL=$url")
+            url
+        }
     }
 
     Card(
@@ -215,14 +243,18 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1.2f)
+                    .aspectRatio(1f)
             ) {
                 if (imageUrl != null) {
                     SubcomposeAsyncImage(
-                        model = imageUrl,
+                        model = ImageRequest.Builder(context)
+                            .data(imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        imageLoader = imageLoader,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit,
+                        contentScale = ContentScale.Crop,
                         error = {
                             Box(
                                 modifier = Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
@@ -253,14 +285,15 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = listing.description?.takeIf { it.isNotBlank() } ?: "Без описания",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = InterFontFamily,
                     color = TextPrimary,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    minLines = 2
+                    overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -269,7 +302,9 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
                 ) {
                     Text(
                         text = "${listing.price ?: 0} ₽",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontFamily = InterFontFamily,
                         color = TextPrimary
                     )
 

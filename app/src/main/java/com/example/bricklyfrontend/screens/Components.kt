@@ -112,7 +112,7 @@ fun BricklyBottomBar(
 ) {
     val items = listOf(
         BottomNavItem("meetings", Icons.Outlined.Language, "Сходки"),
-        BottomNavItem("home", Icons.Outlined.Home, "Главная"),
+        BottomNavItem("home", Icons.Outlined.Storefront, "Маркет"),
         BottomNavItem("scan", Icons.Outlined.DocumentScanner, "Сканер"),
         BottomNavItem("cart", Icons.Outlined.ShoppingBag, "Корзина"),
         BottomNavItem("profile", Icons.Outlined.Person, "Профиль"),
