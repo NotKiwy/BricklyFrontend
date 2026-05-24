@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object BrickognizeClient {
 
-    private const val BASE_URL = "https://brickognize.com/"
+    private const val BASE_URL = "http://104.128.139.152:8888/"
 
     private val logger = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

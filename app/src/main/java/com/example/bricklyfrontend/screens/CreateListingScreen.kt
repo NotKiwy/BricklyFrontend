@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -51,7 +52,7 @@ fun CreateListingScreen(
     var quantity by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var condition by remember { mutableStateOf("NEW") }
-    var conditionRate by remember { mutableStateOf("10") }
+    var conditionRate by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -126,21 +127,21 @@ fun CreateListingScreen(
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(20.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Outlined.ArrowBack, null, tint = Color(0xFF1A1A1A))
+                        Icon(Icons.Outlined.ArrowBackIosNew, null, tint = TextPrimary)
                     }
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         "Создать объявление",
-                        fontSize = 22.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF1A1A1A)
+                        color = TextPrimary
                     )
                 }
             }
@@ -187,11 +188,11 @@ fun CreateListingScreen(
                                 .size(100.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(CardBackground)
-                                .border(2.dp, Accent.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                .border(1.dp, Divider, RoundedCornerShape(12.dp))
                                 .clickable { imagePickerLauncher.launch("image/*") },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Outlined.AddPhotoAlternate, null, tint = Accent, modifier = Modifier.size(32.dp))
+                            Icon(Icons.Outlined.AddPhotoAlternate, null, tint = IconInactive, modifier = Modifier.size(32.dp))
                         }
                     }
                 }
@@ -212,8 +213,9 @@ fun CreateListingScreen(
                 modifier = Modifier.fillMaxWidth().clickable { showItemTypeDialog = true },
                 enabled = false,
                 colors = OutlinedTextFieldDefaults.colors(
-                    disabledBorderColor = if (itemType.isEmpty()) ErrorColor else TextSecondary.copy(alpha = 0.5f),
-                    disabledTextColor = TextPrimary
+                    disabledBorderColor = Divider,
+                    disabledTextColor = TextPrimary,
+                    disabledContainerColor = Color.White
                 ),
                 trailingIcon = {
                     Icon(Icons.Outlined.ArrowDropDown, null)
@@ -256,8 +258,10 @@ fun CreateListingScreen(
                 },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Accent,
-                    unfocusedBorderColor = TextSecondary.copy(alpha = 0.3f),
-                    cursorColor = Accent
+                    unfocusedBorderColor = Divider,
+                    cursorColor = Accent,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
                 ),
                 shape = RoundedCornerShape(12.dp),
                 minLines = 3,
@@ -274,8 +278,9 @@ fun CreateListingScreen(
                 modifier = Modifier.fillMaxWidth().clickable { showConditionDialog = true },
                 enabled = false,
                 colors = OutlinedTextFieldDefaults.colors(
-                    disabledBorderColor = TextSecondary.copy(alpha = 0.5f),
-                    disabledTextColor = TextPrimary
+                    disabledBorderColor = Divider,
+                    disabledTextColor = TextPrimary,
+                    disabledContainerColor = Color.White
                 ),
                 trailingIcon = {
                     Icon(Icons.Outlined.ArrowDropDown, null)
@@ -343,7 +348,7 @@ fun CreateListingScreen(
     if (showItemTypeDialog) {
         AlertDialog(
             onDismissRequest = { showItemTypeDialog = false },
-            title = { Text("Выберите тип товара") },
+            title = { Text("Выберите тип товара", color = TextPrimary) },
             text = {
                 Column {
                     listOf("P" to "Деталь", "M" to "Минифигурка", "S" to "Набор").forEach { (code, name) ->
@@ -354,7 +359,7 @@ fun CreateListingScreen(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(name, modifier = Modifier.fillMaxWidth())
+                            Text(name, modifier = Modifier.fillMaxWidth(), color = TextPrimary)
                         }
                     }
                 }
@@ -362,7 +367,7 @@ fun CreateListingScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showItemTypeDialog = false }) {
-                    Text("Отмена")
+                    Text("Отмена", color = TextPrimary)
                 }
             }
         )
@@ -371,7 +376,7 @@ fun CreateListingScreen(
     if (showConditionDialog) {
         AlertDialog(
             onDismissRequest = { showConditionDialog = false },
-            title = { Text("Выберите состояние") },
+            title = { Text("Выберите состояние", color = TextPrimary) },
             text = {
                 Column {
                     listOf("NEW" to "Новое", "USED" to "Б/У").forEach { (code, name) ->
@@ -382,7 +387,7 @@ fun CreateListingScreen(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(name, modifier = Modifier.fillMaxWidth())
+                            Text(name, modifier = Modifier.fillMaxWidth(), color = TextPrimary)
                         }
                     }
                 }
@@ -390,7 +395,7 @@ fun CreateListingScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showConditionDialog = false }) {
-                    Text("Отмена")
+                    Text("Отмена", color = TextPrimary)
                 }
             }
         )

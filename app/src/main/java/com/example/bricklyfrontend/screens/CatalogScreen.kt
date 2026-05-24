@@ -196,7 +196,7 @@ fun CatalogScreen(
 
 @Composable
 private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
-    val imageUrl = listing.listingImage?.firstOrNull()?.imagePath?.let { path ->
+    val imageUrl = listing.listingImage?.firstOrNull { it.positionId == 0 }?.imagePath?.let { path ->
         val url = if (path.startsWith("http", ignoreCase = true)) path 
         else "${RetrofitClient.BASE_URL}${if (path.startsWith("/")) path else "/$path"}"
         android.util.Log.d("ListingCard", "Listing ${listing.id}: path=$path, url=$url")

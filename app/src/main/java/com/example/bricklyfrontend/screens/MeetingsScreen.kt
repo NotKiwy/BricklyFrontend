@@ -258,7 +258,7 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
             }
 
             Box(
-                modifier = Modifier.fillMaxWidth().height(130.dp),
+                modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
                 contentAlignment = Alignment.Center
             ) {
                 if (previewUrl != null) {
