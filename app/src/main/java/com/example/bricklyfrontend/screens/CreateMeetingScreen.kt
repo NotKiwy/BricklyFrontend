@@ -47,7 +47,6 @@ fun CreateMeetingScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // === STATE ===
     var title by remember { mutableStateOf("") }
     var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
     var selectedHour by remember { mutableStateOf<Int?>(null) }
@@ -66,18 +65,16 @@ fun CreateMeetingScreen(
     var hasDiscount by remember { mutableStateOf(false) }
     var discountDuration by remember { mutableStateOf("") }
     var discountAmount by remember { mutableStateOf("") }
-    var discountFromAnnounce by remember { mutableStateOf(true) } // true = от анонса (modifier=1), false = от начала (modifier=-1)
+    var discountFromAnnounce by remember { mutableStateOf(true) }
 
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
-    // === IMAGE PICKER ===
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { selectedImageUri = it }
     }
 
-    // === LOAD MEETING TYPES ===
     LaunchedEffect(Unit) {
         try {
             val resp = RetrofitClient.api.getMeetingTypes()
@@ -129,7 +126,6 @@ fun CreateMeetingScreen(
         ) {
             Spacer(Modifier.height(16.dp))
 
-            // === ИЗОБРАЖЕНИЕ (необязательное с заглушкой) ===
             Text("Изображение *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
             Spacer(Modifier.height(8.dp))
             Box(
@@ -163,7 +159,6 @@ fun CreateMeetingScreen(
             }
             Spacer(Modifier.height(16.dp))
 
-            // === ПОЛЯ ===
             BricklyTextField(
                 value = title,
                 onValueChange = { title = it },
@@ -180,7 +175,6 @@ fun CreateMeetingScreen(
             )
             Spacer(Modifier.height(16.dp))
 
-            // === ДАТА ===
             Text("Дата *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
             Spacer(Modifier.height(8.dp))
             Box(
@@ -226,7 +220,6 @@ fun CreateMeetingScreen(
             }
             Spacer(Modifier.height(16.dp))
 
-            // === ВРЕМЯ ===
             Text("Время *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
             Spacer(Modifier.height(8.dp))
             Box(
@@ -279,7 +272,6 @@ fun CreateMeetingScreen(
             )
             Spacer(Modifier.height(16.dp))
 
-            // === ТИП МЕРОПРИЯТИЯ ===
             Text("Тип мероприятия *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
             Spacer(Modifier.height(8.dp))
 
@@ -302,7 +294,6 @@ fun CreateMeetingScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // === ПЛАТНЫЙ ВХОД ===
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -334,7 +325,6 @@ fun CreateMeetingScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // === ДОБАВИТЬ СКИДКУ ===
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -375,7 +365,6 @@ fun CreateMeetingScreen(
                     )
                     Spacer(Modifier.height(12.dp))
 
-                    // === СЕЛЕКТОР ОТ КАКОЙ ДАТЫ ОТСЧИТЫВАТЬ ===
                     Text("Отсчитывать скидку от:", style = MaterialTheme.typography.labelMedium, color = TextPrimary)
                     Spacer(Modifier.height(6.dp))
 
@@ -401,7 +390,6 @@ fun CreateMeetingScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // === ОШИБКА / УСПЕХ ===
             if (errorMessage != null) {
                 Text(errorMessage!!, color = ErrorColor, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(8.dp))
@@ -415,7 +403,6 @@ fun CreateMeetingScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
-            // === КНОПКА СОЗДАТЬ ===
             val isFormValid = title.isNotBlank() &&
                     address.isNotBlank() &&
                     selectedDateMillis != null &&
@@ -434,7 +421,6 @@ fun CreateMeetingScreen(
                         errorMessage = null
                         successMessage = null
                         try {
-                            // Изображение обязательно (иначе 400 от бэка)
                             val imageFile = uriToFile(context, selectedImageUri!!)
                             val imagePart = MultipartBody.Part.createFormData(
                                 "previewImage",
@@ -442,7 +428,6 @@ fun CreateMeetingScreen(
                                 imageFile.asRequestBody("image/*".toMediaTypeOrNull())
                             )
 
-                            // Объединяем дату и время в ISO формат с часовым поясом
                             val calendar = Calendar.getInstance()
                             calendar.timeInMillis = selectedDateMillis!!
                             calendar.set(Calendar.HOUR_OF_DAY, selectedHour!!)
@@ -450,7 +435,6 @@ fun CreateMeetingScreen(
                             calendar.set(Calendar.SECOND, 0)
                             calendar.set(Calendar.MILLISECOND, 0)
                             
-                            // Используем ISO_OFFSET_DATE_TIME формат для полной совместимости
                             val dateIso = java.time.ZonedDateTime.ofInstant(
                                 java.time.Instant.ofEpochMilli(calendar.timeInMillis),
                                 java.time.ZoneId.systemDefault()
@@ -464,7 +448,6 @@ fun CreateMeetingScreen(
                             
                             val priceValue = if (isPaidEntry) ticketPrice.toIntOrNull() ?: 0 else 0
                             
-                            // Конвертируем часы в минуты
                             val durationInMinutes = (duration.toIntOrNull() ?: 0) * 60
 
                             val response = RetrofitClient.api.createMeeting(
@@ -488,7 +471,6 @@ fun CreateMeetingScreen(
 
                             if (response.isSuccessful) {
                                 successMessage = "Мероприятие успешно создано!"
-                                // Сброс формы
                                 title = ""
                                 address = ""
                                 selectedDateMillis = null

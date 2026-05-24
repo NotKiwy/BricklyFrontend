@@ -162,7 +162,7 @@ fun CatalogScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredListings) { listing ->
-                        ListingCard(listing = listing, onClick = { /* TODO: навигация */ })
+                        ListingCard(listing = listing, onClick = { })
                     }
                 }
             }
@@ -186,7 +186,6 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column {
-            // Изображение
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -225,7 +224,6 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
                 }
             }
 
-            // Информация
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = listing.description?.takeIf { it.isNotBlank() } ?: "Без описания",

@@ -155,3 +155,15 @@ data class PagedModelListingDefaultDTO(
     val content: List<ListingDefaultDTO>?,
     val page: PageMetadata?
 )
+
+data class ListingCreateDTO(
+    val sellerId: Long,
+    val itemType: String,
+    val itemId: String,
+    val quantity: Int,
+    val description: String?,
+    val condition: String,
+    val conditionRate: Int,
+    val price: Int,
+    val status: String
+)

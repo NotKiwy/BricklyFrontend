@@ -138,10 +138,8 @@ fun BricklyApp() {
         }
 
         composable("profile") {
-            // Читаем toast-аргумент из savedStateHandle (кладём туда из edit_profile)
             val savedState = navController.currentBackStackEntry?.savedStateHandle
             val toast = savedState?.get<String>("toast")
-            // После показа сбрасываем чтобы не показывался повторно
             LaunchedEffect(toast) {
                 if (!toast.isNullOrBlank()) {
                     savedState?.remove<String>("toast")
@@ -161,6 +159,9 @@ fun BricklyApp() {
                 onNavigateToCreateMeeting = {
                     navController.navigate("create_meeting") { launchSingleTop = true }
                 },
+                onNavigateToCreateListing = {
+                    navController.navigate("create_listing") { launchSingleTop = true }
+                },
                 onNavigateToCart = { navToTab("cart") },
                 onNavigateToHome = { navToTab("home") },
                 onNavigateToBrickognize = { navToTab("brickognize") },
@@ -177,7 +178,6 @@ fun BricklyApp() {
             EditProfileScreen(
                 onBack = { navController.popBackStack() },
                 onSaved = {
-                    // Кладём toast в предыдущий экран (profile) и возвращаемся
                     navController.previousBackStackEntry
                         ?.savedStateHandle
                         ?.set("toast", "Профиль обновлён")
@@ -188,6 +188,10 @@ fun BricklyApp() {
 
         composable("create_meeting") {
             CreateMeetingScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable("create_listing") {
+            CreateListingScreen(onBack = { navController.popBackStack() })
         }
 
         composable("meeting_detail/{meetingId}") { backStackEntry ->

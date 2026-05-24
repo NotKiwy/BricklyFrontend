@@ -32,11 +32,10 @@ fun ProfileScreen(
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToFeedbacks: () -> Unit = {},
     onNavigateToCreateMeeting: () -> Unit = {},
+    onNavigateToCreateListing: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
-    onLogout: () -> Unit = {},
-    // Toast-сообщение, которое показывается при входе на экран (например после сохранения профиля)
     toastMessage: String? = null
 ) {
     val context = LocalContext.current
@@ -48,6 +47,7 @@ fun ProfileScreen(
     val savedUsername = remember { UserPreferences.getUsername(context) }
     val role = remember { UserPreferences.getRole(context) }
     val canCreateMeeting = remember { role == "ROLE_ADMIN" || role == "ROLE_MEETING_CREATOR" }
+    val isSeller = remember { UserPreferences.isSeller(context) }
 
     var displayName by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -154,7 +154,10 @@ fun ProfileScreen(
                     ProfileMenuItem(icon = Icons.Outlined.ShoppingBag, text = "Заказы", onClick = onNavigateToOrders, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.Storefront, text = "Мой магазин", onClick = onNavigateToShop, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.Star, text = "Отзывы", onClick = onNavigateToFeedbacks, showDivider = true)
-                    ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = canCreateMeeting)
+                    ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = canCreateMeeting || isSeller)
+                    if (isSeller) {
+                        ProfileMenuItem(icon = Icons.Outlined.AddBox, text = "Создать карточку", onClick = onNavigateToCreateListing, showDivider = canCreateMeeting)
+                    }
                     if (canCreateMeeting) {
                         ProfileMenuItem(icon = Icons.Outlined.AddCircleOutline, text = "Создать сходку", onClick = onNavigateToCreateMeeting, showDivider = true)
                     }

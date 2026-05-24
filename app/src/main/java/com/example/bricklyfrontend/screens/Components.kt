@@ -113,7 +113,6 @@ fun BricklyBottomBar(
     val items = listOf(
         BottomNavItem("meetings", Icons.Outlined.Language, "Сходки"),
         BottomNavItem("home", Icons.Outlined.Home, "Главная"),
-        // "scan" — это псевдо-маршрут для центральной FAB-кнопки
         BottomNavItem("scan", Icons.Outlined.DocumentScanner, "Сканер"),
         BottomNavItem("cart", Icons.Outlined.ShoppingBag, "Корзина"),
         BottomNavItem("profile", Icons.Outlined.Person, "Профиль"),
@@ -127,7 +126,6 @@ fun BricklyBottomBar(
     ) {
         items.forEach { item ->
             if (item.route == "scan") {
-                // Центральная выделенная кнопка сканера
                 NavigationBarItem(
                     selected = currentRoute == "brickognize",
                     onClick = { onScanClick?.invoke() ?: onNavigate("brickognize") },

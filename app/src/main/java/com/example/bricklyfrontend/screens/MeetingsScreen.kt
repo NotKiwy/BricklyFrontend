@@ -1,5 +1,6 @@
 package com.example.bricklyfrontend.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,13 +21,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.example.bricklyfrontend.data.MeetingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
+import okhttp3.Credentials
+import okhttp3.OkHttpClient
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -213,7 +218,26 @@ fun MeetingsScreen(
 
 @Composable
 private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
+    val context = LocalContext.current
     val dateFormatted = meeting.date?.let { formatMeetingDate(it) }
+    
+    val imageLoader = remember {
+        val username = UserPreferences.getUsername(context)
+        val password = UserPreferences.getPassword(context)
+        
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("Authorization", Credentials.basic(username, password))
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
+        
+        ImageLoader.Builder(context)
+            .okHttpClient(okHttpClient)
+            .build()
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).clickable(onClick = onClick),
@@ -223,10 +247,14 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
     ) {
         Column {
             val previewUrl = meeting.previewImagePath?.let { path ->
-                val url = if (path.startsWith("http", ignoreCase = true)) path 
-                else "${RetrofitClient.BASE_URL}${if (path.startsWith("/")) path else "/$path"}"
-                android.util.Log.d("MeetingCard", "Meeting ${meeting.id}: path=$path, url=$url")
-                url
+                if (path.isBlank()) {
+                    null
+                } else {
+                    val cleanPath = path.trimStart('/')
+                    val url = "${RetrofitClient.BASE_URL}/$cleanPath"
+                    Log.d("MeetingCard", "Meeting ${meeting.id}: finalURL='$url'")
+                    url
+                }
             }
 
             Box(
@@ -235,7 +263,11 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
             ) {
                 if (previewUrl != null) {
                     SubcomposeAsyncImage(
-                        model = previewUrl,
+                        model = ImageRequest.Builder(context)
+                            .data(previewUrl)
+                            .crossfade(true)
+                            .build(),
+                        imageLoader = imageLoader,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,

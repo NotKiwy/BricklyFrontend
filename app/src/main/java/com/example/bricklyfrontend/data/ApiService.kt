@@ -97,6 +97,21 @@ interface ApiService {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): Response<PagedModelListingDefaultDTO>
+
+    @Multipart
+    @POST("/api/app/listings/create")
+    suspend fun createListing(
+        @Part("sellerId") sellerId: RequestBody,
+        @Part("itemType") itemType: RequestBody,
+        @Part("itemId") itemId: RequestBody,
+        @Part("quantity") quantity: RequestBody,
+        @Part("description") description: RequestBody?,
+        @Part("condition") condition: RequestBody,
+        @Part("conditionRate") conditionRate: RequestBody,
+        @Part("price") price: RequestBody,
+        @Part("status") status: RequestBody,
+        @Part images: List<MultipartBody.Part>
+    ): Response<ListingDefaultDTO>
 }
 
 interface BrickognizeApiService {

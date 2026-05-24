@@ -134,7 +134,6 @@ fun RegisterScreen(
                                 isLoading = true
                                 errorMessage = null
                                 try {
-                                    // Очищаем любые существующие креды перед регистрацией
                                     RetrofitClient.clearCredentials()
                                     
                                     val trimmed = username.trim()
@@ -151,10 +150,9 @@ fun RegisterScreen(
                                          )
                                      )
 
-                                     if (response.isSuccessful && response.body() != null) {
-                                         val createdUser = response.body()!!
-                                         // Сохраняем креды и данные пользователя напрямую из ответа регистрации
-                                         RetrofitClient.setCredentials(createdUser.username, password)
+                                      if (response.isSuccessful && response.body() != null) {
+                                          val createdUser = response.body()!!
+                                          RetrofitClient.setCredentials(createdUser.username, password)
                                          val role = UserPreferences.extractRole(createdUser.authorities)
                                          UserPreferences.saveUser(
                                              context,
