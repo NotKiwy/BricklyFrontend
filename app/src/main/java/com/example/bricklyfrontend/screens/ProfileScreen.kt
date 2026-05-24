@@ -36,6 +36,7 @@ fun ProfileScreen(
     onNavigateToCart: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
+    onLogout: () -> Unit = {},
     toastMessage: String? = null
 ) {
     val context = LocalContext.current
