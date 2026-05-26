@@ -109,13 +109,7 @@ fun ProfileScreen(
                     }
                     Spacer(Modifier.height(10.dp))
                     if (isLoading) {
-                        Box(
-                            modifier = Modifier
-                                .width(120.dp)
-                                .height(22.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(TextPrimary.copy(alpha = 0.2f))
-                        )
+                        ProfileNameSkeleton()
                     } else {
                         Text(
                             text = displayName ?: savedUsername,

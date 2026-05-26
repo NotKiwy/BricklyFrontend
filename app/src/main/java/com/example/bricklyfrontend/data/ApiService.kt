@@ -121,6 +121,9 @@ interface ApiService {
 
     @POST("/api/app/cart_items/create")
     suspend fun addCartItem(@Body dto: CartItemCreateDTO): Response<CartItemDefaultDTO>
+
+    @GET("/api/app/minifigs/by_bl_id/{blId}")
+    suspend fun getMinifigByBlId(@Path("blId") blId: String): Response<List<MinifigDTO>>
 }
 
 interface BrickognizeApiService {

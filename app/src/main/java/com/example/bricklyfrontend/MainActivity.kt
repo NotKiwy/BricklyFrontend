@@ -244,6 +244,21 @@ fun BricklyApp() {
                 onNavigateToSetDetail = { setId ->
                     navController.navigate("set_detail/$setId") { launchSingleTop = true }
                 },
+                onNavigateToMinifigDetail = { blId ->
+                    navController.navigate("minifig_detail/$blId") { launchSingleTop = true }
+                },
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToProfile = { navToTab("profile") },
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToBrickognize = { navToTab("brickognize") }
+            )
+        }
+
+        composable("minifig_detail/{blId}") { backStackEntry ->
+            val blId = backStackEntry.arguments?.getString("blId") ?: ""
+            MinifigDetailScreen(
+                blId = blId,
+                onBack = { navController.popBackStack() },
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
                 onNavigateToCart = { navToTab("cart") },

@@ -176,9 +176,8 @@ fun FeedbacksScreen(
 
             when {
                 isLoading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Accent)
-                    }
+                    Spacer(Modifier.height(20.dp))
+                    FeedbackListSkeleton()
                 }
 
                 errorMessage != null -> {

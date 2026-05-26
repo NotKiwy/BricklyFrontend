@@ -148,12 +148,7 @@ fun CatalogScreen(
         }
     ) { padding ->
         when {
-            isLoading -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Accent)
-            }
+            isLoading -> ListingGridSkeleton(modifier = Modifier.padding(padding))
 
             errorMessage != null -> Column(
                 modifier = Modifier.fillMaxSize().padding(padding),
@@ -208,9 +203,7 @@ fun CatalogScreen(
 @Composable
 private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavigateToSetDetail: (String) -> Unit = {}) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val userId = UserPreferences.getUserId(context)
-    
+
     val imageLoader = remember {
         val username = UserPreferences.getUsername(context)
         val password = UserPreferences.getPassword(context)
@@ -248,9 +241,6 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
             }
         }
     }
-
-    val cartItem by remember { derivedStateOf { ListingCartState.items.find { it.listingId == listing.id } } }
-    val isInCart = cartItem != null
 
     Card(
         modifier = Modifier
@@ -304,160 +294,33 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
             }
 
             Column(modifier = Modifier.padding(12.dp).clickable(onClick = onClick)) {
-                // Item ID with Set info button
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = listing.itemId?.takeIf { it.isNotBlank() } ?: "ID",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = InterFontFamily,
-                        color = TextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                
-                Spacer(Modifier.height(6.dp))
-
                 Text(
-                    text = listing.description?.takeIf { it.isNotBlank() } ?: "Без описания",
-                    fontSize = 14.sp,
+                    text = listing.itemId?.takeIf { it.isNotBlank() } ?: "ID",
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = InterFontFamily,
-                    color = TextPrimary,
-                    maxLines = 2,
+                    color = TextSecondary,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(Modifier.height(6.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Text(
+                    text = "${listing.price ?: 0} ₽",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = InterFontFamily,
+                    color = TextPrimary
+                )
+
+                listing.quantity?.let { qty ->
                     Text(
-                        text = "${listing.price ?: 0} ₽",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        text = "В наличии: $qty",
+                        fontSize = 11.sp,
                         fontFamily = InterFontFamily,
-                        color = TextPrimary
+                        color = TextSecondary
                     )
-
-                    listing.quantity?.let { qty ->
-                        if (qty > 0) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Accent.copy(alpha = 0.15f)
-                            ) {
-                                Text(
-                                    text = "×$qty",
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = TextPrimary
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(10.dp))
-
-                // Buy Button with Quantity Controls
-                if (!isInCart) {
-                    // Show simple "Buy" button
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                ListingCartState.addItemWithApi(
-                                    ListingCartItem(
-                                        listingId = listing.id,
-                                        title = listing.itemId ?: "Unknown",
-                                        unitPrice = listing.price ?: 0,
-                                        quantity = 1,
-                                        maxQuantity = listing.quantity ?: 1
-                                    ),
-                                    userId = userId
-                                )
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Accent,
-                            contentColor = Color.Black
-                        )
-                    ) {
-                        Icon(
-                            Icons.Outlined.ShoppingCart,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            "Купить",
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                    }
-                } else {
-                    val currentItem = cartItem
-                    if (currentItem != null) {
-                    // Show quantity controls
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Accent),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        IconButton(
-                            onClick = { ListingCartState.decrementQuantity(listing.id) },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                if (currentItem.quantity == 1) Icons.Outlined.Delete else Icons.Outlined.Remove,
-                                contentDescription = "Уменьшить",
-                                tint = Color.Black,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Text(
-                            "${currentItem.quantity}",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 16.sp
-                            ),
-                            color = Color.Black
-                        )
-                        IconButton(
-                            onClick = {
-                                if (currentItem.quantity < (listing.quantity ?: 1)) {
-                                    ListingCartState.incrementQuantity(listing.id)
-                                }
-                            },
-                            modifier = Modifier.size(44.dp),
-                            enabled = currentItem.quantity < (listing.quantity ?: 1)
-                        ) {
-                            Icon(
-                                Icons.Outlined.Add,
-                                contentDescription = "Увеличить",
-                                tint = if (currentItem.quantity < (listing.quantity ?: 1)) Color.Black else Color.Black.copy(alpha = 0.3f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                    }
                 }
             }
         }

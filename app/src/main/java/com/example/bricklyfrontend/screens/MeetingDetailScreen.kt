@@ -102,7 +102,7 @@ fun MeetingDetailScreen(
         }
     ) { padding ->
         when {
-            isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Accent) }
+            isLoading -> DetailPageSkeleton()
 
             errorMessage != null -> Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
                 Text(errorMessage!!, color = ErrorColor, textAlign = TextAlign.Center)

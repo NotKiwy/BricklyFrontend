@@ -149,9 +149,7 @@ fun MeetingsScreen(
                 Spacer(Modifier.height(20.dp))
 
             when {
-                isLoading -> Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Accent)
-                }
+                isLoading -> MeetingListSkeleton()
 
                 errorMessage != null -> Column(
                     Modifier.fillMaxWidth().padding(20.dp),

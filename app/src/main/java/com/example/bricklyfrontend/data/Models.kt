@@ -175,6 +175,22 @@ data class CartItemCreateDTO(
     val quantity: Int
 )
 
+data class BlMinifigDTO(
+    val id: String,
+    val name: String?,
+    val categoryName: String?,
+    val imageUrl: String?,
+    val url: String?
+)
+
+data class MinifigDTO(
+    val id: String,
+    val name: String?,
+    val numParts: Int?,
+    val imageUrl: String?,
+    val blMinifig: BlMinifigDTO?
+)
+
 data class BrickSetThemeDTO(
     val id: Int,
     val name: String?

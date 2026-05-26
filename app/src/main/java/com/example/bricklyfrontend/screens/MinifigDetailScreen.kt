@@ -19,13 +19,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.bricklyfrontend.data.BrickSetDTO
+import com.example.bricklyfrontend.data.MinifigDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.ui.theme.*
 
 @Composable
-fun SetDetailScreen(
-    setId: String,
+fun MinifigDetailScreen(
+    blId: String,
     onBack: () -> Unit,
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
@@ -34,15 +34,16 @@ fun SetDetailScreen(
 ) {
     SetStatusBarColor(Accent)
 
-    var setData by remember { mutableStateOf<BrickSetDTO?>(null) }
+    var minifig by remember { mutableStateOf<MinifigDTO?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(setId) {
+    LaunchedEffect(blId) {
         try {
-            val response = RetrofitClient.api.getSetById(setId)
+            val response = RetrofitClient.api.getMinifigByBlId(blId)
             if (response.isSuccessful) {
-                setData = response.body()
+                minifig = response.body()?.firstOrNull()
+                if (minifig == null) errorMessage = "Минифигурка не найдена"
             } else {
                 errorMessage = "Ошибка загрузки (${response.code()})"
             }
@@ -77,7 +78,7 @@ fun SetDetailScreen(
                     Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
                 }
                 Text(
-                    text = "Информация о наборе",
+                    text = "Информация о минифигурке",
                     color = Color(0xFF1A1A1A),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
@@ -100,8 +101,11 @@ fun SetDetailScreen(
                 )
             }
 
-            setData != null -> {
-                val s = setData!!
+            minifig != null -> {
+                val m = minifig!!
+                val imageUrl = m.blMinifig?.imageUrl?.takeIf { it.isNotBlank() }
+                    ?: m.imageUrl?.takeIf { it.isNotBlank() }
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -110,11 +114,10 @@ fun SetDetailScreen(
                 ) {
                     Spacer(Modifier.height(16.dp))
 
-                    // Image
-                    if (!s.imageUrl.isNullOrBlank()) {
-                    AsyncImage(
-                            model = s.imageUrl,
-                            contentDescription = s.name,
+                    if (!imageUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = m.name,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(260.dp)
@@ -144,7 +147,6 @@ fun SetDetailScreen(
 
                     Spacer(Modifier.height(20.dp))
 
-                    // Main info card
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -155,23 +157,29 @@ fun SetDetailScreen(
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Text(
-                                text = s.name ?: s.id,
+                                text = m.blMinifig?.name ?: m.name ?: m.id,
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
                                 color = TextPrimary
                             )
 
                             Spacer(Modifier.height(16.dp))
 
-                            SetInfoRow(label = "Номер набора", value = s.id)
+                            MinifigInfoRow(label = "BrickLink ID", value = m.blMinifig?.id ?: blId)
                             Spacer(Modifier.height(10.dp))
 
-                            SetInfoRow(label = "Год выпуска", value = s.year?.toString() ?: "Не указан")
+                            MinifigInfoRow(label = "Rebrickable ID", value = m.id)
                             Spacer(Modifier.height(10.dp))
 
-                            SetInfoRow(label = "Тема", value = s.theme?.name ?: "Не указана")
+                            MinifigInfoRow(
+                                label = "Категория",
+                                value = m.blMinifig?.categoryName ?: "Не указана"
+                            )
                             Spacer(Modifier.height(10.dp))
 
-                            SetInfoRow(label = "Количество деталей", value = s.numParts?.toString() ?: "Не указано")
+                            MinifigInfoRow(
+                                label = "Количество деталей",
+                                value = m.numParts?.toString() ?: "Не указано"
+                            )
                         }
                     }
 
@@ -183,7 +191,7 @@ fun SetDetailScreen(
 }
 
 @Composable
-private fun SetInfoRow(label: String, value: String) {
+private fun MinifigInfoRow(label: String, value: String) {
     Column {
         Text(
             label,

@@ -40,6 +40,7 @@ fun ListingDetailScreen(
     listingId: Long,
     onBack: () -> Unit,
     onNavigateToSetDetail: (String) -> Unit = {},
+    onNavigateToMinifigDetail: (String) -> Unit = {},
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
@@ -104,12 +105,7 @@ fun ListingDetailScreen(
         }
     ) { padding ->
         when {
-            isLoading -> Box(
-                Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Accent)
-            }
+            isLoading -> DetailPageSkeleton()
 
             errorMessage != null -> Box(
                 Modifier.fillMaxSize().padding(32.dp),
@@ -262,7 +258,10 @@ fun ListingDetailScreen(
                                 )
                                 if (!item.itemId.isNullOrBlank()) {
                                     IconButton(
-                                        onClick = { onNavigateToSetDetail(item.itemId) },
+                                        onClick = {
+                                            if (item.itemType == "M") onNavigateToMinifigDetail(item.itemId)
+                                            else onNavigateToSetDetail(item.itemId)
+                                        },
                                         modifier = Modifier
                                             .size(36.dp)
                                             .clip(RoundedCornerShape(10.dp))
@@ -270,7 +269,7 @@ fun ListingDetailScreen(
                                     ) {
                                         Icon(
                                             Icons.Outlined.ArrowForwardIos,
-                                            contentDescription = "Информация о наборе",
+                                            contentDescription = "Информация о товаре",
                                             tint = Color.Black,
                                             modifier = Modifier.size(18.dp)
                                         )
