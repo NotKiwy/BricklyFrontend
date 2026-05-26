@@ -10,13 +10,9 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import com.example.bricklyfrontend.ui.theme.Accent
 import kotlinx.coroutines.delay
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.material3.Text
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-import com.example.bricklyfrontend.ui.theme.TextPrimary
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.example.bricklyfrontend.R
 
 @Composable
 fun SplashScreen(onFinished: () -> Unit) {
@@ -46,57 +42,9 @@ fun SplashScreen(onFinished: () -> Unit) {
 
 @Composable
 fun BricklyMascot(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.size(120.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .width(100.dp)
-                .height(80.dp)
-                .clip(androidx.compose.foundation.shape.RoundedCornerShape(18.dp))
-                .background(Color(0xFF1A1A1A)),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(Modifier.width(12.dp))
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clip(CircleShape)
-                        .background(Accent)
-                )
-                Spacer(Modifier.width(20.dp))
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clip(CircleShape)
-                        .background(Accent)
-                )
-                Spacer(Modifier.width(12.dp))
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = (-12).dp),
-            horizontalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
-            repeat(3) {
-                Box(
-                    modifier = Modifier
-                        .size(width = 22.dp, height = 14.dp)
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 4.dp, bottomEnd = 4.dp))
-                        .background(Color(0xFF1A1A1A))
-                )
-            }
-        }
-    }
+    Image(
+        painter = painterResource(id = R.drawable.brickly_logo),
+        contentDescription = "Logo",
+        modifier = modifier.size(250.dp)
+    )
 }
