@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.screens.*
+import com.example.bricklyfrontend.screens.ListingCartScreen
 import com.example.bricklyfrontend.ui.theme.Accent
 import com.example.bricklyfrontend.ui.theme.BricklyFrontendTheme
 
@@ -127,6 +128,12 @@ fun BricklyApp() {
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToCreateListing = {
                     navController.navigate("create_listing") { launchSingleTop = true }
+                },
+                onNavigateToListingDetail = { listingId ->
+                    navController.navigate("listing_detail/$listingId") { launchSingleTop = true }
+                },
+                onNavigateToSetDetail = { setId ->
+                    navController.navigate("set_detail/$setId") { launchSingleTop = true }
                 }
             )
         }
@@ -226,6 +233,37 @@ fun BricklyApp() {
                 onNavigateToHome = { navToTab("home") },
                 onNavigateToCart = { navToTab("cart") },
                 onNavigateToProfile = { navToTab("profile") }
+            )
+        }
+
+        composable("listing_detail/{listingId}") { backStackEntry ->
+            val listingId = backStackEntry.arguments?.getString("listingId")?.toLongOrNull() ?: -1L
+            ListingDetailScreen(
+                listingId = listingId,
+                onBack = { navController.popBackStack() },
+                onNavigateToSetDetail = { setId ->
+                    navController.navigate("set_detail/$setId") { launchSingleTop = true }
+                },
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToProfile = { navToTab("profile") },
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToBrickognize = { navToTab("brickognize") }
+            )
+        }
+
+        composable("listing_cart") {
+            ListingCartScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable("set_detail/{setId}") { backStackEntry ->
+            val setId = backStackEntry.arguments?.getString("setId") ?: ""
+            SetDetailScreen(
+                setId = setId,
+                onBack = { navController.popBackStack() },
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToProfile = { navToTab("profile") },
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToBrickognize = { navToTab("brickognize") }
             )
         }
     }

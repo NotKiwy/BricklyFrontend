@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -39,7 +40,9 @@ fun CatalogScreen(
     onNavigateToCart: () -> Unit = {},
     onNavigateToMeetingDetail: (Long) -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
-    onNavigateToCreateListing: () -> Unit = {}
+    onNavigateToCreateListing: () -> Unit = {},
+    onNavigateToListingDetail: (Long) -> Unit = {},
+    onNavigateToSetDetail: (String) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
 
@@ -190,7 +193,11 @@ fun CatalogScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredListings) { listing ->
-                        ListingCard(listing = listing, onClick = { })
+                        ListingCard(
+                            listing = listing,
+                            onClick = { onNavigateToListingDetail(listing.id) },
+                            onNavigateToSetDetail = onNavigateToSetDetail
+                        )
                     }
                 }
             }
@@ -199,8 +206,10 @@ fun CatalogScreen(
 }
 
 @Composable
-private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
+private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavigateToSetDetail: (String) -> Unit = {}) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val userId = UserPreferences.getUserId(context)
     
     val imageLoader = remember {
         val username = UserPreferences.getUsername(context)
@@ -224,17 +233,28 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
         if (path.isBlank()) {
             null
         } else {
-            val cleanPath = path.trimStart('/')
-            val url = "${RetrofitClient.BASE_URL}/$cleanPath"
-            android.util.Log.d("ListingCard", "Listing ${listing.id}: path=$path, finalURL=$url")
-            url
+            try {
+                val cleanPath = path.trim().trimStart('/')
+                val url = if (cleanPath.startsWith("http")) {
+                    cleanPath
+                } else {
+                    "${RetrofitClient.BASE_URL}/$cleanPath"
+                }
+                android.util.Log.d("ListingCard", "Listing ${listing.id}: path=$path, cleanPath=$cleanPath, finalURL=$url")
+                url
+            } catch (e: Exception) {
+                android.util.Log.e("ListingCard", "Error constructing image URL: ${e.message}")
+                null
+            }
         }
     }
 
+    val cartItem by remember { derivedStateOf { ListingCartState.items.find { it.listingId == listing.id } } }
+    val isInCart = cartItem != null
+
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(0.dp)
@@ -244,6 +264,7 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
+                    .clickable(onClick = onClick)
             ) {
                 if (imageUrl != null) {
                     SubcomposeAsyncImage(
@@ -282,7 +303,25 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
                 }
             }
 
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(12.dp).clickable(onClick = onClick)) {
+                // Item ID with Set info button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = listing.itemId?.takeIf { it.isNotBlank() } ?: "ID",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = InterFontFamily,
+                        color = TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                
+                Spacer(Modifier.height(6.dp))
+
                 Text(
                     text = listing.description?.takeIf { it.isNotBlank() } ?: "Без описания",
                     fontSize = 14.sp,
@@ -323,6 +362,101 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit) {
                                 )
                             }
                         }
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                // Buy Button with Quantity Controls
+                if (!isInCart) {
+                    // Show simple "Buy" button
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                ListingCartState.addItemWithApi(
+                                    ListingCartItem(
+                                        listingId = listing.id,
+                                        title = listing.itemId ?: "Unknown",
+                                        unitPrice = listing.price ?: 0,
+                                        quantity = 1,
+                                        maxQuantity = listing.quantity ?: 1
+                                    ),
+                                    userId = userId
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Accent,
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Icon(
+                            Icons.Outlined.ShoppingCart,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "Купить",
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+                } else {
+                    val currentItem = cartItem
+                    if (currentItem != null) {
+                    // Show quantity controls
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Accent),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        IconButton(
+                            onClick = { ListingCartState.decrementQuantity(listing.id) },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                if (currentItem.quantity == 1) Icons.Outlined.Delete else Icons.Outlined.Remove,
+                                contentDescription = "Уменьшить",
+                                tint = Color.Black,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            "${currentItem.quantity}",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 16.sp
+                            ),
+                            color = Color.Black
+                        )
+                        IconButton(
+                            onClick = {
+                                if (currentItem.quantity < (listing.quantity ?: 1)) {
+                                    ListingCartState.incrementQuantity(listing.id)
+                                }
+                            },
+                            modifier = Modifier.size(44.dp),
+                            enabled = currentItem.quantity < (listing.quantity ?: 1)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Add,
+                                contentDescription = "Увеличить",
+                                tint = if (currentItem.quantity < (listing.quantity ?: 1)) Color.Black else Color.Black.copy(alpha = 0.3f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                     }
                 }
             }

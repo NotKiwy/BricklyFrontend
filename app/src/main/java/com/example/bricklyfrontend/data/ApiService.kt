@@ -98,6 +98,9 @@ interface ApiService {
         @Query("size") size: Int = 20
     ): Response<PagedModelListingDefaultDTO>
 
+    @GET("/api/app/listings/by_id/{id}")
+    suspend fun getListingById(@Path("id") id: Long): Response<ListingDefaultDTO>
+
     @Multipart
     @POST("/api/app/listings/create")
     suspend fun createListing(
@@ -112,6 +115,12 @@ interface ApiService {
         @Part("status") status: RequestBody,
         @Part images: List<MultipartBody.Part>
     ): Response<ListingDefaultDTO>
+
+    @GET("/api/app/sets/by_id/{id}")
+    suspend fun getSetById(@Path("id") id: String): Response<BrickSetDTO>
+
+    @POST("/api/app/cart_items/create")
+    suspend fun addCartItem(@Body dto: CartItemCreateDTO): Response<CartItemDefaultDTO>
 }
 
 interface BrickognizeApiService {

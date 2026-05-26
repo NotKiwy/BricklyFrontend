@@ -167,3 +167,24 @@ data class ListingCreateDTO(
     val price: Int,
     val status: String
 )
+
+data class CartItemCreateDTO(
+    val userId: Long,
+    val itemType: String,
+    val itemId: Long,
+    val quantity: Int
+)
+
+data class BrickSetThemeDTO(
+    val id: Int,
+    val name: String?
+)
+
+data class BrickSetDTO(
+    val id: String,
+    val name: String?,
+    val year: Int?,
+    val theme: BrickSetThemeDTO?,
+    val numParts: Int?,
+    val imageUrl: String?
+)
