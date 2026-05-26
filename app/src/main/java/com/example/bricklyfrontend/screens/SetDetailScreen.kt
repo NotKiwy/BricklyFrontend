@@ -110,7 +110,6 @@ fun SetDetailScreen(
                 ) {
                     Spacer(Modifier.height(16.dp))
 
-                    // Image
                     if (!s.imageUrl.isNullOrBlank()) {
                     AsyncImage(
                             model = s.imageUrl,
@@ -144,7 +143,6 @@ fun SetDetailScreen(
 
                     Spacer(Modifier.height(20.dp))
 
-                    // Main info card
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

@@ -1,9 +1,10 @@
 package com.example.bricklyfrontend.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -80,7 +81,10 @@ fun MeetingsScreen(
                 it.type?.description?.contains(searchQuery, ignoreCase = true) == true
     }
 
-    val upcoming = filteredMeetings.sortedWith(compareBy(nullsLast()) { parseDateSafe(it.date) })
+    val now = OffsetDateTime.now()
+    val upcoming = filteredMeetings
+        .filter { parseDateSafe(it.date)?.let { dt -> !dt.isBefore(now) } ?: true }
+        .sortedWith(compareBy(nullsLast()) { parseDateSafe(it.date) })
 
     Scaffold(
         containerColor = Background,
@@ -185,30 +189,63 @@ fun MeetingsScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            Text(
-                text = "Фото с мероприятий",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                color = TextPrimary,
-                modifier = Modifier.padding(horizontal = 20.dp)
-            )
-            Spacer(Modifier.height(14.dp))
-
-            listOf(
-                "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600",
-                "https://images.unsplash.com/photo-1511578314322-379afb476865?w=600",
-                "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600",
-                "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=600"
-            ).forEach { url ->
-                AsyncImage(
-                    model = url,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(200.dp).clip(RoundedCornerShape(24.dp)),
-                    contentScale = ContentScale.Crop
+            val meetingsWithImages = meetings.filter { !it.previewImagePath.isNullOrBlank() }
+            if (meetingsWithImages.isNotEmpty()) {
+                Text(
+                    text = "Фото с мероприятий",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                    color = TextPrimary,
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
-                Spacer(Modifier.height(12.dp))
-            }
+                Spacer(Modifier.height(14.dp))
 
+                val photoLoader = remember {
+                    val username = UserPreferences.getUsername(context)
+                    val password = UserPreferences.getPassword(context)
+                    val okHttpClient = OkHttpClient.Builder()
+                        .addInterceptor { chain ->
+                            chain.proceed(
+                                chain.request().newBuilder()
+                                    .header("Authorization", Credentials.basic(username, password))
+                                    .build()
+                            )
+                        }
+                        .build()
+                    ImageLoader.Builder(context).okHttpClient(okHttpClient).build()
+                }
+
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(meetingsWithImages) { meeting ->
+                        val url = "${RetrofitClient.BASE_URL}/${meeting.previewImagePath!!.trimStart('/')}"
+                        SubcomposeAsyncImage(
+                            model = ImageRequest.Builder(context).data(url).crossfade(true).build(),
+                            imageLoader = photoLoader,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .width(200.dp)
+                                .height(140.dp)
+                                .clip(RoundedCornerShape(20.dp)),
+                            contentScale = ContentScale.Crop,
+                            loading = {
+                                Box(Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)))
+                            },
+                            error = {
+                                Box(
+                                    Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Outlined.ImageNotSupported, null, tint = Accent, modifier = Modifier.size(28.dp))
+                                }
+                            }
+                        )
+                    }
+                }
                 Spacer(Modifier.height(24.dp))
+            }
             }
         }
     }
@@ -250,7 +287,6 @@ private fun LargeMeetingCard(meeting: MeetingDefaultDTO, onClick: () -> Unit) {
                 } else {
                     val cleanPath = path.trimStart('/')
                     val url = "${RetrofitClient.BASE_URL}/$cleanPath"
-                    Log.d("MeetingCard", "Meeting ${meeting.id}: finalURL='$url'")
                     url
                 }
             }

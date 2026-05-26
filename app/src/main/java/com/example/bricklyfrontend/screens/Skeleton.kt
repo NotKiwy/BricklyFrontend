@@ -35,8 +35,6 @@ fun shimmerBrush(): Brush {
     )
 }
 
-// --- Listing grid skeleton (CatalogScreen) ---
-
 @Composable
 fun ListingGridSkeleton(modifier: Modifier = Modifier) {
     val brush = shimmerBrush()
@@ -98,8 +96,6 @@ private fun ListingCardSkeleton(modifier: Modifier, brush: Brush) {
         }
     }
 }
-
-// --- Meeting list skeleton (MeetingsScreen) ---
 
 @Composable
 fun MeetingListSkeleton() {
@@ -167,8 +163,6 @@ private fun MeetingCardSkeleton(brush: Brush) {
         }
     }
 }
-
-// --- Detail page skeleton (ListingDetail / SetDetail / MinifigDetail / MeetingDetail) ---
 
 @Composable
 fun DetailPageSkeleton() {
@@ -248,7 +242,26 @@ fun DetailPageSkeleton() {
     }
 }
 
-// --- Feedback list skeleton (FeedbacksScreen) ---
+@Composable
+fun CartSkeleton(modifier: Modifier = Modifier) {
+    val brush = shimmerBrush()
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        repeat(4) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(brush)
+            )
+        }
+    }
+}
 
 @Composable
 fun FeedbackListSkeleton() {
@@ -270,8 +283,6 @@ fun FeedbackListSkeleton() {
         }
     }
 }
-
-// --- Profile name skeleton ---
 
 @Composable
 fun ProfileNameSkeleton() {

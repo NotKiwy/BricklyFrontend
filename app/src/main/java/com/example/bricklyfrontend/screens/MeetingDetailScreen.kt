@@ -15,8 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import com.example.bricklyfrontend.data.CartItemCreateDTO
+import com.example.bricklyfrontend.data.UserPreferences
+import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.data.MeetingDefaultDTO
@@ -47,9 +51,6 @@ object CartState {
         }
     }
 
-    fun removeItem(meetingId: Long) { items = items.filter { it.meetingId != meetingId } }
-    fun totalPrice(): Int = items.sumOf { it.ticketPrice * it.quantity }
-    fun totalTickets(): Int = items.sumOf { it.quantity }
 }
 
 @Composable
@@ -59,12 +60,16 @@ fun MeetingDetailScreen(
     onNavigateToCart: () -> Unit
 ) {
     SetStatusBarColor(Accent)
-    
+
+    val context = LocalContext.current
+    val userId = UserPreferences.getUserId(context)
+    val scope = rememberCoroutineScope()
+
     var meeting by remember { mutableStateOf<MeetingDefaultDTO?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var ticketCount by remember { mutableIntStateOf(1) }
-    var addedToCart by remember { mutableStateOf(false) }
+    var addedToCart by remember { mutableStateOf(CartState.items.any { it.meetingId == meetingId }) }
 
     LaunchedEffect(meetingId) {
         try {
@@ -211,6 +216,14 @@ fun MeetingDetailScreen(
                             Spacer(Modifier.height(16.dp))
 
                             if (addedToCart) {
+                                Text(
+                                    text = "В корзине: $ticketCount",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = TextSecondary,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(Modifier.height(8.dp))
                                 Button(
                                     onClick = onNavigateToCart,
                                     modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -224,8 +237,29 @@ fun MeetingDetailScreen(
                             } else {
                                 Button(
                                     onClick = {
-                                    CartState.addItem(CartItem(meetingId = m.id, meetingTitle = m.title?.takeIf { it.isNotBlank() } ?: m.type?.description ?: m.description?.take(30) ?: "Без названия", meetingDate = m.date, meetingAddress = m.address, ticketPrice = m.ticketPrice ?: 0, quantity = ticketCount))
-                                        addedToCart = true
+                                        scope.launch {
+                                            try {
+                                                RetrofitClient.api.addCartItem(
+                                                    CartItemCreateDTO(
+                                                        userId = userId,
+                                                        itemType = "M",
+                                                        itemId = m.id,
+                                                        quantity = ticketCount
+                                                    )
+                                                )
+                                            } catch (_: Exception) {}
+                                            CartState.addItem(
+                                                CartItem(
+                                                    meetingId = m.id,
+                                                    meetingTitle = m.title?.takeIf { it.isNotBlank() } ?: m.type?.description ?: m.description?.take(30) ?: "Без названия",
+                                                    meetingDate = m.date,
+                                                    meetingAddress = m.address,
+                                                    ticketPrice = m.ticketPrice ?: 0,
+                                                    quantity = ticketCount
+                                                )
+                                            )
+                                            addedToCart = true
+                                        }
                                     },
                                     modifier = Modifier.fillMaxWidth().height(52.dp),
                                     shape = RoundedCornerShape(14.dp),

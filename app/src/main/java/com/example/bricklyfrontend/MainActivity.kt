@@ -197,7 +197,17 @@ fun BricklyApp() {
         }
 
         composable("create_meeting") {
-            CreateMeetingScreen(onBack = { navController.popBackStack() })
+            val ctx = LocalContext.current
+            CreateMeetingScreen(
+                onBack = { navController.popBackStack() },
+                onMeetingCreated = {
+                    android.widget.Toast.makeText(ctx, "Сходка создана", android.widget.Toast.LENGTH_SHORT).show()
+                    navController.navigate("meetings") {
+                        popUpTo("create_meeting") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
 
         composable("create_listing") {

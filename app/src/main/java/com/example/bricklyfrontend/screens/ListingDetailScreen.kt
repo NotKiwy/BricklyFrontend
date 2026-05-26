@@ -280,25 +280,17 @@ fun ListingDetailScreen(
                             Spacer(Modifier.height(16.dp))
 
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "${item.price ?: 0} ₽",
-                                    style = MaterialTheme.typography.headlineMedium
-                                        .copy(fontWeight = FontWeight.ExtraBold),
-                                    color = Color.Black
-                                )
-                                
-
-                                Text(
-                                    text = "× ${item.quantity ?: 1}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = TextSecondary
-                                )
-                            }
+                            Text(
+                                text = "${item.price ?: 0} ₽",
+                                style = MaterialTheme.typography.headlineMedium
+                                    .copy(fontWeight = FontWeight.ExtraBold),
+                                color = Color.Black
+                            )
+                            Text(
+                                text = "В наличии: ${item.quantity ?: 0}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary
+                            )
 
                             Spacer(Modifier.height(16.dp))
 
@@ -426,6 +418,14 @@ fun ListingDetailScreen(
                                     )
                                 }
                             }
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = "В корзине: ${currentItem.quantity}",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = TextSecondary,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
                         }
                     }
 

@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.bricklyfrontend.data.AppConfig
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
@@ -50,33 +49,12 @@ fun ProfileScreen(
     val canCreateMeeting = remember { role == "ROLE_ADMIN" || role == "ROLE_MEETING_CREATOR" }
     val isSeller = remember { UserPreferences.isSeller(context) }
 
-    var displayName by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-
     LaunchedEffect(toastMessage) {
         if (!toastMessage.isNullOrBlank()) {
             snackbarHostState.showSnackbar(toastMessage)
         }
     }
 
-    LaunchedEffect(userId) {
-        if (!AppConfig.debugMode && userId != -1L) {
-            try {
-                val response = RetrofitClient.api.getUserById(userId)
-                if (response.isSuccessful) {
-                    val user = response.body()
-                    displayName = user?.name?.takeIf { it.isNotBlank() } ?: user?.username ?: savedUsername
-                } else {
-                    displayName = savedUsername
-                }
-            } catch (_: Exception) {
-                displayName = savedUsername
-            }
-        } else {
-            displayName = savedUsername
-        }
-        isLoading = false
-    }
 
     Scaffold(
         containerColor = Background,
@@ -101,23 +79,19 @@ fun ProfileScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = (displayName ?: savedUsername).take(1).uppercase(),
+                            text = savedUsername.take(1).uppercase(),
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = Accent
                         )
                     }
                     Spacer(Modifier.height(10.dp))
-                    if (isLoading) {
-                        ProfileNameSkeleton()
-                    } else {
-                        Text(
-                            text = displayName ?: savedUsername,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = TextPrimary
-                        )
-                    }
+                    Text(
+                        text = savedUsername,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TextPrimary
+                    )
                 }
             }
         },

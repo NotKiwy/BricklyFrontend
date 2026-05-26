@@ -50,9 +50,7 @@ fun CatalogScreen(
     val scope = rememberCoroutineScope()
     
     // Debug: проверяем роль пользователя
-    val userRole = UserPreferences.getRole(context)
     val isSeller = UserPreferences.isSeller(context)
-    android.util.Log.d("CatalogScreen", "User role: $userRole, isSeller: $isSeller")
     
     var listings by remember { mutableStateOf<List<ListingDefaultDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -132,18 +130,19 @@ fun CatalogScreen(
             }, onScanClick = onNavigateToBrickognize)
         },
         floatingActionButton = {
-            // Временно показываем FAB всем для тестирования
-            FloatingActionButton(
-                onClick = onNavigateToCreateListing,
-                containerColor = Accent,
-                contentColor = Color.Black,
-                modifier = Modifier.size(64.dp)
-            ) {
-                Icon(
-                    Icons.Outlined.Add,
-                    contentDescription = "Создать товар",
-                    modifier = Modifier.size(28.dp)
-                )
+            if (isSeller) {
+                FloatingActionButton(
+                    onClick = onNavigateToCreateListing,
+                    containerColor = Accent,
+                    contentColor = Color.Black,
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = "Создать товар",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         }
     ) { padding ->

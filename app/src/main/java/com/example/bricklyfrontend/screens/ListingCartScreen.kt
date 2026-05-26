@@ -70,11 +70,11 @@ fun ListingCartScreen(
                                     Text("${item.quantity} × ${item.unitPrice} ₽", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    IconButton(onClick = { ListingCartState.updateQuantity(item.listingId, (item.quantity - 1).coerceAtLeast(1)) }) {
+                                    IconButton(onClick = { ListingCartState.decrementQuantity(item.listingId) }) {
                                         Icon(Icons.Outlined.Remove, null)
                                     }
                                     Text("${item.quantity}", modifier = Modifier.padding(horizontal = 8.dp))
-                                    IconButton(onClick = { ListingCartState.updateQuantity(item.listingId, (item.quantity + 1).coerceAtMost(item.maxQuantity)) }) {
+                                    IconButton(onClick = { ListingCartState.incrementQuantity(item.listingId) }) {
                                         Icon(Icons.Outlined.Add, null)
                                     }
                                     IconButton(onClick = { ListingCartState.removeItem(item.listingId) }) {

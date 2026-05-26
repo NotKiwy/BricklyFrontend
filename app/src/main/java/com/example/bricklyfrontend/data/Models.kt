@@ -175,6 +175,8 @@ data class CartItemCreateDTO(
     val quantity: Int
 )
 
+data class CartItemUpdateDTO(val quantity: Int)
+
 data class BlMinifigDTO(
     val id: String,
     val name: String?,

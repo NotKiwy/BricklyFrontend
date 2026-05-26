@@ -40,7 +40,8 @@ import java.util.Calendar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateMeetingScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onMeetingCreated: () -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
     
@@ -69,7 +70,6 @@ fun CreateMeetingScreen(
 
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var successMessage by remember { mutableStateOf<String?>(null) }
 
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { selectedImageUri = it }
@@ -199,7 +199,9 @@ fun CreateMeetingScreen(
                             calendar.get(Calendar.YEAR),
                             calendar.get(Calendar.MONTH),
                             calendar.get(Calendar.DAY_OF_MONTH)
-                        ).show()
+                        ).apply {
+                            datePicker.minDate = System.currentTimeMillis() - 1000
+                        }.show()
                     }
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterStart
@@ -394,14 +396,6 @@ fun CreateMeetingScreen(
                 Text(errorMessage!!, color = ErrorColor, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(8.dp))
             }
-            if (successMessage != null) {
-                Text(
-                    successMessage!!,
-                    color = AccentDark,
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
-                )
-                Spacer(Modifier.height(8.dp))
-            }
 
             val isFormValid = title.isNotBlank() &&
                     address.isNotBlank() &&
@@ -419,7 +413,6 @@ fun CreateMeetingScreen(
                     scope.launch {
                         isSaving = true
                         errorMessage = null
-                        successMessage = null
                         try {
                             val imageFile = uriToFile(context, selectedImageUri!!)
                             val imagePart = MultipartBody.Part.createFormData(
@@ -470,22 +463,7 @@ fun CreateMeetingScreen(
                             )
 
                             if (response.isSuccessful) {
-                                successMessage = "Мероприятие успешно создано!"
-                                title = ""
-                                address = ""
-                                selectedDateMillis = null
-                                selectedHour = null
-                                selectedMinute = null
-                                duration = ""
-                                description = ""
-                                selectedImageUri = null
-                                selectedType = null
-                                isPaidEntry = false
-                                ticketPrice = ""
-                                hasDiscount = false
-                                discountDuration = ""
-                                discountAmount = ""
-                                discountFromAnnounce = true
+                                onMeetingCreated()
                             } else {
                                 errorMessage = "Ошибка создания (${response.code()}): ${response.message()}"
                             }

@@ -4,6 +4,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.example.bricklyfrontend.data.CartItemCreateDTO
+import com.example.bricklyfrontend.data.CartItemUpdateDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 
 data class ListingCartItem(
@@ -11,71 +12,56 @@ data class ListingCartItem(
     val title: String,
     val unitPrice: Int,
     val quantity: Int,
-    val maxQuantity: Int
+    val maxQuantity: Int,
+    val serverCartItemId: Long? = null
 )
 
 object ListingCartState {
     var items by mutableStateOf<List<ListingCartItem>>(emptyList())
 
-    fun addItem(item: ListingCartItem, userId: Long? = null, onError: ((String) -> Unit)? = null) {
+    suspend fun addItemWithApi(item: ListingCartItem, userId: Long) {
         val existing = items.find { it.listingId == item.listingId }
-        items = if (existing != null) {
-            items.map {
-                if (it.listingId == item.listingId) {
-                    val newQty = (it.quantity + item.quantity).coerceAtMost(it.maxQuantity)
-                    it.copy(quantity = newQty)
-                } else it
+        if (existing != null && existing.serverCartItemId != null) {
+            val newQty = (existing.quantity + item.quantity).coerceAtMost(existing.maxQuantity)
+            items = items.map {
+                if (it.listingId == item.listingId) it.copy(quantity = newQty) else it
+            }
+            try {
+                RetrofitClient.api.updateCartItem(existing.serverCartItemId, CartItemUpdateDTO(newQty))
+            } catch (_: Exception) {}
+        } else if (existing != null) {
+            val newQty = (existing.quantity + item.quantity).coerceAtMost(existing.maxQuantity)
+            items = items.map {
+                if (it.listingId == item.listingId) it.copy(quantity = newQty) else it
             }
         } else {
-            items + item.copy(quantity = item.quantity.coerceAtMost(item.maxQuantity))
-        }
-    }
-
-    suspend fun addItemWithApi(item: ListingCartItem, userId: Long, onError: ((String) -> Unit)? = null) {
-        addItem(item)
-        try {
-            RetrofitClient.api.addCartItem(
-                CartItemCreateDTO(
-                    userId = userId,
-                    itemType = "L",
-                    itemId = item.listingId,
-                    quantity = item.quantity
+            items = items + item.copy(quantity = item.quantity.coerceAtMost(item.maxQuantity))
+            try {
+                val resp = RetrofitClient.api.addCartItem(
+                    CartItemCreateDTO(userId = userId, itemType = "L", itemId = item.listingId, quantity = item.quantity)
                 )
-            )
-        } catch (e: Exception) {
-            onError?.invoke(e.message ?: "Ошибка синхронизации корзины")
-        }
-    }
-
-    fun updateQuantity(listingId: Long, quantity: Int) {
-        if (quantity <= 0) {
-            removeItem(listingId)
-        } else {
-            items = items.map { if (it.listingId == listingId) it.copy(quantity = quantity.coerceAtMost(it.maxQuantity)) else it }
+                if (resp.isSuccessful) {
+                    val serverId = resp.body()?.id
+                    if (serverId != null) {
+                        items = items.map {
+                            if (it.listingId == item.listingId) it.copy(serverCartItemId = serverId) else it
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
         }
     }
 
     fun incrementQuantity(listingId: Long) {
-        items = items.map { 
-            if (it.listingId == listingId) {
-                val newQty = (it.quantity + 1).coerceAtMost(it.maxQuantity)
-                it.copy(quantity = newQty)
-            } else it 
+        items = items.map {
+            if (it.listingId == listingId) it.copy(quantity = (it.quantity + 1).coerceAtMost(it.maxQuantity)) else it
         }
     }
 
     fun decrementQuantity(listingId: Long) {
-        val item = items.find { it.listingId == listingId }
-        if (item != null) {
-            if (item.quantity <= 1) {
-                removeItem(listingId)
-            } else {
-                items = items.map { 
-                    if (it.listingId == listingId) it.copy(quantity = it.quantity - 1) 
-                    else it 
-                }
-            }
-        }
+        val item = items.find { it.listingId == listingId } ?: return
+        if (item.quantity <= 1) removeItem(listingId)
+        else items = items.map { if (it.listingId == listingId) it.copy(quantity = it.quantity - 1) else it }
     }
 
     fun removeItem(listingId: Long) { items = items.filter { it.listingId != listingId } }

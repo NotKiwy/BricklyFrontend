@@ -124,6 +124,15 @@ interface ApiService {
 
     @GET("/api/app/minifigs/by_bl_id/{blId}")
     suspend fun getMinifigByBlId(@Path("blId") blId: String): Response<List<MinifigDTO>>
+
+    @GET("/api/app/cart_items/by_user_id/{userId}")
+    suspend fun getCartItemsByUserId(@Path("userId") userId: Long): Response<List<CartItemDefaultDTO>>
+
+    @DELETE("/api/app/cart_items/delete/{id}")
+    suspend fun deleteCartItem(@Path("id") id: Long): Response<Unit>
+
+    @PUT("/api/app/cart_items/update/{id}")
+    suspend fun updateCartItem(@Path("id") id: Long, @Body dto: CartItemUpdateDTO): Response<CartItemDefaultDTO>
 }
 
 interface BrickognizeApiService {
