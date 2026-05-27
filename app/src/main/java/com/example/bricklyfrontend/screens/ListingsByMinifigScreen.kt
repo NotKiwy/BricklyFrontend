@@ -55,13 +55,15 @@ fun ListingsByMinifigScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    val itemIdList = remember(itemId) { itemId.split(",").map { it.trim() }.filter { it.isNotEmpty() } }
+
     LaunchedEffect(itemId) {
         isLoading = true
         try {
             val resp = RetrofitClient.api.getListingsByStatus("active", page = 0, size = 100)
             if (resp.isSuccessful) {
                 listings = (resp.body()?.content ?: emptyList())
-                    .filter { it.itemId?.equals(itemId, ignoreCase = true) == true }
+                    .filter { listing -> itemIdList.any { id -> listing.itemId?.equals(id, ignoreCase = true) == true } }
             } else {
                 errorMessage = "Ошибка загрузки (${resp.code()})"
             }
@@ -123,7 +125,7 @@ fun ListingsByMinifigScreen(
                 EmptyStateBox(
                     icon = Icons.Outlined.Inventory2,
                     title = "Объявлений не найдено",
-                    subtitle = "Нет активных объявлений для $itemId",
+                    subtitle = "Нет активных объявлений для ${itemIdList.joinToString(", ")}",
                     onRefresh = {}
                 )
             }

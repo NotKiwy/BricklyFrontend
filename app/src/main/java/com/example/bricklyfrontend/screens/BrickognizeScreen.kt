@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -271,22 +272,20 @@ private fun ResultContent(
     } else {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             items.forEachIndexed { index, item ->
-                BrickResultCard(item = item, rank = index + 1)
+                BrickResultCard(item = item, rank = index + 1, onSearch = { onNavigateToListingsByItem(item.id) })
                 Spacer(Modifier.height(12.dp))
             }
             Spacer(Modifier.height(8.dp))
-            val topItemId = items.firstOrNull()?.id
-            if (topItemId != null) {
-                Button(
-                    onClick = { onNavigateToListingsByItem(topItemId) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) {
-                    Text("Показать предложения", fontWeight = FontWeight.SemiBold)
-                }
-                Spacer(Modifier.height(10.dp))
+            val allIds = items.joinToString(",") { it.id }
+            Button(
+                onClick = { onNavigateToListingsByItem(allIds) },
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp)
+            ) {
+                Text("Показать предложения", fontWeight = FontWeight.SemiBold)
             }
+            Spacer(Modifier.height(10.dp))
             TextButton(
                 onClick = onReset,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -299,7 +298,10 @@ private fun ResultContent(
 }
 
 @Composable
-private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
+private fun BrickResultCard(item: BrickognizeItem, rank: Int, onSearch: () -> Unit = {}) {
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val pct = (item.score * 100).toInt()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -310,10 +312,10 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
             if (!item.img_url.isNullOrBlank()) {
                 Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
                     AsyncImage(
-                    model = item.img_url,
-                    contentDescription = item.name,
-                    modifier = Modifier.fillMaxSize().padding(top = 12.dp).clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
-                    contentScale = ContentScale.Fit
+                        model = item.img_url,
+                        contentDescription = item.name,
+                        modifier = Modifier.fillMaxSize().padding(top = 12.dp).clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+                        contentScale = ContentScale.Fit
                     )
                     Box(
                         modifier = Modifier.padding(12.dp).size(32.dp).clip(CircleShape).background(Accent).align(Alignment.TopStart),
@@ -325,27 +327,50 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
             }
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(text = item.name ?: item.id, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
-                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF0F0F0)) {
-                        Text("ID: ${item.id}", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFF0F0F0),
+                            onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(item.id)) }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text("ID: ${item.id}", fontSize = 12.sp, color = TextSecondary)
+                                Icon(Icons.Outlined.ContentCopy, null, tint = TextSecondary, modifier = Modifier.size(12.dp))
+                            }
+                        }
+                        Surface(shape = RoundedCornerShape(8.dp), color = if (pct >= 80) Color(0xFFE8F5E9) else Color(0xFFF0F0F0)) {
+                            Text(
+                                text = "$pct%",
+                                fontSize = 12.sp,
+                                color = if (pct >= 80) Color(0xFF2E7D32) else TextSecondary,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
-                    IconButton(
-                        onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(item.id)) },
-                        modifier = Modifier.size(28.dp)
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Accent,
+                        onClick = onSearch
                     ) {
-                        Icon(Icons.Outlined.ContentCopy, null, tint = TextSecondary, modifier = Modifier.size(14.dp))
-                    }
-                    val pct = (item.score * 100).toInt()
-                    Surface(shape = RoundedCornerShape(8.dp), color = if (pct >= 80) Color(0xFFE8F5E9) else Color(0xFFF0F0F0)) {
-                        Text(
-                            text = "$pct% совпадение",
-                            fontSize = 12.sp,
-                            color = if (pct >= 80) Color(0xFF2E7D32) else TextSecondary,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Outlined.Search, null, tint = TextPrimary, modifier = Modifier.size(14.dp))
+                            Text("Искать", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                        }
                     }
                 }
             }
