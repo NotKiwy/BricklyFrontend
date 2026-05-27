@@ -18,8 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.bricklyfrontend.data.CartItemCreateDTO
+import com.example.bricklyfrontend.data.CartItemUpdateDTO
 import com.example.bricklyfrontend.data.UserPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -79,17 +82,38 @@ fun MeetingDetailScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var ticketCount by remember { mutableIntStateOf(1) }
-    var addedToCart by remember { mutableStateOf(CartState.items.any { it.meetingId == meetingId }) }
+    var serverCartItemId by remember { mutableStateOf<Long?>(null) }
+    val addedToCart = serverCartItemId != null
+    var isMapFullscreen by remember { mutableStateOf(false) }
+    var parentScrollEnabled by remember { mutableStateOf(true) }
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(meetingId) {
         try {
             val response = RetrofitClient.api.getMeetingById(meetingId)
             if (response.isSuccessful) meeting = response.body()
             else errorMessage = "Ошибка загрузки (${response.code()})"
+
+            val cartResp = RetrofitClient.api.getCartItemsByUserId(userId)
+            if (cartResp.isSuccessful) {
+                val match = cartResp.body()?.find { it.itemType == "M" && it.itemId?.toLong() == meetingId }
+                if (match != null) {
+                    serverCartItemId = match.id
+                    ticketCount = match.quantity ?: 1
+                }
+            }
         } catch (e: Exception) {
             errorMessage = "Нет соединения с сервером"
         }
         isLoading = false
+    }
+
+    if (isMapFullscreen && meeting != null) {
+        FullscreenMap(
+            address = meeting!!.address,
+            onClose = { isMapFullscreen = false }
+        )
+        return
     }
 
     Scaffold(
@@ -127,7 +151,7 @@ fun MeetingDetailScreen(
                 val m = meeting!!
                 val dateFormatted = m.date?.let { formatDetailDate(it) }
 
-                Column(modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+                Column(modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(scrollState, enabled = parentScrollEnabled)) {
                     Spacer(Modifier.height(16.dp))
 
                     Box(
@@ -139,7 +163,10 @@ fun MeetingDetailScreen(
                     ) {
                         MeetingMap(
                             address = m.address,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            onFullscreen = { isMapFullscreen = true },
+                            onTouchStart = { parentScrollEnabled = false },
+                            onTouchEnd = { parentScrollEnabled = true }
                         )
                     }
 
@@ -201,14 +228,44 @@ fun MeetingDetailScreen(
 
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                                 IconButton(
-                                    onClick = { if (ticketCount > 1) ticketCount-- },
+                                    onClick = {
+                                        if (addedToCart) {
+                                            val newQty = ticketCount - 1
+                                            val serverId = serverCartItemId
+                                            if (newQty <= 0 && serverId != null) {
+                                                scope.launch {
+                                                    try { RetrofitClient.api.deleteCartItem(serverId) } catch (_: Exception) {}
+                                                    serverCartItemId = null
+                                                    ticketCount = 1
+                                                }
+                                            } else if (newQty >= 1 && serverId != null) {
+                                                ticketCount = newQty
+                                                scope.launch {
+                                                    try { RetrofitClient.api.updateCartItem(serverId, CartItemUpdateDTO(newQty)) } catch (_: Exception) {}
+                                                }
+                                            }
+                                        } else if (ticketCount > 1) {
+                                            ticketCount--
+                                        }
+                                    },
                                     modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF0F0F0))
                                 ) {
                                     Icon(Icons.Filled.Remove, null, tint = TextPrimary)
                                 }
                                 Text("$ticketCount", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = TextPrimary, modifier = Modifier.padding(horizontal = 28.dp))
                                 IconButton(
-                                    onClick = { ticketCount++ },
+                                    onClick = {
+                                        val newQty = ticketCount + 1
+                                        if (addedToCart) {
+                                            val serverId = serverCartItemId ?: return@IconButton
+                                            ticketCount = newQty
+                                            scope.launch {
+                                                try { RetrofitClient.api.updateCartItem(serverId, CartItemUpdateDTO(newQty)) } catch (_: Exception) {}
+                                            }
+                                        } else {
+                                            ticketCount = newQty
+                                        }
+                                    },
                                     modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Accent)
                                 ) {
                                     Icon(Icons.Filled.Add, null, tint = TextPrimary)
@@ -246,7 +303,7 @@ fun MeetingDetailScreen(
                                     onClick = {
                                         scope.launch {
                                             try {
-                                                RetrofitClient.api.addCartItem(
+                                                val resp = RetrofitClient.api.addCartItem(
                                                     CartItemCreateDTO(
                                                         userId = userId,
                                                         itemType = "M",
@@ -254,18 +311,10 @@ fun MeetingDetailScreen(
                                                         quantity = ticketCount
                                                     )
                                                 )
+                                                if (resp.isSuccessful) {
+                                                    serverCartItemId = resp.body()?.id
+                                                }
                                             } catch (_: Exception) {}
-                                            CartState.addItem(
-                                                CartItem(
-                                                    meetingId = m.id,
-                                                    meetingTitle = m.title?.takeIf { it.isNotBlank() } ?: m.type?.description ?: m.description?.take(30) ?: "Без названия",
-                                                    meetingDate = m.date,
-                                                    meetingAddress = m.address,
-                                                    ticketPrice = m.ticketPrice ?: 0,
-                                                    quantity = ticketCount
-                                                )
-                                            )
-                                            addedToCart = true
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -274,7 +323,7 @@ fun MeetingDetailScreen(
                                 ) {
                                     Icon(Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text("В корзину", fontWeight = FontWeight.SemiBold)
+                                    Text("В корзину ($ticketCount)", fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
@@ -301,8 +350,15 @@ private fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text:
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun MeetingMap(address: String?, modifier: Modifier = Modifier) {
+private fun MeetingMap(
+    address: String?,
+    modifier: Modifier = Modifier,
+    onFullscreen: () -> Unit = {},
+    onTouchStart: () -> Unit = {},
+    onTouchEnd: () -> Unit = {}
+) {
     val context = LocalContext.current
     var geoPoint by remember { mutableStateOf<GeoPoint?>(null) }
 
@@ -343,7 +399,95 @@ private fun MeetingMap(address: String?, modifier: Modifier = Modifier) {
         }
     }
 
-    AndroidView(factory = { mapView }, modifier = modifier)
+    Box(modifier = modifier) {
+        AndroidView(
+            factory = { mapView },
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInteropFilter { event ->
+                    when (event.action) {
+                        android.view.MotionEvent.ACTION_DOWN -> onTouchStart()
+                        android.view.MotionEvent.ACTION_UP,
+                        android.view.MotionEvent.ACTION_CANCEL -> onTouchEnd()
+                    }
+                    false
+                }
+        )
+        IconButton(
+            onClick = onFullscreen,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp)
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White.copy(alpha = 0.92f))
+        ) {
+            Icon(Icons.Outlined.Fullscreen, "На весь экран", tint = TextPrimary)
+        }
+    }
+}
+
+@Composable
+private fun FullscreenMap(address: String?, onClose: () -> Unit) {
+    SetStatusBarColor(Color.Black)
+    val context = LocalContext.current
+    var geoPoint by remember { mutableStateOf<GeoPoint?>(null) }
+
+    LaunchedEffect(address) {
+        if (!address.isNullOrBlank()) {
+            geoPoint = geocodeAddress(address)
+        }
+    }
+
+    val mapView = remember {
+        Configuration.getInstance().apply {
+            userAgentValue = context.packageName
+            osmdroidBasePath = File(context.cacheDir, "osmdroid")
+            osmdroidTileCache = File(context.cacheDir, "osmdroid/tiles")
+        }
+        MapView(context).apply {
+            setTileSource(TileSourceFactory.MAPNIK)
+            setMultiTouchControls(true)
+            controller.setZoom(15.0)
+            controller.setCenter(GeoPoint(55.7558, 37.6173))
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { mapView.onDetach() }
+    }
+
+    LaunchedEffect(geoPoint) {
+        geoPoint?.let { point ->
+            mapView.controller.setCenter(point)
+            mapView.controller.setZoom(16.0)
+            mapView.overlays.clear()
+            val marker = Marker(mapView)
+            marker.position = point
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            mapView.overlays.add(marker)
+            mapView.invalidate()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        AndroidView(
+            factory = { mapView },
+            modifier = Modifier.fillMaxSize()
+        )
+        IconButton(
+            onClick = onClose,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(12.dp)
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color.White.copy(alpha = 0.92f))
+        ) {
+            Icon(Icons.Outlined.ArrowBackIosNew, "Закрыть", tint = TextPrimary)
+        }
+    }
 }
 
 private suspend fun geocodeAddress(address: String): GeoPoint? = withContext(Dispatchers.IO) {

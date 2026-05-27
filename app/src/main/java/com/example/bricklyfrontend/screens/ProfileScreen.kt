@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -53,11 +54,38 @@ fun ProfileScreen(
     val isSeller = remember { UserPreferences.isSeller(context) }
 
     var balance by remember { mutableStateOf<Int?>(null) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     LaunchedEffect(userId) {
         try {
             val resp = RetrofitClient.api.getUserById(userId)
             if (resp.isSuccessful) balance = resp.body()?.balance
         } catch (_: Exception) {}
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            containerColor = CardBackground,
+            shape = RoundedCornerShape(24.dp),
+            title = { Text("Выход из аккаунта", fontWeight = FontWeight.Bold, color = TextPrimary) },
+            text = { Text("Вы действительно хотите выйти?", color = TextSecondary) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        UserPreferences.clear(context)
+                        onLogout()
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ErrorColor, contentColor = Color.White)
+                ) { Text("Выйти", fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Отмена", color = TextSecondary)
+                }
+            }
+        )
     }
 
     LaunchedEffect(toastMessage) {
@@ -170,20 +198,15 @@ fun ProfileScreen(
                 Column {
                     ProfileMenuItem(icon = Icons.Outlined.CalendarMonth, text = "Записи на мероприятия", onClick = onNavigateToMeetings, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.ShoppingBag, text = "Заказы", onClick = onNavigateToOrders, showDivider = true)
-                    ProfileMenuItem(icon = Icons.Outlined.Storefront, text = "Мой магазин", onClick = onNavigateToShop, showDivider = true)
-                    ProfileMenuItem(icon = Icons.Outlined.Star, text = "Отзывы", onClick = onNavigateToFeedbacks, showDivider = true)
-                    ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = canCreateMeeting || isSeller)
                     if (isSeller) {
-                        ProfileMenuItem(icon = Icons.Outlined.Inventory2, text = "Мои объявления", onClick = onNavigateToMyListings, showDivider = true)
-                        ProfileMenuItem(icon = Icons.Outlined.AddBox, text = "Создать карточку", onClick = onNavigateToCreateListing, showDivider = canCreateMeeting)
+                        ProfileMenuItem(icon = Icons.Outlined.Storefront, text = "Мой магазин", onClick = onNavigateToMyListings, showDivider = true)
                     }
-                    if (canCreateMeeting) {
-                        ProfileMenuItem(icon = Icons.Outlined.AddCircleOutline, text = "Создать сходку", onClick = onNavigateToCreateMeeting, showDivider = true)
-                    }
+                    ProfileMenuItem(icon = Icons.Outlined.Star, text = "Отзывы", onClick = onNavigateToFeedbacks, showDivider = true)
+                    ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = true)
                     ProfileMenuItem(
                         icon = Icons.Outlined.Logout,
                         text = "Выйти из аккаунта",
-                        onClick = { UserPreferences.clear(context); onLogout() },
+                        onClick = { showLogoutDialog = true },
                         showDivider = false,
                         isDestructive = true
                     )

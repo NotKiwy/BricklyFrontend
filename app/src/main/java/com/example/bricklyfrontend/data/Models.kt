@@ -227,3 +227,19 @@ data class TopUpResponseDTO(
     val confirmationUrl: String?,
     val cancellationReason: String?
 )
+
+data class PartCategoryDTO(
+    val name: String?
+)
+
+data class BlPartDTO(
+    val id: String,
+    val imageUrl: String?
+)
+
+data class PartDTO(
+    val id: String,
+    val name: String?,
+    val category: PartCategoryDTO?,
+    val blPart: BlPartDTO?
+)

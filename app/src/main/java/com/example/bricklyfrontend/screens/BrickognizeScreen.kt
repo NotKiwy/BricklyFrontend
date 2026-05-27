@@ -276,9 +276,9 @@ private fun ResultContent(
                 Spacer(Modifier.height(12.dp))
             }
             Spacer(Modifier.height(8.dp))
-            val allIds = items.joinToString(",") { it.id }
+            val topItemId = items.firstOrNull()?.id ?: ""
             Button(
-                onClick = { onNavigateToListingsByItem(allIds) },
+                onClick = { onNavigateToListingsByItem(topItemId) },
                 colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth().height(52.dp)

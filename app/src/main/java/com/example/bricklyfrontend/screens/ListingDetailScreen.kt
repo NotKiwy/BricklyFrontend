@@ -41,6 +41,7 @@ fun ListingDetailScreen(
     onBack: () -> Unit,
     onNavigateToSetDetail: (String) -> Unit = {},
     onNavigateToMinifigDetail: (String) -> Unit = {},
+    onNavigateToPartDetail: (String) -> Unit = {},
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
@@ -60,7 +61,17 @@ fun ListingDetailScreen(
         try {
             val response = RetrofitClient.api.getListingById(listingId)
             if (response.isSuccessful) {
-                listing = response.body()
+                val l = response.body()
+                listing = l
+                if (l != null) {
+                    ListingCartState.syncSingleItem(
+                        userId = userId,
+                        listingId = l.id,
+                        title = l.itemId ?: "",
+                        unitPrice = l.price ?: 0,
+                        maxQuantity = l.quantity ?: 1
+                    )
+                }
             } else {
                 errorMessage = "Ошибка загрузки (${response.code()})"
             }
@@ -264,8 +275,11 @@ fun ListingDetailScreen(
                                 if (!item.itemId.isNullOrBlank()) {
                                     IconButton(
                                         onClick = {
-                                            if (item.itemType == "M") onNavigateToMinifigDetail(item.itemId)
-                                            else onNavigateToSetDetail(item.itemId)
+                                            when (item.itemType) {
+                                                "M" -> onNavigateToMinifigDetail(item.itemId)
+                                                "P" -> onNavigateToPartDetail(item.itemId)
+                                                else -> onNavigateToSetDetail(item.itemId)
+                                            }
                                         },
                                         modifier = Modifier
                                             .size(36.dp)
@@ -351,77 +365,98 @@ fun ListingDetailScreen(
                     Spacer(Modifier.height(16.dp))
 
 
-                    if (!isInCart) {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    ListingCartState.addItemWithApi(
-                                        ListingCartItem(
-                                            listingId = item.id,
-                                            title = item.itemId ?: "Unknown",
-                                            unitPrice = item.price ?: 0,
-                                            quantity = 1,
-                                            maxQuantity = item.quantity ?: 1
-                                        ),
-                                        userId = userId
-                                    )
-                                }
-                            },
+                    val maxQty = item.quantity ?: 1
+                    var selectedQty by remember(item.id) { mutableIntStateOf(1) }
+                    val displayQty = if (isInCart) (cartItem?.quantity ?: 1) else selectedQty
+
+                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                                .height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Accent,
-                                contentColor = TextPrimary
-                            )
+                                .height(56.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Accent),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Купить", style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp))
-                        }
-                    } else {
-                        val currentItem = cartItem
-                        if (currentItem != null) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 20.dp)
-                                    .height(56.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(Accent),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            IconButton(
+                                onClick = {
+                                    if (isInCart) {
+                                        scope.launch { ListingCartState.decrementQuantityWithApi(item.id) }
+                                    } else if (selectedQty > 1) {
+                                        selectedQty--
+                                    }
+                                },
+                                modifier = Modifier.size(56.dp)
                             ) {
-                                IconButton(
-                                    onClick = { scope.launch { ListingCartState.decrementQuantityWithApi(item.id) } },
-                                    modifier = Modifier.size(56.dp)
-                                ) {
-                                    Icon(
-                                        if (currentItem.quantity == 1) Icons.Outlined.Delete else Icons.Outlined.Remove,
-                                        null, tint = Color.Black, modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                                Text(
-                                    "В корзине: ${currentItem.quantity}",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 16.sp
-                                    ),
-                                    color = Color.Black
+                                Icon(
+                                    if (isInCart && displayQty == 1) Icons.Outlined.Delete else Icons.Outlined.Remove,
+                                    null, tint = Color.Black, modifier = Modifier.size(22.dp)
                                 )
-                                IconButton(
-                                    onClick = { scope.launch { ListingCartState.incrementQuantityWithApi(item.id) } },
-                                    modifier = Modifier.size(56.dp),
-                                    enabled = currentItem.quantity < (item.quantity ?: 1)
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.Add, null,
-                                        tint = if (currentItem.quantity < (item.quantity ?: 1)) Color.Black else Color.Black.copy(alpha = 0.3f),
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
+                            }
+                            Text(
+                                if (isInCart) "В корзине: $displayQty" else "Количество: $displayQty",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 16.sp
+                                ),
+                                color = Color.Black
+                            )
+                            IconButton(
+                                onClick = {
+                                    if (isInCart) {
+                                        scope.launch { ListingCartState.incrementQuantityWithApi(item.id) }
+                                    } else if (selectedQty < maxQty) {
+                                        selectedQty++
+                                    }
+                                },
+                                modifier = Modifier.size(56.dp),
+                                enabled = displayQty < maxQty
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Add, null,
+                                    tint = if (displayQty < maxQty) Color.Black else Color.Black.copy(alpha = 0.3f),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+
+                        if (isInCart) {
+                            Button(
+                                onClick = onNavigateToCart,
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = TextPrimary, contentColor = Accent)
+                            ) {
+                                Icon(Icons.Outlined.ShoppingBag, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Перейти в корзину", fontWeight = FontWeight.SemiBold)
+                            }
+                        } else {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        ListingCartState.addExactQuantityWithApi(
+                                            userId = userId,
+                                            item = ListingCartItem(
+                                                listingId = item.id,
+                                                title = item.itemId ?: "Unknown",
+                                                unitPrice = item.price ?: 0,
+                                                quantity = selectedQty,
+                                                maxQuantity = maxQty
+                                            )
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
+                            ) {
+                                Icon(Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("В корзину ($selectedQty)", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                             }
                         }
                     }

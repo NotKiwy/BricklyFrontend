@@ -232,7 +232,8 @@ fun FeedbacksScreen(
 
                 else -> {
                     LazyColumn(
-                        contentPadding = PaddingValues(vertical = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(feedbacks, key = { it.id }) { feedback ->
                             FeedbackCard(feedback = feedback)
@@ -402,75 +403,75 @@ fun FeedbacksScreen(
 
 @Composable
 private fun FeedbackCard(feedback: FeedbackDefaultDTO) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(Accent.copy(alpha = 0.25f)),
-                contentAlignment = Alignment.Center
-            ) {
-                val initial = (feedback.author?.name ?: feedback.author?.username ?: "?")
-                    .firstOrNull()?.uppercaseChar() ?: '?'
-                Text(
-                    text = initial.toString(),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = TextPrimary
-                )
-            }
-
-            Spacer(Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = feedback.author?.name?.takeIf { it.isNotBlank() }
-                        ?: feedback.author?.username
-                        ?: "Аноним",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = TextPrimary
-                )
-                if (!feedback.author?.name.isNullOrBlank()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Accent.copy(alpha = 0.25f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val initial = (feedback.author?.name ?: feedback.author?.username ?: "?")
+                        .firstOrNull()?.uppercaseChar() ?: '?'
                     Text(
-                        text = "@${feedback.author?.username}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
+                        text = initial.toString(),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = TextPrimary
+                    )
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = feedback.author?.name?.takeIf { it.isNotBlank() }
+                            ?: feedback.author?.username
+                            ?: "Аноним",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = TextPrimary
+                    )
+                    if (!feedback.author?.name.isNullOrBlank()) {
+                        Text(
+                            text = "@${feedback.author?.username}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        tint = Accent,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "${feedback.rate}",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = TextPrimary
                     )
                 }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = Accent,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(Modifier.width(4.dp))
+            if (!feedback.comment.isNullOrBlank()) {
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    text = "${feedback.rate}",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = TextPrimary
+                    text = feedback.comment,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextPrimary,
+                    lineHeight = 20.sp
                 )
             }
         }
-
-        if (!feedback.comment.isNullOrBlank()) {
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = feedback.comment,
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextPrimary,
-                lineHeight = 20.sp
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-        HorizontalDivider(color = Divider, thickness = 1.dp)
     }
 }
 

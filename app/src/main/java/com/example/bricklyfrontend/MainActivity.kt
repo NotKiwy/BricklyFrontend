@@ -138,6 +138,29 @@ fun BricklyApp() {
             )
         }
 
+        composable("home_search/{query}") { backStackEntry ->
+            val query = backStackEntry.arguments?.getString("query") ?: ""
+            CatalogScreen(
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToProfile = { navToTab("profile") },
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToMeetingDetail = { meetingId ->
+                    navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
+                },
+                onNavigateToBrickognize = { navToTab("brickognize") },
+                onNavigateToCreateListing = {
+                    navController.navigate("create_listing") { launchSingleTop = true }
+                },
+                onNavigateToListingDetail = { listingId ->
+                    navController.navigate("listing_detail/$listingId") { launchSingleTop = true }
+                },
+                onNavigateToSetDetail = { setId ->
+                    navController.navigate("set_detail/$setId") { launchSingleTop = true }
+                },
+                initialSearchQuery = query
+            )
+        }
+
         composable("cart") {
             CartScreen(
                 onNavigateToMeetings = { navToTab("meetings") },
@@ -285,7 +308,7 @@ fun BricklyApp() {
                 onNavigateToCart = { navToTab("cart") },
                 onNavigateToProfile = { navToTab("profile") },
                 onNavigateToListingsByItem = { itemId ->
-                    navController.navigate("listings_by_minifig/$itemId") { launchSingleTop = true }
+                    navController.navigate("home_search/$itemId") { launchSingleTop = true }
                 }
             )
         }
@@ -300,6 +323,9 @@ fun BricklyApp() {
                 },
                 onNavigateToMinifigDetail = { blId ->
                     navController.navigate("minifig_detail/$blId") { launchSingleTop = true }
+                },
+                onNavigateToPartDetail = { blId ->
+                    navController.navigate("part_detail/$blId") { launchSingleTop = true }
                 },
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
@@ -318,18 +344,22 @@ fun BricklyApp() {
                 onNavigateToCart = { navToTab("cart") },
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToListings = { itemId ->
-                    navController.navigate("listings_by_minifig/$itemId") { launchSingleTop = true }
+                    navController.navigate("home_search/$itemId") { launchSingleTop = true }
                 }
             )
         }
 
-        composable("listings_by_minifig/{itemId}") { backStackEntry ->
-            val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
-            ListingsByMinifigScreen(
-                itemId = itemId,
+        composable("part_detail/{blId}") { backStackEntry ->
+            val blId = backStackEntry.arguments?.getString("blId") ?: ""
+            PartDetailScreen(
+                blId = blId,
                 onBack = { navController.popBackStack() },
-                onNavigateToListingDetail = { listingId ->
-                    navController.navigate("listing_detail/$listingId") { launchSingleTop = true }
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToProfile = { navToTab("profile") },
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToBrickognize = { navToTab("brickognize") },
+                onNavigateToListings = { itemId ->
+                    navController.navigate("home_search/$itemId") { launchSingleTop = true }
                 }
             )
         }

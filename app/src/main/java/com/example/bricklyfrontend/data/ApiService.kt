@@ -126,6 +126,12 @@ interface ApiService {
     @GET("/api/app/minifigs/by_bl_id/{blId}")
     suspend fun getMinifigByBlId(@Path("blId") blId: String): Response<List<MinifigDTO>>
 
+    @GET("/api/app/parts/by_bl_id/{blId}")
+    suspend fun getPartByBlId(@Path("blId") blId: String): Response<List<PartDTO>>
+
+    @GET("/api/app/listings/by_description_or_name_containing/{stringContained}")
+    suspend fun searchListings(@Path("stringContained") query: String): Response<List<ListingDefaultDTO>>
+
     @GET("/api/app/cart_items/by_user_id/{userId}")
     suspend fun getCartItemsByUserId(@Path("userId") userId: Long): Response<List<CartItemDefaultDTO>>
 

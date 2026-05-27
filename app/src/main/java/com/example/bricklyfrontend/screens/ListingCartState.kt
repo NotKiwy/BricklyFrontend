@@ -91,4 +91,67 @@ object ListingCartState {
 
     fun totalPrice(): Int = items.sumOf { it.unitPrice * it.quantity }
     fun totalCount(): Int = items.sumOf { it.quantity }
+
+    suspend fun syncSingleItem(
+        userId: Long,
+        listingId: Long,
+        title: String,
+        unitPrice: Int,
+        maxQuantity: Int
+    ) {
+        try {
+            val resp = RetrofitClient.api.getCartItemsByUserId(userId)
+            if (!resp.isSuccessful) return
+            val cartItems = resp.body() ?: return
+            val match = cartItems.find { it.itemType == "L" && it.itemId?.toLong() == listingId }
+            if (match != null) {
+                val updated = ListingCartItem(
+                    listingId = listingId,
+                    title = title,
+                    unitPrice = unitPrice,
+                    quantity = match.quantity ?: 1,
+                    maxQuantity = maxQuantity,
+                    serverCartItemId = match.id
+                )
+                items = if (items.any { it.listingId == listingId }) {
+                    items.map { if (it.listingId == listingId) updated else it }
+                } else {
+                    items + updated
+                }
+            } else {
+                items = items.filter { it.listingId != listingId }
+            }
+        } catch (_: Exception) {}
+    }
+
+    suspend fun addExactQuantityWithApi(
+        userId: Long,
+        item: ListingCartItem
+    ) {
+        val existing = items.find { it.listingId == item.listingId }
+        val targetQty = item.quantity.coerceAtMost(item.maxQuantity)
+        if (existing != null && existing.serverCartItemId != null) {
+            items = items.map {
+                if (it.listingId == item.listingId) it.copy(quantity = targetQty) else it
+            }
+            try {
+                RetrofitClient.api.updateCartItem(existing.serverCartItemId, CartItemUpdateDTO(targetQty))
+            } catch (_: Exception) {}
+        } else {
+            items = items + item.copy(quantity = targetQty)
+            try {
+                val resp = RetrofitClient.api.addCartItem(
+                    CartItemCreateDTO(userId = userId, itemType = "L", itemId = item.listingId, quantity = targetQty)
+                )
+                if (resp.isSuccessful) {
+                    val serverId = resp.body()?.id
+                    if (serverId != null) {
+                        items = items.map {
+                            if (it.listingId == item.listingId) it.copy(serverCartItemId = serverId) else it
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+    }
 }

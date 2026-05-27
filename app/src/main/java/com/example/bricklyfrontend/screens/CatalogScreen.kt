@@ -32,6 +32,7 @@ import com.example.bricklyfrontend.data.ListingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,32 +45,42 @@ fun CatalogScreen(
     onNavigateToBrickognize: () -> Unit = {},
     onNavigateToCreateListing: () -> Unit = {},
     onNavigateToListingDetail: (Long) -> Unit = {},
-    onNavigateToSetDetail: (String) -> Unit = {}
+    onNavigateToSetDetail: (String) -> Unit = {},
+    initialSearchQuery: String = ""
 ) {
     SetStatusBarColor(Accent)
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
-    
-    // Debug: проверяем роль пользователя
+
     val isSeller = UserPreferences.isSeller(context)
-    
+
     var listings by remember { mutableStateOf<List<ListingDefaultDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery by remember { mutableStateOf(initialSearchQuery) }
 
     fun loadListings(silent: Boolean = false) {
         scope.launch {
             if (silent) isRefreshing = true else isLoading = true
             errorMessage = null
             try {
-                val response = RetrofitClient.api.getListingsPaginated(page = 0, size = 50)
-                if (response.isSuccessful) {
-                    listings = response.body()?.content ?: emptyList()
+                val query = searchQuery.trim()
+                if (query.isNotBlank()) {
+                    val response = RetrofitClient.api.searchListings(query)
+                    if (response.isSuccessful) {
+                        listings = response.body() ?: emptyList()
+                    } else {
+                        errorMessage = "Ошибка загрузки (${response.code()})"
+                    }
                 } else {
-                    errorMessage = "Ошибка загрузки (${response.code()})"
+                    val response = RetrofitClient.api.getListingsPaginated(page = 0, size = 50)
+                    if (response.isSuccessful) {
+                        listings = response.body()?.content ?: emptyList()
+                    } else {
+                        errorMessage = "Ошибка загрузки (${response.code()})"
+                    }
                 }
             } catch (e: Exception) {
                 errorMessage = "Нет соединения: ${e.message}"
@@ -80,13 +91,12 @@ fun CatalogScreen(
         }
     }
 
-    LaunchedEffect(Unit) { loadListings() }
-
-    val filteredListings = if (searchQuery.isBlank()) listings
-    else listings.filter {
-        it.description?.contains(searchQuery, ignoreCase = true) == true ||
-                it.itemId?.contains(searchQuery, ignoreCase = true) == true
+    LaunchedEffect(searchQuery) {
+        delay(if (searchQuery == initialSearchQuery) 0L else 400L)
+        loadListings()
     }
+
+    val filteredListings = listings
 
     Scaffold(
         containerColor = Background,
