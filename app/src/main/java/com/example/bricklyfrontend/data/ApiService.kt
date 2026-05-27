@@ -146,6 +146,9 @@ interface ApiService {
         @Path("id") id: Long,
         @Body dto: ListingUpdateDTO
     ): Response<ListingDefaultDTO>
+
+    @POST("/api/app/payments/top_user_balance_up")
+    suspend fun topUpBalance(@Body dto: TopUpRequestDTO): Response<TopUpResponseDTO>
 }
 
 interface BrickognizeApiService {

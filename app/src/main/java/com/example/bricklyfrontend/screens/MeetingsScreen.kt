@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +38,7 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MeetingsScreen(
     onNavigateToProfile: () -> Unit = {},
@@ -53,12 +55,13 @@ fun MeetingsScreen(
 
     var meetings by remember { mutableStateOf<List<MeetingDefaultDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
 
-    fun loadMeetings() {
+    fun loadMeetings(silent: Boolean = false) {
         scope.launch {
-            isLoading = true
+            if (silent) isRefreshing = true else isLoading = true
             errorMessage = null
             try {
                 val response = RetrofitClient.api.getAllMeetings()
@@ -68,6 +71,7 @@ fun MeetingsScreen(
                 errorMessage = "Нет соединения с сервером"
             } finally {
                 isLoading = false
+                isRefreshing = false
             }
         }
     }
@@ -148,7 +152,11 @@ fun MeetingsScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { loadMeetings(silent = true) },
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
             Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 Spacer(Modifier.height(20.dp))
 

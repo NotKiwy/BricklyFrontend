@@ -23,7 +23,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.BuildConfig
+import com.example.bricklyfrontend.data.RetrofitClient
+import com.example.bricklyfrontend.data.TopUpRequestDTO
+import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
+import kotlinx.coroutines.launch
 import ru.yoomoney.sdk.kassa.payments.Checkout
 import ru.yoomoney.sdk.kassa.payments.checkoutParameters.Amount
 import ru.yoomoney.sdk.kassa.payments.checkoutParameters.PaymentMethodType
@@ -40,9 +44,12 @@ fun TopUpScreen(
 ) {
     SetStatusBarColor(Accent)
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val userId = remember { UserPreferences.getUserId(context) }
 
     var amountInput by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isProcessing by remember { mutableStateOf(false) }
 
     val presets = listOf(500, 1000, 2000, 5000)
 
@@ -55,7 +62,41 @@ fun TopUpScreen(
                 if (data != null) {
                     val tokenResult = Checkout.createTokenizationResult(data)
                     android.util.Log.d("BRICKLY_PAYMENT", "token=${tokenResult.paymentToken} method=${tokenResult.paymentMethodType}")
-                    onSuccess(amountInput.toIntOrNull() ?: 0)
+                    val amount = amountInput.toIntOrNull() ?: 0
+                    val formattedAmount = "$amount.00"
+                    isProcessing = true
+                    errorMessage = null
+                    scope.launch {
+                        try {
+                            val resp = RetrofitClient.api.topUpBalance(
+                                TopUpRequestDTO(
+                                    userId = userId,
+                                    amount = formattedAmount,
+                                    paymentToken = tokenResult.paymentToken
+                                )
+                            )
+                            if (resp.isSuccessful) {
+                                val body = resp.body()
+                                when {
+                                    !body?.cancellationReason.isNullOrBlank() ->
+                                        errorMessage = "Платёж отклонён: ${body?.cancellationReason}"
+                                    body?.status == "succeeded" ->
+                                        onSuccess(amount)
+                                    body?.status == "pending" ->
+                                        errorMessage = "Неизвестный статус: pending"
+                                    body?.status == "canceled" ->
+                                        errorMessage = "Платёж отменён"
+                                    else ->
+                                        errorMessage = "Ошибка обработки платежа"
+                                }
+                            } else {
+                                errorMessage = "Ошибка сервера (${resp.code()})"
+                            }
+                        } catch (_: Exception) {
+                            errorMessage = "Нет соединения с сервером"
+                        }
+                        isProcessing = false
+                    }
                 }
             }
             Activity.RESULT_CANCELED -> {}
@@ -210,20 +251,35 @@ fun TopUpScreen(
 
             Spacer(Modifier.weight(1f))
 
-            Button(
-                onClick = { pay() },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
-                enabled = amountInput.isNotBlank()
-            ) {
-                Text(
-                    if (amountInput.isNotBlank() && amountInput.toIntOrNull() != null)
-                        "Пополнить ${amountInput.toIntOrNull()} ₽"
-                    else "Пополнить",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+            if (isProcessing) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Accent, strokeWidth = 2.5.dp)
+                        Text("Обрабатываем платёж...", fontSize = 15.sp, color = TextSecondary)
+                    }
+                }
+            } else {
+                Button(
+                    onClick = { pay() },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
+                    enabled = amountInput.isNotBlank()
+                ) {
+                    Text(
+                        if (amountInput.isNotBlank() && amountInput.toIntOrNull() != null)
+                            "Пополнить ${amountInput.toIntOrNull()} ₽"
+                        else "Пополнить",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
             }
 
             Spacer(Modifier.height(32.dp))

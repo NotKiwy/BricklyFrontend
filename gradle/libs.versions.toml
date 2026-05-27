@@ -18,6 +18,7 @@ coil = "2.6.0"
 bcrypt = "0.10.2"
 desugar = "2.0.4"
 yookassa = "6.10.0"
+osmdroid = "6.1.20"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -46,6 +47,7 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 bcrypt = { group = "at.favre.lib", name = "bcrypt", version.ref = "bcrypt" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar" }
 yookassa-android-sdk = { group = "ru.yoomoney.sdk.kassa.payments", name = "yookassa-android-sdk", version.ref = "yookassa" }
+osmdroid = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

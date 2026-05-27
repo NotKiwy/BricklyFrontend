@@ -214,3 +214,16 @@ data class BrickSetDTO(
     val numParts: Int?,
     val imageUrl: String?
 )
+
+data class TopUpRequestDTO(
+    val userId: Long,
+    val amount: String,
+    val paymentToken: String
+)
+
+data class TopUpResponseDTO(
+    val paymentId: String?,
+    val status: String?,
+    val confirmationUrl: String?,
+    val cancellationReason: String?
+)

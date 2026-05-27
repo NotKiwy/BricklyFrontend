@@ -18,14 +18,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.viewinterop.AndroidView
 import com.example.bricklyfrontend.data.CartItemCreateDTO
 import com.example.bricklyfrontend.data.UserPreferences
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.data.MeetingDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.ui.theme.*
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import java.io.File
+import java.net.URLEncoder
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -123,17 +133,14 @@ fun MeetingDetailScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
+                            .height(220.dp)
                             .padding(horizontal = 20.dp)
                             .clip(RoundedCornerShape(24.dp))
-                            .background(Accent.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Outlined.Map, null, tint = Accent, modifier = Modifier.size(48.dp))
-                            Spacer(Modifier.height(8.dp))
-                            Text(m.address ?: "Адрес не указан", style = MaterialTheme.typography.bodyMedium, color = TextSecondary, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 16.dp))
-                        }
+                        MeetingMap(
+                            address = m.address,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
 
                     Spacer(Modifier.height(16.dp))
@@ -292,6 +299,69 @@ private fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text:
         Spacer(Modifier.width(12.dp))
         Text(text, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal), color = TextPrimary)
     }
+}
+
+@Composable
+private fun MeetingMap(address: String?, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    var geoPoint by remember { mutableStateOf<GeoPoint?>(null) }
+
+    LaunchedEffect(address) {
+        if (!address.isNullOrBlank()) {
+            geoPoint = geocodeAddress(address)
+        }
+    }
+
+    val mapView = remember {
+        Configuration.getInstance().apply {
+            userAgentValue = context.packageName
+            osmdroidBasePath = File(context.cacheDir, "osmdroid")
+            osmdroidTileCache = File(context.cacheDir, "osmdroid/tiles")
+        }
+        MapView(context).apply {
+            setTileSource(TileSourceFactory.MAPNIK)
+            setMultiTouchControls(true)
+            controller.setZoom(15.0)
+            controller.setCenter(GeoPoint(55.7558, 37.6173))
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { mapView.onDetach() }
+    }
+
+    LaunchedEffect(geoPoint) {
+        geoPoint?.let { point ->
+            mapView.controller.setCenter(point)
+            mapView.controller.setZoom(15.0)
+            mapView.overlays.clear()
+            val marker = Marker(mapView)
+            marker.position = point
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            mapView.overlays.add(marker)
+            mapView.invalidate()
+        }
+    }
+
+    AndroidView(factory = { mapView }, modifier = modifier)
+}
+
+private suspend fun geocodeAddress(address: String): GeoPoint? = withContext(Dispatchers.IO) {
+    try {
+        val encoded = URLEncoder.encode(address, "UTF-8")
+        val client = okhttp3.OkHttpClient()
+        val request = okhttp3.Request.Builder()
+            .url("https://nominatim.openstreetmap.org/search?q=$encoded&format=json&limit=1")
+            .header("User-Agent", "BricklyApp/1.0")
+            .build()
+        val resp = client.newCall(request).execute()
+        val body = resp.body?.string() ?: return@withContext null
+        val arr = org.json.JSONArray(body)
+        if (arr.length() > 0) {
+            val obj = arr.getJSONObject(0)
+            GeoPoint(obj.getDouble("lat"), obj.getDouble("lon"))
+        } else null
+    } catch (_: Exception) { null }
 }
 
 private fun formatDetailDate(dateStr: String): String? {

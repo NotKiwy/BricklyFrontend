@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +37,7 @@ private data class CartEntry(
     val listing: ListingDefaultDTO? = null
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
     onNavigateToMeetings: () -> Unit = {},
@@ -62,11 +64,12 @@ fun CartScreen(
 
     var entries by remember { mutableStateOf<List<CartEntry>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    fun loadCart() {
+    fun loadCart(silent: Boolean = false) {
         scope.launch {
-            isLoading = true
+            if (silent) isRefreshing = true else isLoading = true
             errorMessage = null
             try {
                 val resp = RetrofitClient.api.getCartItemsByUserId(userId)
@@ -121,6 +124,7 @@ fun CartScreen(
                 errorMessage = "Нет соединения"
             }
             isLoading = false
+            isRefreshing = false
         }
     }
 
@@ -188,11 +192,16 @@ fun CartScreen(
             }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { loadCart(silent = true) },
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
         when {
-            isLoading -> CartSkeleton(modifier = Modifier.padding(padding))
+            isLoading -> CartSkeleton(modifier = Modifier.fillMaxSize())
 
             errorMessage != null -> Box(
-                Modifier.fillMaxSize().padding(padding).padding(32.dp),
+                Modifier.fillMaxSize().padding(32.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -205,7 +214,7 @@ fun CartScreen(
             }
 
             entries.isEmpty() -> Box(
-                Modifier.fillMaxSize().padding(padding).padding(32.dp),
+                Modifier.fillMaxSize().padding(32.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -224,7 +233,7 @@ fun CartScreen(
                 }
             }
 
-            else -> Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            else -> Column(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(vertical = 12.dp)
@@ -274,6 +283,7 @@ fun CartScreen(
                     }
                 }
             }
+        }
         }
     }
 }

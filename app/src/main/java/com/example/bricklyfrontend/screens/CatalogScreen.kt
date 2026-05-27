@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +34,7 @@ import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     onNavigateToMeetings: () -> Unit = {},
@@ -54,12 +56,13 @@ fun CatalogScreen(
     
     var listings by remember { mutableStateOf<List<ListingDefaultDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
 
-    fun loadListings() {
+    fun loadListings(silent: Boolean = false) {
         scope.launch {
-            isLoading = true
+            if (silent) isRefreshing = true else isLoading = true
             errorMessage = null
             try {
                 val response = RetrofitClient.api.getListingsPaginated(page = 0, size = 50)
@@ -72,6 +75,7 @@ fun CatalogScreen(
                 errorMessage = "Нет соединения: ${e.message}"
             } finally {
                 isLoading = false
+                isRefreshing = false
             }
         }
     }
@@ -146,11 +150,16 @@ fun CatalogScreen(
             }
         }
     ) { padding ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { loadListings(silent = true) },
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
         when {
-            isLoading -> ListingGridSkeleton(modifier = Modifier.padding(padding))
+            isLoading -> ListingGridSkeleton(modifier = Modifier.fillMaxSize())
 
             errorMessage != null -> Column(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -168,7 +177,7 @@ fun CatalogScreen(
             }
 
             filteredListings.isEmpty() -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 EmptyStateBox(
@@ -182,7 +191,7 @@ fun CatalogScreen(
             else -> {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                     contentPadding = PaddingValues(vertical = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -196,6 +205,7 @@ fun CatalogScreen(
                     }
                 }
             }
+        }
         }
     }
 }
