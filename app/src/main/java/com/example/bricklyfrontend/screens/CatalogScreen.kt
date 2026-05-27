@@ -206,7 +206,7 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
     val imageLoader = remember {
         val username = UserPreferences.getUsername(context)
         val password = UserPreferences.getPassword(context)
-        
+
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
@@ -215,12 +215,12 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
                 chain.proceed(request)
             }
             .build()
-        
+
         ImageLoader.Builder(context)
             .okHttpClient(okHttpClient)
             .build()
     }
-    
+
     val imageUrl = listing.listingImage?.firstOrNull { it.positionId == 0 }?.imagePath?.let { path ->
         if (path.isBlank()) {
             null
@@ -243,17 +243,18 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
 
     Card(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .clickable(onClick = onClick),   // ← Главное изменение: clickable на Card
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column {
+            // Изображение
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .clickable(onClick = onClick)
             ) {
                 if (imageUrl != null) {
                     SubcomposeAsyncImage(
@@ -292,12 +293,14 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
                 }
             }
 
-            Column(modifier = Modifier.padding(12.dp).clickable(onClick = onClick)) {
+            // Информация
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
                 Text(
                     text = listing.itemId?.takeIf { it.isNotBlank() } ?: "ID",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = InterFontFamily,
                     color = TextSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -309,7 +312,6 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
                     text = "${listing.price ?: 0} ₽",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    fontFamily = InterFontFamily,
                     color = TextPrimary
                 )
 
@@ -317,7 +319,6 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
                     Text(
                         text = "В наличии: $qty",
                         fontSize = 11.sp,
-                        fontFamily = InterFontFamily,
                         color = TextSecondary
                     )
                 }

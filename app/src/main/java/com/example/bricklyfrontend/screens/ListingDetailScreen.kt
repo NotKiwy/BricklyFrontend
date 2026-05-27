@@ -155,16 +155,18 @@ fun ListingDetailScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(300.dp)
+                                .height(320.dp)
                                 .padding(horizontal = 20.dp)
                         ) {
                             HorizontalPager(
                                 state = pagerState,
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .clip(RoundedCornerShape(24.dp))
+                                    .clip(RoundedCornerShape(24.dp))     // ← Вернул закругление сюда
+                                    .background(Color.White)             // фон для не квадратных фото
                             ) { page ->
                                 val imageUrl = "${RetrofitClient.BASE_URL}${images[page].imagePath}"
+
                                 SubcomposeAsyncImage(
                                     model = ImageRequest.Builder(LocalContext.current)
                                         .data(imageUrl)
@@ -173,13 +175,14 @@ fun ListingDetailScreen(
                                     imageLoader = imageLoader,
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop,
+                                    contentScale = ContentScale.Fit,      // полностью видно фото
+                                    alignment = Alignment.Center,
                                     error = {
                                         Box(
                                             modifier = Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Outlined.ImageNotSupported, null, tint = Accent, modifier = Modifier.size(32.dp))
+                                            Icon(Icons.Outlined.ImageNotSupported, null, tint = Accent, modifier = Modifier.size(48.dp))
                                         }
                                     },
                                     loading = {
@@ -187,12 +190,13 @@ fun ListingDetailScreen(
                                             modifier = Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            CircularProgressIndicator(color = Accent, modifier = Modifier.size(24.dp))
+                                            CircularProgressIndicator(color = Accent, modifier = Modifier.size(32.dp))
                                         }
                                     }
                                 )
                             }
 
+                            // Индикаторы
                             if (images.size > 1) {
                                 Row(
                                     modifier = Modifier
@@ -206,7 +210,8 @@ fun ListingDetailScreen(
                                                 .size(if (pagerState.currentPage == index) 8.dp else 6.dp)
                                                 .clip(CircleShape)
                                                 .background(
-                                                    if (pagerState.currentPage == index) Accent else Color.White.copy(alpha = 0.5f)
+                                                    if (pagerState.currentPage == index) Accent
+                                                    else Color.White.copy(alpha = 0.7f)
                                                 )
                                         )
                                     }
