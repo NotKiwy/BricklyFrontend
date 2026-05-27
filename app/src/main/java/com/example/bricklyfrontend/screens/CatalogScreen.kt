@@ -171,11 +171,12 @@ fun CatalogScreen(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Outlined.Inventory2, null, tint = IconInactive, modifier = Modifier.size(64.dp))
-                    Spacer(Modifier.height(16.dp))
-                    Text("Объявлений пока нет", style = MaterialTheme.typography.titleMedium, color = IconInactive)
-                }
+                EmptyStateBox(
+                    icon = Icons.Outlined.Inventory2,
+                    title = "Объявлений пока нет",
+                    subtitle = "Здесь будут отображаться объявления продавцов",
+                    onRefresh = { loadListings() }
+                )
             }
 
             else -> {

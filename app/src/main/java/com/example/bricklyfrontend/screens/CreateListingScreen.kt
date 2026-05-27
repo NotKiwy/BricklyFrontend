@@ -40,7 +40,8 @@ import java.io.File
 @Composable
 fun CreateListingScreen(
     onNavigateBack: () -> Unit,
-    onListingCreated: () -> Unit
+    onListingCreated: () -> Unit,
+    onNavigateToBrickognize: () -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
 
@@ -224,11 +225,28 @@ fun CreateListingScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            BricklyTextField(
+            Text("ID товара *", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
+            Spacer(Modifier.height(6.dp))
+            OutlinedTextField(
                 value = itemId,
                 onValueChange = { itemId = it; errorMessage = null },
-                label = "ID товара *",
-                placeholder = "Например: 3001"
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Например: 3001", style = MaterialTheme.typography.bodyLarge, color = TextSecondary.copy(alpha = 0.4f)) },
+                trailingIcon = {
+                    IconButton(onClick = onNavigateToBrickognize) {
+                        Icon(Icons.Outlined.QrCodeScanner, null, tint = TextSecondary)
+                    }
+                },
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Accent,
+                    unfocusedBorderColor = Divider,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    cursorColor = Accent
+                ),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
             )
 
             Spacer(Modifier.height(16.dp))

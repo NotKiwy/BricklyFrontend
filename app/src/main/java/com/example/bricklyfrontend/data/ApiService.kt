@@ -133,6 +133,19 @@ interface ApiService {
 
     @PUT("/api/app/cart_items/update/{id}")
     suspend fun updateCartItem(@Path("id") id: Long, @Body dto: CartItemUpdateDTO): Response<CartItemDefaultDTO>
+
+    @GET("/api/app/listings/by_seller_id/{sellerId}")
+    suspend fun getListingsBySellerId(
+        @Path("sellerId") sellerId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 50
+    ): Response<PagedModelListingDefaultDTO>
+
+    @PUT("/api/app/listings/update/{id}")
+    suspend fun updateListing(
+        @Path("id") id: Long,
+        @Body dto: ListingUpdateDTO
+    ): Response<ListingDefaultDTO>
 }
 
 interface BrickognizeApiService {

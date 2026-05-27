@@ -67,7 +67,10 @@ private val particles = List(60) {
 @Composable
 fun PaymentSuccessScreen(
     totalPrice: Int,
-    onGoHome: () -> Unit
+    onGoHome: () -> Unit,
+    title: String = "Оплата прошла успешно!",
+    subtitle: String = "Ваш заказ оформлен",
+    buttonLabel: String = "На главную"
 ) {
     SetStatusBarColor(Background)
 
@@ -146,7 +149,7 @@ fun PaymentSuccessScreen(
             Spacer(Modifier.height(28.dp))
 
             Text(
-                "Оплата прошла успешно!",
+                title,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = TextPrimary
@@ -155,7 +158,7 @@ fun PaymentSuccessScreen(
             Spacer(Modifier.height(8.dp))
 
             Text(
-                "Ваш заказ оформлен",
+                subtitle,
                 fontSize = 15.sp,
                 color = TextSecondary
             )
@@ -182,7 +185,7 @@ fun PaymentSuccessScreen(
                     contentColor = Accent
                 )
             ) {
-                Text("На главную", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(buttonLabel, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
     }

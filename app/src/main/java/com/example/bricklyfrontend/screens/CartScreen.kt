@@ -101,6 +101,19 @@ fun CartScreen(
                             else -> CartEntry(item)
                         }
                     }
+
+                    ListingCartState.items = entries
+                        .filter { it.cartItem.itemType == "L" && it.listing != null }
+                        .map { entry ->
+                            ListingCartItem(
+                                listingId = entry.cartItem.itemId?.toLong() ?: 0L,
+                                title = entry.listing?.itemId ?: "",
+                                unitPrice = entry.listing?.price ?: 0,
+                                quantity = entry.cartItem.quantity ?: 1,
+                                maxQuantity = entry.listing?.quantity ?: 1,
+                                serverCartItemId = entry.cartItem.id
+                            )
+                        }
                 } else {
                     errorMessage = "Ошибка загрузки (${resp.code()})"
                 }
@@ -116,8 +129,13 @@ fun CartScreen(
     fun deleteEntry(cartItemId: Long) {
         scope.launch {
             try {
+                val entry = entries.find { it.cartItem.id == cartItemId }
                 RetrofitClient.api.deleteCartItem(cartItemId)
                 entries = entries.filter { it.cartItem.id != cartItemId }
+                if (entry?.cartItem?.itemType == "L") {
+                    val listingId = entry.cartItem.itemId?.toLong()
+                    if (listingId != null) ListingCartState.removeItem(listingId)
+                }
             } catch (_: Exception) {}
         }
     }

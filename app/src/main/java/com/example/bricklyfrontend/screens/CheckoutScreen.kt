@@ -62,7 +62,8 @@ fun CheckoutScreen(
             Activity.RESULT_OK -> {
                 val data = result.data
                 if (data != null) {
-                    Checkout.createTokenizationResult(data)
+                    val tokenResult = Checkout.createTokenizationResult(data)
+                    android.util.Log.d("BRICKLY_PAYMENT", "token=${tokenResult.paymentToken} method=${tokenResult.paymentMethodType}")
                     onPaymentSuccess()
                 }
             }

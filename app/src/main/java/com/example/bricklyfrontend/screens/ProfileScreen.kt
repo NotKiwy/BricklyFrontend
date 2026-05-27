@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
@@ -32,6 +33,8 @@ fun ProfileScreen(
     onNavigateToFeedbacks: () -> Unit = {},
     onNavigateToCreateMeeting: () -> Unit = {},
     onNavigateToCreateListing: () -> Unit = {},
+    onNavigateToMyListings: () -> Unit = {},
+    onNavigateToTopUp: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
@@ -48,6 +51,14 @@ fun ProfileScreen(
     val role = remember { UserPreferences.getRole(context) }
     val canCreateMeeting = remember { role == "ROLE_ADMIN" || role == "ROLE_MEETING_CREATOR" }
     val isSeller = remember { UserPreferences.isSeller(context) }
+
+    var balance by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(userId) {
+        try {
+            val resp = RetrofitClient.api.getUserById(userId)
+            if (resp.isSuccessful) balance = resp.body()?.balance
+        } catch (_: Exception) {}
+    }
 
     LaunchedEffect(toastMessage) {
         if (!toastMessage.isNullOrBlank()) {
@@ -92,6 +103,44 @@ fun ProfileScreen(
                         fontWeight = FontWeight.ExtraBold,
                         color = TextPrimary
                     )
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = TextPrimary.copy(alpha = 0.15f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(Icons.Outlined.AccountBalanceWallet, null, tint = TextPrimary, modifier = Modifier.size(16.dp))
+                                Text(
+                                    text = if (balance != null) "${balance} ₽" else "—",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                            }
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = TextPrimary,
+                            onClick = onNavigateToTopUp
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(Icons.Outlined.Add, null, tint = Accent, modifier = Modifier.size(16.dp))
+                                Text("Пополнить", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Accent)
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -125,6 +174,7 @@ fun ProfileScreen(
                     ProfileMenuItem(icon = Icons.Outlined.Star, text = "Отзывы", onClick = onNavigateToFeedbacks, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = canCreateMeeting || isSeller)
                     if (isSeller) {
+                        ProfileMenuItem(icon = Icons.Outlined.Inventory2, text = "Мои объявления", onClick = onNavigateToMyListings, showDivider = true)
                         ProfileMenuItem(icon = Icons.Outlined.AddBox, text = "Создать карточку", onClick = onNavigateToCreateListing, showDivider = canCreateMeeting)
                     }
                     if (canCreateMeeting) {

@@ -395,7 +395,7 @@ fun ListingDetailScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 IconButton(
-                                    onClick = { ListingCartState.decrementQuantity(item.id) },
+                                    onClick = { scope.launch { ListingCartState.decrementQuantityWithApi(item.id) } },
                                     modifier = Modifier.size(56.dp)
                                 ) {
                                     Icon(
@@ -412,10 +412,7 @@ fun ListingDetailScreen(
                                     color = Color.Black
                                 )
                                 IconButton(
-                                    onClick = {
-                                        if (currentItem.quantity < (item.quantity ?: 1))
-                                            ListingCartState.incrementQuantity(item.id)
-                                    },
+                                    onClick = { scope.launch { ListingCartState.incrementQuantityWithApi(item.id) } },
                                     modifier = Modifier.size(56.dp),
                                     enabled = currentItem.quantity < (item.quantity ?: 1)
                                 ) {

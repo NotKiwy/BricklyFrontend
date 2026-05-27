@@ -155,96 +155,101 @@ fun MeetingsScreen(
             when {
                 isLoading -> MeetingListSkeleton()
 
-                errorMessage != null -> Column(
-                    Modifier.fillMaxWidth().padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                errorMessage != null -> Box(
+                    Modifier.fillMaxWidth().padding(top = 40.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(errorMessage!!, color = ErrorColor)
-                    Spacer(Modifier.height(8.dp))
-                    Button(onClick = { loadMeetings() }, colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)) {
-                        Text("Повторить")
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(errorMessage!!, color = ErrorColor)
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { loadMeetings() }, colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)) {
+                            Text("Повторить")
+                        }
                     }
-                }
-
-                upcoming.isEmpty() -> Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Block, null, tint = IconInactive, modifier = Modifier.size(32.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text("Мероприятий пока не запланировано", style = MaterialTheme.typography.bodyLarge, color = IconInactive)
                 }
 
                 else -> {
-                    Text(
-                        text = "Все мероприятия",
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                        color = TextPrimary,
-                        modifier = Modifier.padding(horizontal = 20.dp)
-                    )
-                    Spacer(Modifier.height(14.dp))
-                    upcoming.forEach { meeting ->
-                        LargeMeetingCard(meeting = meeting, onClick = { onNavigateToMeetingDetail(meeting.id) })
-                        Spacer(Modifier.height(12.dp))
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            val meetingsWithImages = meetings.filter { !it.previewImagePath.isNullOrBlank() }
-            if (meetingsWithImages.isNotEmpty()) {
-                Text(
-                    text = "Фото с мероприятий",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                    color = TextPrimary,
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
-                Spacer(Modifier.height(14.dp))
-
-                val photoLoader = remember {
-                    val username = UserPreferences.getUsername(context)
-                    val password = UserPreferences.getPassword(context)
-                    val okHttpClient = OkHttpClient.Builder()
-                        .addInterceptor { chain ->
-                            chain.proceed(
-                                chain.request().newBuilder()
-                                    .header("Authorization", Credentials.basic(username, password))
-                                    .build()
-                            )
-                        }
-                        .build()
-                    ImageLoader.Builder(context).okHttpClient(okHttpClient).build()
-                }
-
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(meetingsWithImages) { meeting ->
-                        val url = "${RetrofitClient.BASE_URL}/${meeting.previewImagePath!!.trimStart('/')}"
-                        SubcomposeAsyncImage(
-                            model = ImageRequest.Builder(context).data(url).crossfade(true).build(),
-                            imageLoader = photoLoader,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .width(200.dp)
-                                .height(140.dp)
-                                .clip(RoundedCornerShape(20.dp)),
-                            contentScale = ContentScale.Crop,
-                            loading = {
-                                Box(Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)))
-                            },
-                            error = {
-                                Box(
-                                    Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Outlined.ImageNotSupported, null, tint = Accent, modifier = Modifier.size(28.dp))
-                                }
-                            }
+                    if (upcoming.isEmpty()) {
+                        EmptyStateBox(
+                            icon = Icons.Outlined.Event,
+                            title = "Мероприятий не запланировано",
+                            subtitle = "Следите за анонсами новых мероприятий",
+                            onRefresh = { loadMeetings() },
+                            modifier = Modifier.fillMaxWidth()
                         )
+                    } else {
+                        Text(
+                            text = "Все мероприятия",
+                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                            color = TextPrimary,
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
+                        Spacer(Modifier.height(14.dp))
+                        upcoming.forEach { meeting ->
+                            LargeMeetingCard(meeting = meeting, onClick = { onNavigateToMeetingDetail(meeting.id) })
+                            Spacer(Modifier.height(12.dp))
+                        }
+                    }
+
+                    val meetingsWithImages = meetings.filter { !it.previewImagePath.isNullOrBlank() }
+                    if (meetingsWithImages.isNotEmpty()) {
+                        Spacer(Modifier.height(20.dp))
+                        Text(
+                            text = "Фото с мероприятий",
+                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                            color = TextPrimary,
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
+                        Spacer(Modifier.height(14.dp))
+
+                        val photoLoader = remember {
+                            val username = UserPreferences.getUsername(context)
+                            val password = UserPreferences.getPassword(context)
+                            val okHttpClient = OkHttpClient.Builder()
+                                .addInterceptor { chain ->
+                                    chain.proceed(
+                                        chain.request().newBuilder()
+                                            .header("Authorization", Credentials.basic(username, password))
+                                            .build()
+                                    )
+                                }
+                                .build()
+                            ImageLoader.Builder(context).okHttpClient(okHttpClient).build()
+                        }
+
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(meetingsWithImages) { meeting ->
+                                val url = "${RetrofitClient.BASE_URL}/${meeting.previewImagePath!!.trimStart('/')}"
+                                SubcomposeAsyncImage(
+                                    model = ImageRequest.Builder(context).data(url).crossfade(true).build(),
+                                    imageLoader = photoLoader,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(200.dp)
+                                        .height(140.dp)
+                                        .clip(RoundedCornerShape(20.dp)),
+                                    contentScale = ContentScale.Crop,
+                                    loading = {
+                                        Box(Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)))
+                                    },
+                                    error = {
+                                        Box(
+                                            Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Outlined.ImageNotSupported, null, tint = Accent, modifier = Modifier.size(28.dp))
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(24.dp))
                     }
                 }
-                Spacer(Modifier.height(24.dp))
             }
             }
         }

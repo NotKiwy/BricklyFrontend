@@ -30,7 +30,8 @@ fun MinifigDetailScreen(
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
-    onNavigateToBrickognize: () -> Unit = {}
+    onNavigateToBrickognize: () -> Unit = {},
+    onNavigateToListings: (String) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
 
@@ -188,6 +189,22 @@ fun MinifigDetailScreen(
                                 value = m.numParts?.toString() ?: "Не указано"
                             )
                         }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { onNavigateToListings(m.blMinifig?.id ?: blId) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
+                    ) {
+                        Icon(Icons.Outlined.Storefront, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Просмотреть объявления", fontWeight = FontWeight.SemiBold)
                     }
 
                     Spacer(Modifier.height(32.dp))

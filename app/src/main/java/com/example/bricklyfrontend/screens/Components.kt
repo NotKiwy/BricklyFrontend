@@ -23,7 +23,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.bricklyfrontend.ui.theme.*
 
@@ -95,6 +97,49 @@ fun BricklyTextField(
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
         )
+    }
+}
+
+@Composable
+fun EmptyStateBox(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Accent.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = Accent, modifier = Modifier.size(36.dp))
+            }
+            Spacer(Modifier.height(16.dp))
+            androidx.compose.material3.Text(
+                title,
+                style = androidx.compose.material3.MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                color = TextPrimary
+            )
+            Spacer(Modifier.height(6.dp))
+            androidx.compose.material3.Text(
+                subtitle,
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(16.dp))
+            androidx.compose.material3.TextButton(onClick = onRefresh) {
+                androidx.compose.material3.Text("Обновить", color = TextSecondary)
+            }
+        }
     }
 }
 

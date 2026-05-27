@@ -66,6 +66,29 @@ object ListingCartState {
 
     fun removeItem(listingId: Long) { items = items.filter { it.listingId != listingId } }
 
+    suspend fun incrementQuantityWithApi(listingId: Long) {
+        val item = items.find { it.listingId == listingId } ?: return
+        if (item.quantity >= item.maxQuantity) return
+        val newQty = item.quantity + 1
+        items = items.map { if (it.listingId == listingId) it.copy(quantity = newQty) else it }
+        val serverId = item.serverCartItemId ?: return
+        try { RetrofitClient.api.updateCartItem(serverId, CartItemUpdateDTO(newQty)) } catch (_: Exception) {}
+    }
+
+    suspend fun decrementQuantityWithApi(listingId: Long) {
+        val item = items.find { it.listingId == listingId } ?: return
+        if (item.quantity <= 1) {
+            items = items.filter { it.listingId != listingId }
+            val serverId = item.serverCartItemId ?: return
+            try { RetrofitClient.api.deleteCartItem(serverId) } catch (_: Exception) {}
+            return
+        }
+        val newQty = item.quantity - 1
+        items = items.map { if (it.listingId == listingId) it.copy(quantity = newQty) else it }
+        val serverId = item.serverCartItemId ?: return
+        try { RetrofitClient.api.updateCartItem(serverId, CartItemUpdateDTO(newQty)) } catch (_: Exception) {}
+    }
+
     fun totalPrice(): Int = items.sumOf { it.unitPrice * it.quantity }
     fun totalCount(): Int = items.sumOf { it.quantity }
 }

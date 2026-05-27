@@ -177,6 +177,14 @@ data class CartItemCreateDTO(
 
 data class CartItemUpdateDTO(val quantity: Int)
 
+data class ListingUpdateDTO(
+    val status: String,
+    val quantity: Int,
+    val description: String,
+    val price: Int,
+    val viewsCount: Int
+)
+
 data class BlMinifigDTO(
     val id: String,
     val name: String?,

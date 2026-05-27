@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -58,7 +59,8 @@ fun BrickognizeScreen(
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToListingsByItem: (String) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
     
@@ -172,7 +174,7 @@ fun BrickognizeScreen(
                     }
                 }
 
-                is BrickState.Result -> ResultContent(items = s.items, onReset = { state = BrickState.Idle })
+                is BrickState.Result -> ResultContent(items = s.items, onReset = { state = BrickState.Idle }, onNavigateToListingsByItem = onNavigateToListingsByItem)
 
                 is BrickState.Error -> ErrorContent(message = s.message, onReset = { state = BrickState.Idle })
             }
@@ -247,7 +249,11 @@ private fun ConfirmDialog(imageUri: Uri, onConfirm: () -> Unit, onDismiss: () ->
 }
 
 @Composable
-private fun ResultContent(items: List<BrickognizeItem>, onReset: () -> Unit) {
+private fun ResultContent(
+    items: List<BrickognizeItem>,
+    onReset: () -> Unit,
+    onNavigateToListingsByItem: (String) -> Unit = {}
+) {
     if (items.isEmpty()) {
         Column(modifier = Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Box(modifier = Modifier.size(72.dp).clip(CircleShape).background(Color(0xFFF0F0F0)), contentAlignment = Alignment.Center) {
@@ -269,8 +275,24 @@ private fun ResultContent(items: List<BrickognizeItem>, onReset: () -> Unit) {
                 Spacer(Modifier.height(12.dp))
             }
             Spacer(Modifier.height(8.dp))
-            Button(onClick = onReset, colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Text("Распознать ещё", fontWeight = FontWeight.SemiBold)
+            val topItemId = items.firstOrNull()?.id
+            if (topItemId != null) {
+                Button(
+                    onClick = { onNavigateToListingsByItem(topItemId) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                ) {
+                    Text("Показать предложения", fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(Modifier.height(10.dp))
+            }
+            TextButton(
+                onClick = onReset,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("Распознать ещё", fontWeight = FontWeight.SemiBold, color = TextPrimary)
             }
         }
     }
@@ -304,9 +326,16 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(text = item.name ?: item.id, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
                     Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF0F0F0)) {
                         Text("ID: ${item.id}", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                    }
+                    IconButton(
+                        onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(item.id)) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(Icons.Outlined.ContentCopy, null, tint = TextSecondary, modifier = Modifier.size(14.dp))
                     }
                     val pct = (item.score * 100).toInt()
                     Surface(shape = RoundedCornerShape(8.dp), color = if (pct >= 80) Color(0xFFE8F5E9) else Color(0xFFF0F0F0)) {

@@ -199,6 +199,12 @@ fun BricklyApp() {
                 onNavigateToCreateMeeting = {
                     navController.navigate("create_meeting") { launchSingleTop = true }
                 },
+                onNavigateToMyListings = {
+                    navController.navigate("my_listings") { launchSingleTop = true }
+                },
+                onNavigateToTopUp = {
+                    navController.navigate("top_up") { launchSingleTop = true }
+                },
                 onNavigateToCreateListing = {
                     navController.navigate("create_listing") { launchSingleTop = true }
                 },
@@ -212,6 +218,10 @@ fun BricklyApp() {
                 },
                 toastMessage = toast
             )
+        }
+
+        composable("my_listings") {
+            MyListingsScreen(onBack = { navController.popBackStack() })
         }
 
         composable("edit_profile") {
@@ -246,7 +256,8 @@ fun BricklyApp() {
                 onListingCreated = {
                     navController.popBackStack()
                     navToTab("home")
-                }
+                },
+                onNavigateToBrickognize = { navToTab("brickognize") }
             )
         }
 
@@ -272,7 +283,10 @@ fun BricklyApp() {
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToHome = { navToTab("home") },
                 onNavigateToCart = { navToTab("cart") },
-                onNavigateToProfile = { navToTab("profile") }
+                onNavigateToProfile = { navToTab("profile") },
+                onNavigateToListingsByItem = { itemId ->
+                    navController.navigate("listings_by_minifig/$itemId") { launchSingleTop = true }
+                }
             )
         }
 
@@ -302,7 +316,49 @@ fun BricklyApp() {
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
                 onNavigateToCart = { navToTab("cart") },
-                onNavigateToBrickognize = { navToTab("brickognize") }
+                onNavigateToBrickognize = { navToTab("brickognize") },
+                onNavigateToListings = { itemId ->
+                    navController.navigate("listings_by_minifig/$itemId") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("listings_by_minifig/{itemId}") { backStackEntry ->
+            val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
+            ListingsByMinifigScreen(
+                itemId = itemId,
+                onBack = { navController.popBackStack() },
+                onNavigateToListingDetail = { listingId ->
+                    navController.navigate("listing_detail/$listingId") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("top_up") {
+            TopUpScreen(
+                onBack = { navController.popBackStack() },
+                onSuccess = { amount ->
+                    navController.navigate("top_up_success/$amount") {
+                        popUpTo("top_up") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        composable("top_up_success/{amount}") { backStackEntry ->
+            val amount = backStackEntry.arguments?.getString("amount")?.toIntOrNull() ?: 0
+            PaymentSuccessScreen(
+                totalPrice = amount,
+                title = "Баланс пополнен!",
+                subtitle = "Средства зачислены на ваш счёт",
+                buttonLabel = "В профиль",
+                onGoHome = {
+                    navController.navigate("profile") {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
