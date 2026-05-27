@@ -332,7 +332,7 @@ private fun CartEntryCard(
 
             Spacer(Modifier.width(12.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -343,6 +343,14 @@ private fun CartEntryCard(
                         if (subtitle != null) {
                             Spacer(Modifier.height(2.dp))
                             Text(subtitle, fontSize = 12.sp, color = TextSecondary, maxLines = 1)
+                        } else if (entry.cartItem.itemType == "L") {
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                "${if (entry.listing?.condition == "NEW") "Новый" else "Б/У"} • ${entry.listing?.conditionRate ?: 0}/10",
+                                fontSize = 12.sp,
+                                color = TextSecondary,
+                                maxLines = 1
+                            )
                         }
                         Spacer(Modifier.height(6.dp))
                         Text("${unitPrice * qty} ₽", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
@@ -352,15 +360,19 @@ private fun CartEntryCard(
                     }
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     TextButton(
                         onClick = onDecrement,
                         contentPadding = PaddingValues(0.dp),
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Text("−", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Icon(Icons.Outlined.Remove, null, tint = TextPrimary)
                     }
                     Text("$qty", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary, modifier = Modifier.padding(horizontal = 10.dp))
                     TextButton(
@@ -369,7 +381,7 @@ private fun CartEntryCard(
                         contentPadding = PaddingValues(0.dp),
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Text("＋", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = if (qty < maxQty) TextPrimary else IconInactive)
+                        Icon(Icons.Outlined.Add, null, tint = if (qty < maxQty) TextPrimary else IconInactive)
                     }
                 }
             }

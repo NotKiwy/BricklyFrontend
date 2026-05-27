@@ -115,17 +115,24 @@ fun MinifigDetailScreen(
                     Spacer(Modifier.height(16.dp))
 
                     if (!imageUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = imageUrl,
-                            contentDescription = m.name,
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(260.dp)
                                 .padding(horizontal = 20.dp)
+                                .height(260.dp)
                                 .clip(RoundedCornerShape(24.dp))
-                                .background(Color.White),
-                            contentScale = ContentScale.Fit
-                        )
+                                .background(Color.White)
+                        ) {
+                            AsyncImage(
+                                model = imageUrl,
+                                contentDescription = m.name,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(8.dp)           // внутренние отступы
+                                    .clip(RoundedCornerShape(16.dp)),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
                     } else {
                         Box(
                             modifier = Modifier

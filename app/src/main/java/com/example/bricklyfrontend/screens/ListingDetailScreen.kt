@@ -399,8 +399,11 @@ fun ListingDetailScreen(
                                     )
                                 }
                                 Text(
-                                    "${currentItem.quantity}",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, fontSize = 18.sp),
+                                    "В корзине: ${currentItem.quantity}",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 16.sp
+                                    ),
                                     color = Color.Black
                                 )
                                 IconButton(
@@ -418,14 +421,6 @@ fun ListingDetailScreen(
                                     )
                                 }
                             }
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                text = "В корзине: ${currentItem.quantity}",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = TextSecondary,
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
                         }
                     }
 
