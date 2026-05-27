@@ -41,7 +41,8 @@ fun CartScreen(
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
-    onNavigateToBrickognize: () -> Unit = {}
+    onNavigateToBrickognize: () -> Unit = {},
+    onNavigateToCheckout: (Int) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
     val context = LocalContext.current
@@ -245,7 +246,7 @@ fun CartScreen(
                         }
                         Spacer(Modifier.height(16.dp))
                         Button(
-                            onClick = {},
+                            onClick = { onNavigateToCheckout(totalPrice) },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)

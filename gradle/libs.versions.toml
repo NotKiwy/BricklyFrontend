@@ -17,6 +17,7 @@ googleFonts = "1.7.6"
 coil = "2.6.0"
 bcrypt = "0.10.2"
 desugar = "2.0.4"
+yookassa = "6.10.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -44,6 +45,7 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 bcrypt = { group = "at.favre.lib", name = "bcrypt", version.ref = "bcrypt" }
 desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar" }
+yookassa-android-sdk = { group = "ru.yoomoney.sdk.kassa.payments", name = "yookassa-android-sdk", version.ref = "yookassa" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Brickly App</string>
+    <string name="ym_app_scheme" translatable="false">brickly</string>
 </resources>

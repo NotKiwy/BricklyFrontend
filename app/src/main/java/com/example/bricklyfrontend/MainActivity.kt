@@ -143,7 +143,37 @@ fun BricklyApp() {
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
                 onNavigateToHome = { navToTab("home") },
-                onNavigateToBrickognize = { navToTab("brickognize") }
+                onNavigateToBrickognize = { navToTab("brickognize") },
+                onNavigateToCheckout = { totalPrice ->
+                    navController.navigate("checkout/$totalPrice") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("checkout/{totalPrice}") { backStackEntry ->
+            val totalPrice = backStackEntry.arguments?.getString("totalPrice")?.toIntOrNull() ?: 0
+            CheckoutScreen(
+                totalPrice = totalPrice,
+                onBack = { navController.popBackStack() },
+                onPaymentSuccess = {
+                    navController.navigate("payment_success/$totalPrice") {
+                        popUpTo("cart") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        composable("payment_success/{totalPrice}") { backStackEntry ->
+            val totalPrice = backStackEntry.arguments?.getString("totalPrice")?.toIntOrNull() ?: 0
+            PaymentSuccessScreen(
+                totalPrice = totalPrice,
+                onGoHome = {
+                    navController.navigate("home") {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
