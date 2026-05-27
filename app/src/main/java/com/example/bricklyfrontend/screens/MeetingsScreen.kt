@@ -64,7 +64,7 @@ fun MeetingsScreen(
             if (silent) isRefreshing = true else isLoading = true
             errorMessage = null
             try {
-                val response = RetrofitClient.api.getAllMeetings()
+                val response = RetrofitClient.api.getMeetingsByFuture()
                 if (response.isSuccessful) meetings = response.body() ?: emptyList()
                 else errorMessage = "Ошибка загрузки (${response.code()})"
             } catch (e: Exception) {
@@ -85,9 +85,7 @@ fun MeetingsScreen(
                 it.type?.description?.contains(searchQuery, ignoreCase = true) == true
     }
 
-    val now = OffsetDateTime.now()
     val upcoming = filteredMeetings
-        .filter { parseDateSafe(it.date)?.let { dt -> !dt.isBefore(now) } ?: true }
         .sortedWith(compareBy(nullsLast()) { parseDateSafe(it.date) })
 
     Scaffold(

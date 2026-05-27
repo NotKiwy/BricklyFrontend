@@ -31,8 +31,8 @@ interface ApiService {
         @Query("size") size: Int = 20
     ): Response<PagedModelMeetingDefaultDTO>
 
-    @GET("/api/app/meetings")
-    suspend fun getAllMeetings(): Response<List<MeetingDefaultDTO>>
+    @GET("/api/app/meetings/by_future")
+    suspend fun getMeetingsByFuture(): Response<List<MeetingDefaultDTO>>
 
     @GET("/api/app/meetings/by_id/{id}")
     suspend fun getMeetingById(@Path("id") id: Long): Response<MeetingDefaultDTO>
@@ -43,6 +43,7 @@ interface ApiService {
     @Multipart
     @POST("/api/app/meetings/create")
     suspend fun createMeeting(
+        @Part("creator_id") creatorId: RequestBody,
         @Part("date") date: RequestBody,
         @Part("title") title: RequestBody,
         @Part("announceDate") announceDate: RequestBody,

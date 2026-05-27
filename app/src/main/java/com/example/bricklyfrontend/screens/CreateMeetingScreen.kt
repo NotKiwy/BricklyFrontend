@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.bricklyfrontend.data.MeetingTypeDefaultDTO
 import com.example.bricklyfrontend.data.RetrofitClient
+import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -47,6 +48,7 @@ fun CreateMeetingScreen(
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val userId = UserPreferences.getUserId(context)
 
     var title by remember { mutableStateOf("") }
     var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
@@ -444,6 +446,7 @@ fun CreateMeetingScreen(
                             val durationInMinutes = (duration.toIntOrNull() ?: 0) * 60
 
                             val response = RetrofitClient.api.createMeeting(
+                                creatorId = userId.toString().toRequestBody("text/plain".toMediaTypeOrNull()),
                                 date = dateIso.toRequestBody("text/plain".toMediaTypeOrNull()),
                                 title = title.toRequestBody("text/plain".toMediaTypeOrNull()),
                                 announceDate = announceDate.toRequestBody("text/plain".toMediaTypeOrNull()),
