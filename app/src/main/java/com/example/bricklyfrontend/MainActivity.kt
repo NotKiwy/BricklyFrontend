@@ -255,7 +255,11 @@ fun BricklyApp() {
                         ?.savedStateHandle
                         ?.set("toast", "Профиль обновлён")
                     navController.popBackStack()
-                }
+                },
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToHome = { navToTab("home") },
+                onNavigateToBrickognize = { navToTab("brickognize") }
             )
         }
 
@@ -297,7 +301,11 @@ fun BricklyApp() {
             val userId = backStackEntry.arguments?.getString("userId")?.toLongOrNull() ?: -1L
             FeedbacksScreen(
                 targetUserId = userId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToHome = { navToTab("home") },
+                onNavigateToBrickognize = { navToTab("brickognize") }
             )
         }
 

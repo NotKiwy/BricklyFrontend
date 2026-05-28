@@ -156,6 +156,12 @@ interface ApiService {
 
     @POST("/api/app/payments/top_user_balance_up")
     suspend fun topUpBalance(@Body dto: TopUpRequestDTO): Response<TopUpResponseDTO>
+
+    @GET("/api/app/payments/by_yookassa_id/{yooId}")
+    suspend fun getPaymentByYooId(@Path("yooId") yooId: String): Response<TopUpResponseDTO>
+
+    @POST("/api/app/payments/pay_for_cart")
+    suspend fun payForCart(@Body dto: TopUpRequestDTO): Response<TopUpResponseDTO>
 }
 
 interface BrickognizeApiService {

@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,13 +28,16 @@ import com.example.bricklyfrontend.data.UserShortDTO
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedbacksScreen(
     targetUserId: Long,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToMeetings: () -> Unit = {},
+    onNavigateToCart: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
+    onNavigateToBrickognize: () -> Unit = {}
 ) {
-    SetStatusBarColor(Color.White)
+    SetStatusBarColor(Accent)
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -80,40 +82,43 @@ fun FeedbacksScreen(
     Scaffold(
         containerColor = Background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Отзывы",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Outlined.ArrowBackIosNew,
-                            contentDescription = "Назад",
-                            tint = TextPrimary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                ),
-                actions = {
-                    if (currentUserId != targetUserId) {
-                        TextButton(onClick = { showDialog = true }) {
-                            Text(
-                                "Оставить",
-                                color = Accent,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            )
-                        }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                    .background(Accent)
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
+                    Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
+                }
+                Text(
+                    "Отзывы",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+                if (currentUserId != targetUserId) {
+                    TextButton(
+                        onClick = { showDialog = true },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Text("Оставить", color = TextPrimary, fontWeight = FontWeight.SemiBold)
                     }
                 }
-            )
+            }
+        },
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
+                when (route) {
+                    "meetings" -> onNavigateToMeetings()
+                    "cart" -> onNavigateToCart()
+                    "home" -> onNavigateToHome()
+                    "brickognize" -> onNavigateToBrickognize()
+                }
+            }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
         Column(

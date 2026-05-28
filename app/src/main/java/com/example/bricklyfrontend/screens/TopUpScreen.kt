@@ -50,8 +50,61 @@ fun TopUpScreen(
     var amountInput by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isProcessing by remember { mutableStateOf(false) }
+    var pendingPaymentId by remember { mutableStateOf<String?>(null) }
+    var pendingAmount by remember { mutableIntStateOf(0) }
 
     val presets = listOf(500, 1000, 2000, 5000)
+
+    val threeDsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val yooId = pendingPaymentId
+        val amount = pendingAmount
+        when (result.resultCode) {
+            Activity.RESULT_OK -> {
+                if (yooId != null) {
+                    scope.launch {
+                        try {
+                            val resp = RetrofitClient.api.getPaymentByYooId(yooId)
+                            if (resp.isSuccessful) {
+                                val body = resp.body()
+                                when {
+                                    body?.status == "succeeded" -> {
+                                        isProcessing = false
+                                        onSuccess(amount)
+                                    }
+                                    !body?.cancellationReason.isNullOrBlank() -> {
+                                        errorMessage = "Платёж отклонён: ${body?.cancellationReason}"
+                                        isProcessing = false
+                                    }
+                                    else -> {
+                                        errorMessage = "Платёж не подтверждён"
+                                        isProcessing = false
+                                    }
+                                }
+                            } else {
+                                errorMessage = "Ошибка проверки статуса (${resp.code()})"
+                                isProcessing = false
+                            }
+                        } catch (_: Exception) {
+                            errorMessage = "Нет соединения с сервером"
+                            isProcessing = false
+                        }
+                    }
+                } else {
+                    isProcessing = false
+                }
+            }
+            Activity.RESULT_CANCELED -> {
+                errorMessage = "Оплата отменена"
+                isProcessing = false
+            }
+            Checkout.RESULT_ERROR -> {
+                errorMessage = "Ошибка проведения 3D Secure"
+                isProcessing = false
+            }
+        }
+    }
 
     val tokenizeLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -61,9 +114,7 @@ fun TopUpScreen(
                 val data = result.data
                 if (data != null) {
                     val tokenResult = Checkout.createTokenizationResult(data)
-                    android.util.Log.d("BRICKLY_PAYMENT", "token=${tokenResult.paymentToken} method=${tokenResult.paymentMethodType}")
                     val amount = amountInput.toIntOrNull() ?: 0
-                    val formattedAmount = "$amount.00"
                     isProcessing = true
                     errorMessage = null
                     scope.launch {
@@ -71,31 +122,50 @@ fun TopUpScreen(
                             val resp = RetrofitClient.api.topUpBalance(
                                 TopUpRequestDTO(
                                     userId = userId,
-                                    amount = formattedAmount,
+                                    amount = "$amount.00",
                                     paymentToken = tokenResult.paymentToken
                                 )
                             )
                             if (resp.isSuccessful) {
                                 val body = resp.body()
                                 when {
-                                    !body?.cancellationReason.isNullOrBlank() ->
-                                        errorMessage = "Платёж отклонён: ${body?.cancellationReason}"
-                                    body?.status == "succeeded" ->
+                                    body?.status == "succeeded" -> {
+                                        isProcessing = false
                                         onSuccess(amount)
-                                    body?.status == "pending" ->
-                                        errorMessage = "Неизвестный статус: pending"
-                                    body?.status == "canceled" ->
+                                    }
+                                    body?.status == "pending" && !body.confirmationUrl.isNullOrBlank() -> {
+                                        pendingPaymentId = body.paymentId
+                                        pendingAmount = amount
+                                        val intent = Checkout.createConfirmationIntent(
+                                            context,
+                                            body.confirmationUrl,
+                                            tokenResult.paymentMethodType,
+                                            BuildConfig.YOOKASSA_CLIENT_KEY,
+                                            BuildConfig.YOOKASSA_SHOP_ID
+                                        )
+                                        threeDsLauncher.launch(intent)
+                                    }
+                                    !body?.cancellationReason.isNullOrBlank() -> {
+                                        errorMessage = "Платёж отклонён: ${body?.cancellationReason}"
+                                        isProcessing = false
+                                    }
+                                    body?.status == "canceled" -> {
                                         errorMessage = "Платёж отменён"
-                                    else ->
+                                        isProcessing = false
+                                    }
+                                    else -> {
                                         errorMessage = "Ошибка обработки платежа"
+                                        isProcessing = false
+                                    }
                                 }
                             } else {
                                 errorMessage = "Ошибка сервера (${resp.code()})"
+                                isProcessing = false
                             }
                         } catch (_: Exception) {
                             errorMessage = "Нет соединения с сервером"
+                            isProcessing = false
                         }
-                        isProcessing = false
                     }
                 }
             }

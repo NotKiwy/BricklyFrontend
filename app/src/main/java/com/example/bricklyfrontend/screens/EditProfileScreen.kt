@@ -13,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,13 +23,16 @@ import com.example.bricklyfrontend.data.UserUpdateDTO
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
     onBack: () -> Unit,
-    onSaved: () -> Unit = {}
+    onSaved: () -> Unit = {},
+    onNavigateToMeetings: () -> Unit = {},
+    onNavigateToCart: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
+    onNavigateToBrickognize: () -> Unit = {}
 ) {
-    SetStatusBarColor(Color.White)
+    SetStatusBarColor(Accent)
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -62,29 +64,35 @@ fun EditProfileScreen(
     Scaffold(
         containerColor = Background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Изменить профиль",
-                        color = TextPrimary,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 20.sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.Outlined.ArrowBackIosNew,
-                            contentDescription = "Назад",
-                            tint = TextPrimary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Background
-                ),
-                modifier = Modifier.statusBarsPadding()
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                    .background(Accent)
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
+                    Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
+                }
+                Text(
+                    "Изменить профиль",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        },
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
+                when (route) {
+                    "meetings" -> onNavigateToMeetings()
+                    "cart" -> onNavigateToCart()
+                    "home" -> onNavigateToHome()
+                    "brickognize" -> onNavigateToBrickognize()
+                }
+            }, onScanClick = onNavigateToBrickognize)
         }
     ) { padding ->
         if (isLoading) {

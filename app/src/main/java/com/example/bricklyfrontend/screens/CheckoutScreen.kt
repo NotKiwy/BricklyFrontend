@@ -22,7 +22,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.BuildConfig
+import com.example.bricklyfrontend.data.RetrofitClient
+import com.example.bricklyfrontend.data.TopUpRequestDTO
+import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.ui.theme.*
+import kotlinx.coroutines.launch
 import ru.yoomoney.sdk.kassa.payments.Checkout
 import ru.yoomoney.sdk.kassa.payments.checkoutParameters.Amount
 import ru.yoomoney.sdk.kassa.payments.checkoutParameters.PaymentMethodType
@@ -40,6 +44,8 @@ fun CheckoutScreen(
 ) {
     SetStatusBarColor(Accent)
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val userId = remember { UserPreferences.getUserId(context) }
 
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -54,6 +60,58 @@ fun CheckoutScreen(
     var deliveryComment by remember { mutableStateOf("") }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isProcessing by remember { mutableStateOf(false) }
+    var pendingPaymentId by remember { mutableStateOf<String?>(null) }
+
+    val threeDsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val yooId = pendingPaymentId
+        when (result.resultCode) {
+            Activity.RESULT_OK -> {
+                if (yooId != null) {
+                    scope.launch {
+                        try {
+                            val resp = RetrofitClient.api.getPaymentByYooId(yooId)
+                            if (resp.isSuccessful) {
+                                val body = resp.body()
+                                when {
+                                    body?.status == "succeeded" -> {
+                                        isProcessing = false
+                                        onPaymentSuccess()
+                                    }
+                                    !body?.cancellationReason.isNullOrBlank() -> {
+                                        errorMessage = "Платёж отклонён: ${body?.cancellationReason}"
+                                        isProcessing = false
+                                    }
+                                    else -> {
+                                        errorMessage = "Платёж не подтверждён"
+                                        isProcessing = false
+                                    }
+                                }
+                            } else {
+                                errorMessage = "Ошибка проверки статуса (${resp.code()})"
+                                isProcessing = false
+                            }
+                        } catch (_: Exception) {
+                            errorMessage = "Нет соединения с сервером"
+                            isProcessing = false
+                        }
+                    }
+                } else {
+                    isProcessing = false
+                }
+            }
+            Activity.RESULT_CANCELED -> {
+                errorMessage = "Оплата отменена"
+                isProcessing = false
+            }
+            Checkout.RESULT_ERROR -> {
+                errorMessage = "Ошибка проведения 3D Secure"
+                isProcessing = false
+            }
+        }
+    }
 
     val tokenizeLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -63,8 +121,57 @@ fun CheckoutScreen(
                 val data = result.data
                 if (data != null) {
                     val tokenResult = Checkout.createTokenizationResult(data)
-                    android.util.Log.d("BRICKLY_PAYMENT", "token=${tokenResult.paymentToken} method=${tokenResult.paymentMethodType}")
-                    onPaymentSuccess()
+                    isProcessing = true
+                    errorMessage = null
+                    scope.launch {
+                        try {
+                            val resp = RetrofitClient.api.payForCart(
+                                TopUpRequestDTO(
+                                    userId = userId,
+                                    amount = "$totalPrice.00",
+                                    paymentToken = tokenResult.paymentToken
+                                )
+                            )
+                            if (resp.isSuccessful) {
+                                val body = resp.body()
+                                when {
+                                    body?.status == "succeeded" -> {
+                                        isProcessing = false
+                                        onPaymentSuccess()
+                                    }
+                                    body?.status == "pending" && !body.confirmationUrl.isNullOrBlank() -> {
+                                        pendingPaymentId = body.paymentId
+                                        val intent = Checkout.createConfirmationIntent(
+                                            context,
+                                            body.confirmationUrl,
+                                            tokenResult.paymentMethodType,
+                                            BuildConfig.YOOKASSA_CLIENT_KEY,
+                                            BuildConfig.YOOKASSA_SHOP_ID
+                                        )
+                                        threeDsLauncher.launch(intent)
+                                    }
+                                    !body?.cancellationReason.isNullOrBlank() -> {
+                                        errorMessage = "Платёж отклонён: ${body?.cancellationReason}"
+                                        isProcessing = false
+                                    }
+                                    body?.status == "canceled" -> {
+                                        errorMessage = "Платёж отменён"
+                                        isProcessing = false
+                                    }
+                                    else -> {
+                                        errorMessage = "Ошибка обработки платежа"
+                                        isProcessing = false
+                                    }
+                                }
+                            } else {
+                                errorMessage = "Ошибка сервера (${resp.code()})"
+                                isProcessing = false
+                            }
+                        } catch (_: Exception) {
+                            errorMessage = "Нет соединения с сервером"
+                            isProcessing = false
+                        }
+                    }
                 }
             }
             Activity.RESULT_CANCELED -> {}
@@ -298,7 +405,8 @@ fun CheckoutScreen(
                     }
                     Spacer(Modifier.height(16.dp))
                     Button(
-                        onClick = { validateAndPay() },
+                        onClick = { if (!isProcessing) validateAndPay() },
+                        enabled = !isProcessing,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -308,11 +416,19 @@ fun CheckoutScreen(
                             contentColor = TextPrimary
                         )
                     ) {
-                        Text(
-                            "Оплатить $totalPrice ₽",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
+                        if (isProcessing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = TextPrimary,
+                                strokeWidth = 2.5.dp
+                            )
+                        } else {
+                            Text(
+                                "Оплатить $totalPrice ₽",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
                     }
                 }
             }
