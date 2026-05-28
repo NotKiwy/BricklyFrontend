@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.bricklyfrontend.ui.theme.*
-import kotlinx.coroutines.flow.distinctUntilChanged
 
 private val CardBorder = BorderStroke(1.dp, Color(0xFFE5E5E5))
 
@@ -73,15 +72,17 @@ fun InventoryPanelBox(
 ) {
     val listState = rememberLazyListState()
 
-    LaunchedEffect(listState) {
-        snapshotFlow {
+    val nearEnd by remember {
+        derivedStateOf {
             val info = listState.layoutInfo
-            if (info.totalItemsCount == 0) return@snapshotFlow false
-            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: return@snapshotFlow false
+            if (info.totalItemsCount == 0) return@derivedStateOf false
+            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: return@derivedStateOf false
             lastVisible >= info.totalItemsCount - 3
         }
-            .distinctUntilChanged()
-            .collect { nearEnd -> if (nearEnd) onLoadMore() }
+    }
+
+    LaunchedEffect(nearEnd) {
+        if (nearEnd) onLoadMore()
     }
 
     Card(
@@ -90,7 +91,7 @@ fun InventoryPanelBox(
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Box(modifier = Modifier.fillMaxWidth().height(320.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().height(460.dp)) {
             when {
                 isLoadingFirst -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Accent)
