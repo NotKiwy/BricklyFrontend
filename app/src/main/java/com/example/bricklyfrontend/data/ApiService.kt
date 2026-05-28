@@ -64,6 +64,22 @@ interface ApiService {
     @GET("/api/app/tickets/by_user_id/{userId}")
     suspend fun getTicketsByUserId(@Path("userId") userId: Long): Response<List<TicketDefaultDTO>>
 
+    @GET("/api/app/tickets/by_meeting_id/{meetingId}")
+    suspend fun getTicketsByMeetingId(@Path("meetingId") meetingId: Long): Response<List<TicketDefaultDTO>>
+
+    @GET("/api/app/meetings/by_creator_id/{creatorId}")
+    suspend fun getMeetingsByCreatorId(
+        @Path("creatorId") creatorId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 50
+    ): Response<PagedModelMeetingShortDTO>
+
+    @PUT("/api/app/meetings/update/{id}")
+    suspend fun updateMeeting(
+        @Path("id") id: Long,
+        @Body dto: MeetingUpdateDTO
+    ): Response<MeetingDefaultDTO>
+
     @GET("/api/app/feedbacks/by_target_id/{targetId}")
     suspend fun getFeedbacksByTargetId(
         @Path("targetId") targetId: Long

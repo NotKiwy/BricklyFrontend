@@ -102,7 +102,7 @@ fun CreateListingScreen(
                     condition = condition.toRequestBody("text/plain".toMediaTypeOrNull()),
                     conditionRate = conditionRate.toRequestBody("text/plain".toMediaTypeOrNull()),
                     price = price.toRequestBody("text/plain".toMediaTypeOrNull()),
-                    status = "sell".toRequestBody("text/plain".toMediaTypeOrNull()),
+                    status = "active".toRequestBody("text/plain".toMediaTypeOrNull()),
                     images = imageParts
                 )
 

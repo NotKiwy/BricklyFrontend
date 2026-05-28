@@ -106,7 +106,26 @@ data class MeetingShortDTO(
     val description: String?,
     val type: MeetingTypeDefaultDTO?,
     val title: String?,
-    val previewImagePath: String?
+    val previewImagePath: String?,
+    val duration: Int?
+)
+
+data class PagedModelMeetingShortDTO(
+    val content: List<MeetingShortDTO>?,
+    val page: PageMetadata?
+)
+
+data class MeetingUpdateDTO(
+    val date: String,
+    val address: String,
+    val title: String,
+    val duration: Int,
+    val typeId: Int,
+    val ticketPrice: Int,
+    val description: String?,
+    val discountDuration: Int,
+    val discountAmount: Int,
+    val discountModifier: Int
 )
 
 data class TicketDefaultDTO(

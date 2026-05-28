@@ -237,6 +237,10 @@ fun CartScreen(
             }
 
             else -> Column(modifier = Modifier.fillMaxSize()) {
+                val hasUnavailable = entries.any {
+                    it.cartItem.itemType == "L" && it.listing != null && it.listing.status != "active"
+                }
+
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(vertical = 12.dp)
@@ -244,10 +248,14 @@ fun CartScreen(
                     items(entries, key = { it.cartItem.id }) { entry ->
                         val qty = entry.cartItem.quantity ?: 1
                         val maxQty = if (entry.cartItem.itemType == "L") entry.listing?.quantity ?: qty else 99
+                        val isUnavailable = entry.cartItem.itemType == "L" &&
+                                entry.listing != null &&
+                                entry.listing.status != "active"
                         CartEntryCard(
                             entry = entry,
                             qty = qty,
                             maxQty = maxQty,
+                            isUnavailable = isUnavailable,
                             imageLoader = imageLoader,
                             onClick = {
                                 when (entry.cartItem.itemType) {
@@ -280,9 +288,18 @@ fun CartScreen(
                             }
                             Text("${entries.size} ${pluralPositions(entries.size)}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                         }
+                        if (hasUnavailable) {
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                "Некоторые товары недоступны. Удалите их, чтобы оформить заказ.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = ErrorColor
+                            )
+                        }
                         Spacer(Modifier.height(16.dp))
                         Button(
                             onClick = { onNavigateToCheckout(totalPrice) },
+                            enabled = !hasUnavailable,
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
@@ -302,6 +319,7 @@ private fun CartEntryCard(
     entry: CartEntry,
     qty: Int,
     maxQty: Int,
+    isUnavailable: Boolean,
     imageLoader: ImageLoader,
     onClick: () -> Unit,
     onDelete: () -> Unit,
@@ -342,7 +360,9 @@ private fun CartEntryCard(
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isUnavailable) CardBackground.copy(alpha = 0.6f) else CardBackground
+        ),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
@@ -378,8 +398,16 @@ private fun CartEntryCard(
                     verticalAlignment = Alignment.Top
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary, maxLines = 1)
-                        if (subtitle != null) {
+                        Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (isUnavailable) TextSecondary else TextPrimary, maxLines = 1)
+                        if (isUnavailable) {
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                "Товар недоступен",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = ErrorColor
+                            )
+                        } else if (subtitle != null) {
                             Spacer(Modifier.height(2.dp))
                             Text(subtitle, fontSize = 12.sp, color = TextSecondary, maxLines = 1)
                         } else if (entry.cartItem.itemType == "L") {

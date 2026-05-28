@@ -70,12 +70,12 @@ fun CatalogScreen(
                 if (query.isNotBlank()) {
                     val response = RetrofitClient.api.searchListings(query)
                     if (response.isSuccessful) {
-                        listings = (response.body()?.content ?: emptyList()).filter { it.status == "sell" }
+                        listings = (response.body()?.content ?: emptyList()).filter { it.status == "active" }
                     } else {
                         errorMessage = "Ошибка загрузки (${response.code()})"
                     }
                 } else {
-                    val response = RetrofitClient.api.getListingsByStatus("sell", page = 0, size = 50)
+                    val response = RetrofitClient.api.getListingsByStatus("active", page = 0, size = 50)
                     if (response.isSuccessful) {
                         listings = response.body()?.content ?: emptyList()
                     } else {

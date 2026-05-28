@@ -32,6 +32,7 @@ fun ProfileScreen(
     onNavigateToShop: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToFeedbacks: () -> Unit = {},
+    onNavigateToMyMeetings: () -> Unit = {},
     onNavigateToCreateMeeting: () -> Unit = {},
     onNavigateToCreateListing: () -> Unit = {},
     onNavigateToMyListings: () -> Unit = {},
@@ -199,6 +200,9 @@ fun ProfileScreen(
                 Column {
                     ProfileMenuItem(icon = Icons.Outlined.CalendarMonth, text = "Записи на мероприятия", onClick = onNavigateToMeetings, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.ConfirmationNumber, text = "Мои билеты", onClick = onNavigateToMyTickets, showDivider = true)
+                    if (canCreateMeeting) {
+                        ProfileMenuItem(icon = Icons.Outlined.Event, text = "Мои мероприятия", onClick = onNavigateToMyMeetings, showDivider = true)
+                    }
                     ProfileMenuItem(icon = Icons.Outlined.ShoppingBag, text = "Заказы", onClick = onNavigateToOrders, showDivider = true)
                     if (isSeller) {
                         ProfileMenuItem(icon = Icons.Outlined.Storefront, text = "Мой магазин", onClick = onNavigateToMyListings, showDivider = true)

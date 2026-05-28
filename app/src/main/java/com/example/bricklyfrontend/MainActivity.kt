@@ -225,6 +225,9 @@ fun BricklyApp() {
                     val userId = UserPreferences.getUserId(context)
                     navController.navigate("feedbacks/$userId") { launchSingleTop = true }
                 },
+                onNavigateToMyMeetings = {
+                    navController.navigate("my_meetings") { launchSingleTop = true }
+                },
                 onNavigateToCreateMeeting = {
                     navController.navigate("create_meeting") { launchSingleTop = true }
                 },
@@ -427,6 +430,24 @@ fun BricklyApp() {
 
         composable("listing_cart") {
             ListingCartScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable("my_meetings") {
+            MyMeetingsScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToEditMeeting = { meetingId ->
+                    navController.navigate("edit_meeting/$meetingId") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("edit_meeting/{meetingId}") { backStackEntry ->
+            val meetingId = backStackEntry.arguments?.getString("meetingId")?.toLongOrNull() ?: -1L
+            EditMeetingScreen(
+                meetingId = meetingId,
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() }
+            )
         }
 
         composable("set_detail/{setId}") { backStackEntry ->
