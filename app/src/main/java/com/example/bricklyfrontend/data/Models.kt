@@ -104,7 +104,9 @@ data class MeetingShortDTO(
     val date: String?,
     val address: String?,
     val description: String?,
-    val type: MeetingTypeDefaultDTO?
+    val type: MeetingTypeDefaultDTO?,
+    val title: String?,
+    val previewImagePath: String?
 )
 
 data class TicketDefaultDTO(

@@ -169,6 +169,12 @@ fun BricklyApp() {
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToCheckout = { totalPrice ->
                     navController.navigate("checkout/$totalPrice") { launchSingleTop = true }
+                },
+                onNavigateToListingDetail = { listingId ->
+                    navController.navigate("listing_detail/$listingId") { launchSingleTop = true }
+                },
+                onNavigateToMeetingDetail = { meetingId ->
+                    navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
                 }
             )
         }
@@ -224,6 +230,9 @@ fun BricklyApp() {
                 },
                 onNavigateToMyListings = {
                     navController.navigate("my_listings") { launchSingleTop = true }
+                },
+                onNavigateToMyTickets = {
+                    navController.navigate("my_tickets") { launchSingleTop = true }
                 },
                 onNavigateToTopUp = {
                     navController.navigate("top_up") { launchSingleTop = true }
@@ -293,7 +302,22 @@ fun BricklyApp() {
             MeetingDetailScreen(
                 meetingId = meetingId,
                 onBack = { navController.popBackStack() },
-                onNavigateToCart = { navToTab("cart") }
+                onNavigateToCart = { navToTab("cart") },
+                onNavigateToEditProfile = {
+                    navController.navigate("edit_profile") { launchSingleTop = true }
+                },
+                onNavigateToMyTickets = {
+                    navController.navigate("my_tickets") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("my_tickets") {
+            MyTicketsScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToMeetingDetail = { meetingId ->
+                    navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
+                }
             )
         }
 

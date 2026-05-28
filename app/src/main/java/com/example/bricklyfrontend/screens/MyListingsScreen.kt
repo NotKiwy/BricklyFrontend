@@ -116,13 +116,14 @@ fun MyListingsScreen(
         }
     }
 
-    fun archiveListing(listing: ListingDefaultDTO) {
+    fun toggleListingStatus(listing: ListingDefaultDTO) {
+        val newStatus = if (listing.status == "archived") "active" else "archived"
         scope.launch {
             try {
                 val resp = RetrofitClient.api.updateListing(
                     listing.id,
                     ListingUpdateDTO(
-                        status = "archived",
+                        status = newStatus,
                         quantity = listing.quantity ?: 0,
                         description = listing.description ?: "",
                         price = listing.price ?: 0,
@@ -301,7 +302,7 @@ fun MyListingsScreen(
                         listing = listing,
                         imageLoader = imageLoader,
                         onEdit = { openEdit(listing) },
-                        onArchive = { archiveListing(listing) }
+                        onToggleStatus = { toggleListingStatus(listing) }
                     )
                 }
             }
@@ -314,7 +315,7 @@ private fun MyListingCard(
     listing: ListingDefaultDTO,
     imageLoader: ImageLoader,
     onEdit: () -> Unit,
-    onArchive: () -> Unit
+    onToggleStatus: () -> Unit
 ) {
     val context = LocalContext.current
     val imageUrl = listing.listingImage
@@ -405,18 +406,20 @@ private fun MyListingCard(
                         Icon(Icons.Outlined.Edit, null, modifier = Modifier.size(14.dp), tint = TextPrimary)
                     }
                     OutlinedButton(
-                        onClick = onArchive,
-                        enabled = !isArchived,
+                        onClick = onToggleStatus,
                         modifier = Modifier.weight(1f).height(34.dp),
                         shape = RoundedCornerShape(10.dp),
                         contentPadding = PaddingValues(0.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = if (isArchived) TextSecondary else ErrorColor,
-                            disabledContentColor = TextSecondary.copy(alpha = 0.4f)
+                            contentColor = if (isArchived) TextPrimary else ErrorColor
                         ),
-                        border = ButtonDefaults.outlinedButtonBorder(enabled = !isArchived).copy(width = 1.dp)
+                        border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(width = 1.dp)
                     ) {
-                        Icon(Icons.Outlined.Archive, null, modifier = Modifier.size(14.dp))
+                        Icon(
+                            if (isArchived) Icons.Outlined.Unarchive else Icons.Outlined.Archive,
+                            null,
+                            modifier = Modifier.size(14.dp)
+                        )
                     }
                 }
             }

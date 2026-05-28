@@ -1,6 +1,7 @@
 package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -44,7 +45,9 @@ fun CartScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
-    onNavigateToCheckout: (Int) -> Unit = {}
+    onNavigateToCheckout: (Int) -> Unit = {},
+    onNavigateToListingDetail: (Long) -> Unit = {},
+    onNavigateToMeetingDetail: (Long) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
     val context = LocalContext.current
@@ -246,6 +249,12 @@ fun CartScreen(
                             qty = qty,
                             maxQty = maxQty,
                             imageLoader = imageLoader,
+                            onClick = {
+                                when (entry.cartItem.itemType) {
+                                    "L" -> entry.cartItem.itemId?.let { onNavigateToListingDetail(it.toLong()) }
+                                    "M" -> entry.cartItem.itemId?.let { onNavigateToMeetingDetail(it.toLong()) }
+                                }
+                            },
                             onDelete = { deleteEntry(entry.cartItem.id) },
                             onDecrement = { updateQuantity(entry.cartItem.id, qty - 1, maxQty) },
                             onIncrement = { updateQuantity(entry.cartItem.id, qty + 1, maxQty) }
@@ -294,6 +303,7 @@ private fun CartEntryCard(
     qty: Int,
     maxQty: Int,
     imageLoader: ImageLoader,
+    onClick: () -> Unit,
     onDelete: () -> Unit,
     onDecrement: () -> Unit,
     onIncrement: () -> Unit
@@ -330,7 +340,7 @@ private fun CartEntryCard(
     } else null
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(0.dp)

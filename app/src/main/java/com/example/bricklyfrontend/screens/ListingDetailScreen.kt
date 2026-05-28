@@ -366,75 +366,10 @@ fun ListingDetailScreen(
 
 
                     val maxQty = item.quantity ?: 1
-                    var selectedQty by remember(item.id) { mutableIntStateOf(1) }
-                    val displayQty = if (isInCart) (cartItem?.quantity ?: 1) else selectedQty
+                    val displayQty = cartItem?.quantity ?: 0
 
                     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Accent),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    if (isInCart) {
-                                        scope.launch { ListingCartState.decrementQuantityWithApi(item.id) }
-                                    } else if (selectedQty > 1) {
-                                        selectedQty--
-                                    }
-                                },
-                                modifier = Modifier.size(56.dp)
-                            ) {
-                                Icon(
-                                    if (isInCart && displayQty == 1) Icons.Outlined.Delete else Icons.Outlined.Remove,
-                                    null, tint = Color.Black, modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Text(
-                                if (isInCart) "В корзине: $displayQty" else "Количество: $displayQty",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 16.sp
-                                ),
-                                color = Color.Black
-                            )
-                            IconButton(
-                                onClick = {
-                                    if (isInCart) {
-                                        scope.launch { ListingCartState.incrementQuantityWithApi(item.id) }
-                                    } else if (selectedQty < maxQty) {
-                                        selectedQty++
-                                    }
-                                },
-                                modifier = Modifier.size(56.dp),
-                                enabled = displayQty < maxQty
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Add, null,
-                                    tint = if (displayQty < maxQty) Color.Black else Color.Black.copy(alpha = 0.3f),
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(10.dp))
-
-                        if (isInCart) {
-                            Button(
-                                onClick = onNavigateToCart,
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = TextPrimary, contentColor = Accent)
-                            ) {
-                                Icon(Icons.Outlined.ShoppingBag, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("Перейти в корзину", fontWeight = FontWeight.SemiBold)
-                            }
-                        } else {
+                        if (!isInCart) {
                             Button(
                                 onClick = {
                                     scope.launch {
@@ -442,21 +377,67 @@ fun ListingDetailScreen(
                                             userId = userId,
                                             item = ListingCartItem(
                                                 listingId = item.id,
-                                                title = item.itemId ?: "Unknown",
+                                                title = item.itemId ?: "",
                                                 unitPrice = item.price ?: 0,
-                                                quantity = selectedQty,
+                                                quantity = 1,
                                                 maxQuantity = maxQty
                                             )
                                         )
                                     }
                                 },
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
                             ) {
-                                Icon(Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("В корзину ($selectedQty)", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                                Text("В корзину", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Accent),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        scope.launch { ListingCartState.decrementQuantityWithApi(item.id) }
+                                    },
+                                    modifier = Modifier.size(56.dp)
+                                ) {
+                                    Icon(
+                                        if (displayQty <= 1) Icons.Outlined.ShoppingCart else Icons.Outlined.Remove,
+                                        null,
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Text(
+                                    "В корзине: $displayQty",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 16.sp
+                                    ),
+                                    color = Color.Black
+                                )
+                                IconButton(
+                                    onClick = {
+                                        scope.launch { ListingCartState.incrementQuantityWithApi(item.id) }
+                                    },
+                                    modifier = Modifier.size(56.dp),
+                                    enabled = displayQty < maxQty
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Add,
+                                        null,
+                                        tint = if (displayQty < maxQty) Color.Black else Color.Black.copy(alpha = 0.3f),
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
                             }
                         }
                     }
