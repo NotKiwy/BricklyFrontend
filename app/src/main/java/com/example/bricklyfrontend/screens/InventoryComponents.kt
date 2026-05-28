@@ -1,16 +1,18 @@
 package com.example.bricklyfrontend.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.bricklyfrontend.ui.theme.*
+import kotlinx.coroutines.flow.distinctUntilChanged
+
+private val CardBorder = BorderStroke(1.dp, Color(0xFFE5E5E5))
 
 @Composable
 fun InventoryTabButton(
@@ -62,11 +67,23 @@ fun InventoryTabButton(
 fun InventoryPanelBox(
     isLoadingFirst: Boolean,
     isEmpty: Boolean,
-    canLoadMore: Boolean,
     isLoadingMore: Boolean,
     onLoadMore: () -> Unit,
     content: LazyListScope.() -> Unit
 ) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val info = listState.layoutInfo
+            if (info.totalItemsCount == 0) return@snapshotFlow false
+            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: return@snapshotFlow false
+            lastVisible >= info.totalItemsCount - 3
+        }
+            .distinctUntilChanged()
+            .collect { nearEnd -> if (nearEnd) onLoadMore() }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -82,24 +99,19 @@ fun InventoryPanelBox(
                     Text("Ничего не найдено", color = TextSecondary, fontSize = 14.sp)
                 }
                 else -> LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     content()
-                    if (canLoadMore || isLoadingMore) {
+                    if (isLoadingMore) {
                         item {
                             Box(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (isLoadingMore) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Accent)
-                                } else {
-                                    TextButton(onClick = onLoadMore) {
-                                        Text("Загрузить ещё", color = Accent, fontWeight = FontWeight.SemiBold)
-                                    }
-                                }
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Accent)
                             }
                         }
                     }
@@ -121,15 +133,16 @@ fun InventorySetCard(
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Background),
-        elevation = CardDefaults.cardElevation(0.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(0.dp),
+        border = CardBorder
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color.White),
+                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF5F5F5)),
                 contentAlignment = Alignment.Center
             ) {
                 if (!imageUrl.isNullOrBlank()) {
@@ -187,15 +200,16 @@ fun InventoryMinifigCard(
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Background),
-        elevation = CardDefaults.cardElevation(0.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(0.dp),
+        border = CardBorder
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color.White),
+                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF5F5F5)),
                 contentAlignment = Alignment.Center
             ) {
                 if (!imageUrl.isNullOrBlank()) {
@@ -255,15 +269,16 @@ fun InventoryPartCard(
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Background),
-        elevation = CardDefaults.cardElevation(0.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(0.dp),
+        border = CardBorder
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color.White),
+                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFF5F5F5)),
                 contentAlignment = Alignment.Center
             ) {
                 if (!imageUrl.isNullOrBlank()) {

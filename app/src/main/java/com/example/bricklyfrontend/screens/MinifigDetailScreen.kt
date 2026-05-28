@@ -1,7 +1,7 @@
 package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -276,11 +276,14 @@ fun MinifigDetailScreen(
                             InventoryPanelBox(
                                 isLoadingFirst = setsLoadingFirst,
                                 isEmpty = sets.isEmpty(),
-                                canLoadMore = setsPage + 1 < setsTotalPages,
                                 isLoadingMore = setsLoadingMore,
-                                onLoadMore = { scope.launch { loadSets(setsPage + 1) } }
+                                onLoadMore = {
+                                    if (!setsLoadingMore && setsPage + 1 < setsTotalPages) {
+                                        scope.launch { loadSets(setsPage + 1) }
+                                    }
+                                }
                             ) {
-                                items(sets, key = { it.id }) { set ->
+                                itemsIndexed(sets, key = { index, _ -> index }) { _, set ->
                                     InventorySetCard(
                                         id = set.id,
                                         name = set.name,
@@ -300,11 +303,14 @@ fun MinifigDetailScreen(
                             InventoryPanelBox(
                                 isLoadingFirst = partsLoadingFirst,
                                 isEmpty = parts.isEmpty(),
-                                canLoadMore = partsPage + 1 < partsTotalPages,
                                 isLoadingMore = partsLoadingMore,
-                                onLoadMore = { scope.launch { loadParts(partsPage + 1) } }
+                                onLoadMore = {
+                                    if (!partsLoadingMore && partsPage + 1 < partsTotalPages) {
+                                        scope.launch { loadParts(partsPage + 1) }
+                                    }
+                                }
                             ) {
-                                items(parts, key = { it.id + "_" + (it.colorId ?: 0) }) { part ->
+                                itemsIndexed(parts, key = { index, _ -> index }) { _, part ->
                                     InventoryPartCard(
                                         blId = part.blId,
                                         name = part.name,

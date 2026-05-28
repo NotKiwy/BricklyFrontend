@@ -1,7 +1,7 @@
 package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -273,11 +273,14 @@ fun PartDetailScreen(
                             InventoryPanelBox(
                                 isLoadingFirst = setsLoadingFirst,
                                 isEmpty = sets.isEmpty(),
-                                canLoadMore = setsPage + 1 < setsTotalPages,
                                 isLoadingMore = setsLoadingMore,
-                                onLoadMore = { scope.launch { loadSets(setsPage + 1) } }
+                                onLoadMore = {
+                                    if (!setsLoadingMore && setsPage + 1 < setsTotalPages) {
+                                        scope.launch { loadSets(setsPage + 1) }
+                                    }
+                                }
                             ) {
-                                items(sets, key = { it.id }) { set ->
+                                itemsIndexed(sets, key = { index, _ -> index }) { _, set ->
                                     InventorySetCard(
                                         id = set.id,
                                         name = set.name,
@@ -297,11 +300,14 @@ fun PartDetailScreen(
                             InventoryPanelBox(
                                 isLoadingFirst = minigifsLoadingFirst,
                                 isEmpty = minifigs.isEmpty(),
-                                canLoadMore = minigifsPage + 1 < minifigsTotalPages,
                                 isLoadingMore = minigifsLoadingMore,
-                                onLoadMore = { scope.launch { loadMinifigs(minigifsPage + 1) } }
+                                onLoadMore = {
+                                    if (!minigifsLoadingMore && minigifsPage + 1 < minifigsTotalPages) {
+                                        scope.launch { loadMinifigs(minigifsPage + 1) }
+                                    }
+                                }
                             ) {
-                                items(minifigs, key = { it.id }) { fig ->
+                                itemsIndexed(minifigs, key = { index, _ -> index }) { _, fig ->
                                     InventoryMinifigCard(
                                         blId = fig.blId,
                                         name = fig.blName ?: fig.name,

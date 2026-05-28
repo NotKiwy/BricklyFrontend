@@ -1,7 +1,7 @@
 package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -243,11 +243,14 @@ fun SetDetailScreen(
                             InventoryPanelBox(
                                 isLoadingFirst = partsLoadingFirst,
                                 isEmpty = parts.isEmpty(),
-                                canLoadMore = partsPage + 1 < partsTotalPages,
                                 isLoadingMore = partsLoadingMore,
-                                onLoadMore = { scope.launch { loadParts(partsPage + 1) } }
+                                onLoadMore = {
+                                    if (!partsLoadingMore && partsPage + 1 < partsTotalPages) {
+                                        scope.launch { loadParts(partsPage + 1) }
+                                    }
+                                }
                             ) {
-                                items(parts, key = { it.id + "_" + (it.colorId ?: 0) }) { part ->
+                                itemsIndexed(parts, key = { index, _ -> index }) { _, part ->
                                     InventoryPartCard(
                                         blId = part.blId,
                                         name = part.name,
@@ -268,11 +271,10 @@ fun SetDetailScreen(
                             InventoryPanelBox(
                                 isLoadingFirst = minigifsLoadingFirst,
                                 isEmpty = minifigs.isEmpty(),
-                                canLoadMore = false,
                                 isLoadingMore = false,
                                 onLoadMore = {}
                             ) {
-                                items(minifigs, key = { it.id }) { fig ->
+                                itemsIndexed(minifigs, key = { index, _ -> index }) { _, fig ->
                                     InventoryMinifigCard(
                                         blId = fig.blId,
                                         name = fig.blName ?: fig.name,
