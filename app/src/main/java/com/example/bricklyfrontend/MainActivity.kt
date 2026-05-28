@@ -307,7 +307,8 @@ fun BricklyApp() {
                     navController.navigate("edit_profile") { launchSingleTop = true }
                 },
                 onNavigateToMyTickets = {
-                    navController.navigate("my_tickets") { launchSingleTop = true }
+                    val popped = navController.popBackStack("my_tickets", inclusive = false)
+                    if (!popped) navController.navigate("my_tickets") { launchSingleTop = true }
                 }
             )
         }

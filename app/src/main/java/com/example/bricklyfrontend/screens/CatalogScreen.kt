@@ -70,12 +70,12 @@ fun CatalogScreen(
                 if (query.isNotBlank()) {
                     val response = RetrofitClient.api.searchListings(query)
                     if (response.isSuccessful) {
-                        listings = response.body() ?: emptyList()
+                        listings = (response.body()?.content ?: emptyList()).filter { it.status == "sell" }
                     } else {
                         errorMessage = "Ошибка загрузки (${response.code()})"
                     }
                 } else {
-                    val response = RetrofitClient.api.getListingsPaginated(page = 0, size = 50)
+                    val response = RetrofitClient.api.getListingsByStatus("sell", page = 0, size = 50)
                     if (response.isSuccessful) {
                         listings = response.body()?.content ?: emptyList()
                     } else {
@@ -265,18 +265,13 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),   // ← Главное изменение: clickable на Card
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column {
-            // Изображение
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
                 if (imageUrl != null) {
                     SubcomposeAsyncImage(
                         model = ImageRequest.Builder(context)
@@ -314,7 +309,6 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
                 }
             }
 
-            // Информация
             Column(
                 modifier = Modifier.padding(12.dp)
             ) {

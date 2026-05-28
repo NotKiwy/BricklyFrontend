@@ -173,8 +173,8 @@ fun ListingDetailScreen(
                                 state = pagerState,
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .clip(RoundedCornerShape(24.dp))     // ← Вернул закругление сюда
-                                    .background(Color.White)             // фон для не квадратных фото
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .background(Color.White)
                             ) { page ->
                                 val imageUrl = "${RetrofitClient.BASE_URL}${images[page].imagePath}"
 
@@ -186,7 +186,7 @@ fun ListingDetailScreen(
                                     imageLoader = imageLoader,
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Fit,      // полностью видно фото
+                                    contentScale = ContentScale.Fit,
                                     alignment = Alignment.Center,
                                     error = {
                                         Box(
@@ -207,7 +207,6 @@ fun ListingDetailScreen(
                                 )
                             }
 
-                            // Индикаторы
                             if (images.size > 1) {
                                 Row(
                                     modifier = Modifier
@@ -250,7 +249,6 @@ fun ListingDetailScreen(
 
                     Spacer(Modifier.height(16.dp))
 
-                    // Main Info Card
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -410,7 +408,7 @@ fun ListingDetailScreen(
                                     modifier = Modifier.size(56.dp)
                                 ) {
                                     Icon(
-                                        if (displayQty <= 1) Icons.Outlined.ShoppingCart else Icons.Outlined.Remove,
+                                        if (displayQty <= 1) Icons.Outlined.Delete else Icons.Outlined.Remove,
                                         null,
                                         tint = Color.Black,
                                         modifier = Modifier.size(22.dp)
