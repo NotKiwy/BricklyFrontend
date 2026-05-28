@@ -2,6 +2,7 @@ package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,8 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -25,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.bricklyfrontend.ui.theme.*
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 private val CardBorder = BorderStroke(1.dp, Color(0xFFE5E5E5))
 
@@ -71,18 +77,27 @@ fun InventoryPanelBox(
     content: LazyListScope.() -> Unit
 ) {
     val listState = rememberLazyListState()
+    val onLoadMoreLatest by rememberUpdatedState(onLoadMore)
 
-    val nearEnd by remember {
-        derivedStateOf {
-            val info = listState.layoutInfo
-            if (info.totalItemsCount == 0) return@derivedStateOf false
-            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: return@derivedStateOf false
-            lastVisible >= info.totalItemsCount - 3
+    val scrollInterceptor = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset = available
         }
     }
 
-    LaunchedEffect(nearEnd) {
-        if (nearEnd) onLoadMore()
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val info = listState.layoutInfo
+            if (info.totalItemsCount == 0) return@snapshotFlow false
+            val lastVisible = info.visibleItemsInfo.lastOrNull()?.index ?: return@snapshotFlow false
+            lastVisible >= info.totalItemsCount - 5
+        }
+            .distinctUntilChanged()
+            .collect { nearEnd -> if (nearEnd) onLoadMoreLatest() }
     }
 
     Card(
@@ -91,7 +106,12 @@ fun InventoryPanelBox(
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Box(modifier = Modifier.fillMaxWidth().height(460.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(460.dp)
+                .nestedScroll(scrollInterceptor)
+        ) {
             when {
                 isLoadingFirst -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Accent)
@@ -307,7 +327,13 @@ fun InventoryPartCard(
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (dotColor != null) {
-                            Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(dotColor))
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .border(0.7.dp, Color(0xFFCCCCCC), CircleShape)
+                                    .clip(CircleShape)
+                                    .background(dotColor)
+                            )
                             Spacer(Modifier.width(4.dp))
                         }
                         Text(colorName, fontSize = 12.sp, color = TextSecondary, maxLines = 1)
