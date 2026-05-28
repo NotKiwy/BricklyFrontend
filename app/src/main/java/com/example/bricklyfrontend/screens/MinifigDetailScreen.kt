@@ -1,6 +1,7 @@
 package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,8 +21,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.bricklyfrontend.data.MinifigDTO
+import com.example.bricklyfrontend.data.PartFromItemDTO
 import com.example.bricklyfrontend.data.RetrofitClient
+import com.example.bricklyfrontend.data.SetContainingBLMinifigDTO
 import com.example.bricklyfrontend.ui.theme.*
+import kotlinx.coroutines.launch
+
+private enum class MinifigInventoryTab { SETS, PARTS }
 
 @Composable
 fun MinifigDetailScreen(
@@ -31,13 +37,63 @@ fun MinifigDetailScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
-    onNavigateToListings: (String) -> Unit = {}
+    onNavigateToListings: (String) -> Unit = {},
+    onNavigateToSetDetail: (String) -> Unit = {},
+    onNavigateToPartDetail: (String) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
 
     var minifig by remember { mutableStateOf<MinifigDTO?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    var activeTab by remember { mutableStateOf<MinifigInventoryTab?>(null) }
+
+    var sets by remember { mutableStateOf<List<SetContainingBLMinifigDTO>>(emptyList()) }
+    var setsPage by remember { mutableStateOf(0) }
+    var setsTotalPages by remember { mutableStateOf(1) }
+    var setsLoadingFirst by remember { mutableStateOf(false) }
+    var setsLoadingMore by remember { mutableStateOf(false) }
+
+    var parts by remember { mutableStateOf<List<PartFromItemDTO>>(emptyList()) }
+    var partsPage by remember { mutableStateOf(0) }
+    var partsTotalPages by remember { mutableStateOf(1) }
+    var partsLoadingFirst by remember { mutableStateOf(false) }
+    var partsLoadingMore by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
+
+    suspend fun loadSets(page: Int) {
+        if (page == 0) setsLoadingFirst = true else setsLoadingMore = true
+        try {
+            val resp = RetrofitClient.api.getSetsContainingMinifig(blId, page)
+            if (resp.isSuccessful) {
+                val body = resp.body()
+                val content = body?.content ?: emptyList()
+                sets = if (page == 0) content else sets + content
+                setsPage = page
+                setsTotalPages = body?.page?.totalPages?.toInt() ?: 1
+            }
+        } catch (_: Exception) {}
+        setsLoadingFirst = false
+        setsLoadingMore = false
+    }
+
+    suspend fun loadParts(page: Int) {
+        if (page == 0) partsLoadingFirst = true else partsLoadingMore = true
+        try {
+            val resp = RetrofitClient.api.getPartsFromMinifig(blId, page)
+            if (resp.isSuccessful) {
+                val body = resp.body()
+                val content = body?.content ?: emptyList()
+                parts = if (page == 0) content else parts + content
+                partsPage = page
+                partsTotalPages = body?.page?.totalPages?.toInt() ?: 1
+            }
+        } catch (_: Exception) {}
+        partsLoadingFirst = false
+        partsLoadingMore = false
+    }
 
     LaunchedEffect(blId) {
         try {
@@ -48,10 +104,18 @@ fun MinifigDetailScreen(
             } else {
                 errorMessage = "Ошибка загрузки (${response.code()})"
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             errorMessage = "Нет соединения с сервером"
         }
         isLoading = false
+    }
+
+    LaunchedEffect(activeTab) {
+        when (activeTab) {
+            MinifigInventoryTab.SETS -> if (sets.isEmpty()) loadSets(0)
+            MinifigInventoryTab.PARTS -> if (parts.isEmpty()) loadParts(0)
+            null -> {}
+        }
     }
 
     Scaffold(
@@ -95,11 +159,7 @@ fun MinifigDetailScreen(
                 Modifier.fillMaxSize().padding(32.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    errorMessage!!,
-                    color = ErrorColor,
-                    textAlign = TextAlign.Center
-                )
+                Text(errorMessage!!, color = ErrorColor, textAlign = TextAlign.Center)
             }
 
             minifig != null -> {
@@ -129,7 +189,7 @@ fun MinifigDetailScreen(
                                 contentDescription = m.name,
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(8.dp)           // внутренние отступы
+                                    .padding(8.dp)
                                     .clip(RoundedCornerShape(16.dp)),
                                 contentScale = ContentScale.Fit
                             )
@@ -144,21 +204,14 @@ fun MinifigDetailScreen(
                                 .background(Accent.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                Icons.Outlined.Image,
-                                null,
-                                tint = Accent,
-                                modifier = Modifier.size(64.dp)
-                            )
+                            Icon(Icons.Outlined.Image, null, tint = Accent, modifier = Modifier.size(64.dp))
                         }
                     }
 
                     Spacer(Modifier.height(20.dp))
 
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(containerColor = CardBackground),
                         elevation = CardDefaults.cardElevation(0.dp)
@@ -169,25 +222,14 @@ fun MinifigDetailScreen(
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
                                 color = TextPrimary
                             )
-
                             Spacer(Modifier.height(16.dp))
-
                             MinifigInfoRow(label = "BrickLink ID", value = m.blMinifig?.id ?: blId)
                             Spacer(Modifier.height(10.dp))
-
                             MinifigInfoRow(label = "Rebrickable ID", value = m.id)
                             Spacer(Modifier.height(10.dp))
-
-                            MinifigInfoRow(
-                                label = "Категория",
-                                value = m.blMinifig?.categoryName ?: "Не указана"
-                            )
+                            MinifigInfoRow(label = "Категория", value = m.blMinifig?.categoryName ?: "Не указана")
                             Spacer(Modifier.height(10.dp))
-
-                            MinifigInfoRow(
-                                label = "Количество деталей",
-                                value = m.numParts?.toString() ?: "Не указано"
-                            )
+                            MinifigInfoRow(label = "Количество деталей", value = m.numParts?.toString() ?: "Не указано")
                         }
                     }
 
@@ -195,16 +237,86 @@ fun MinifigDetailScreen(
 
                     Button(
                         onClick = { onNavigateToListings(m.blMinifig?.id ?: blId) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                            .height(52.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(52.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
                     ) {
                         Icon(Icons.Outlined.Storefront, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Просмотреть объявления", fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        InventoryTabButton(
+                            label = "Наборы",
+                            icon = Icons.Outlined.GridView,
+                            isActive = activeTab == MinifigInventoryTab.SETS,
+                            isLoadingFirst = setsLoadingFirst,
+                            onClick = { activeTab = if (activeTab == MinifigInventoryTab.SETS) null else MinifigInventoryTab.SETS },
+                            modifier = Modifier.weight(1f)
+                        )
+                        InventoryTabButton(
+                            label = "Детали",
+                            icon = Icons.Outlined.Extension,
+                            isActive = activeTab == MinifigInventoryTab.PARTS,
+                            isLoadingFirst = partsLoadingFirst,
+                            onClick = { activeTab = if (activeTab == MinifigInventoryTab.PARTS) null else MinifigInventoryTab.PARTS },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    if (activeTab == MinifigInventoryTab.SETS) {
+                        Spacer(Modifier.height(10.dp))
+                        Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                            InventoryPanelBox(
+                                isLoadingFirst = setsLoadingFirst,
+                                isEmpty = sets.isEmpty(),
+                                canLoadMore = setsPage + 1 < setsTotalPages,
+                                isLoadingMore = setsLoadingMore,
+                                onLoadMore = { scope.launch { loadSets(setsPage + 1) } }
+                            ) {
+                                items(sets, key = { it.id }) { set ->
+                                    InventorySetCard(
+                                        id = set.id,
+                                        name = set.name,
+                                        year = set.year,
+                                        imageUrl = set.imageUrl,
+                                        countLabel = "×${set.minifigQuantity ?: 1}",
+                                        onClick = { onNavigateToSetDetail(set.id) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (activeTab == MinifigInventoryTab.PARTS) {
+                        Spacer(Modifier.height(10.dp))
+                        Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                            InventoryPanelBox(
+                                isLoadingFirst = partsLoadingFirst,
+                                isEmpty = parts.isEmpty(),
+                                canLoadMore = partsPage + 1 < partsTotalPages,
+                                isLoadingMore = partsLoadingMore,
+                                onLoadMore = { scope.launch { loadParts(partsPage + 1) } }
+                            ) {
+                                items(parts, key = { it.id + "_" + (it.colorId ?: 0) }) { part ->
+                                    InventoryPartCard(
+                                        blId = part.blId,
+                                        name = part.name,
+                                        imageUrl = part.imageUrl,
+                                        colorName = part.colorName,
+                                        colorRgb = part.colorRgb,
+                                        countLabel = "×${part.quantity ?: 1}",
+                                        onClick = { onNavigateToPartDetail(part.blId ?: part.id) }
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     Spacer(Modifier.height(32.dp))
@@ -217,11 +329,7 @@ fun MinifigDetailScreen(
 @Composable
 private fun MinifigInfoRow(label: String, value: String) {
     Column {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = TextSecondary
-        )
+        Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
         Text(
             value,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),

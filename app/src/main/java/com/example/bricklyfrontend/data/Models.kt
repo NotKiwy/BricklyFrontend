@@ -264,3 +264,84 @@ data class PartDTO(
     val category: PartCategoryDTO?,
     val blPart: BlPartDTO?
 )
+
+data class SetContainingBlPartDTO(
+    val id: String,
+    val name: String?,
+    val year: Int?,
+    val numParts: Int?,
+    val imageUrl: String?,
+    val themeId: Int?,
+    val themeName: String?,
+    val partQuantity: Int?
+)
+
+data class PagedModelSetContainingBlPartDTO(
+    val content: List<SetContainingBlPartDTO>?,
+    val page: PageMetadata?
+)
+
+data class MinifigContainingBlPartDTO(
+    val id: String,
+    val name: String?,
+    val numParts: Int?,
+    val imageUrl: String?,
+    val partQuantity: Int?,
+    val blId: String?,
+    val blName: String?,
+    val blCategoryName: String?,
+    val blImageUrl: String?,
+    val blUrl: String?
+)
+
+data class PagedModelMinifigContainingBlPartDTO(
+    val content: List<MinifigContainingBlPartDTO>?,
+    val page: PageMetadata?
+)
+
+data class PartFromItemDTO(
+    val id: String,
+    val name: String?,
+    val blId: String?,
+    val categoryId: Int?,
+    val categoryName: String?,
+    val colorId: Int?,
+    val colorName: String?,
+    val colorRgb: String?,
+    val imageUrl: String?,
+    val quantity: Int?
+)
+
+data class PagedModelPartFromItemDTO(
+    val content: List<PartFromItemDTO>?,
+    val page: PageMetadata?
+)
+
+data class SetContainingBLMinifigDTO(
+    val id: String,
+    val name: String?,
+    val year: Int?,
+    val numParts: Int?,
+    val imageUrl: String?,
+    val themeId: Int?,
+    val themeName: String?,
+    val minifigQuantity: Int?
+)
+
+data class PagedModelSetContainingBLMinifigDTO(
+    val content: List<SetContainingBLMinifigDTO>?,
+    val page: PageMetadata?
+)
+
+data class MinifigFromSetDTO(
+    val id: String,
+    val name: String?,
+    val numParts: Int?,
+    val imageUrl: String?,
+    val quantity: Int?,
+    val blId: String?,
+    val blName: String?,
+    val blCategoryName: String?,
+    val blImageUrl: String?,
+    val blUrl: String?
+)

@@ -136,6 +136,46 @@ interface ApiService {
     @GET("/api/app/sets/by_id/{id}")
     suspend fun getSetById(@Path("id") id: String): Response<BrickSetDTO>
 
+    @GET("/api/app/inventories/sets/containing_part/{partId}")
+    suspend fun getSetsContainingPart(
+        @Path("partId") partId: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PagedModelSetContainingBlPartDTO>
+
+    @GET("/app/api/inventories/minifigs/containing_part/{partId}")
+    suspend fun getMinigifsContainingPart(
+        @Path("partId") partId: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PagedModelMinifigContainingBlPartDTO>
+
+    @GET("/api/app/inventories/parts/from_set/{setId}")
+    suspend fun getPartsFromSet(
+        @Path("setId") setId: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PagedModelPartFromItemDTO>
+
+    @GET("/app/api/inventories/minifigs/from_set/{setId}")
+    suspend fun getMinigifsFromSet(
+        @Path("setId") setId: String
+    ): Response<List<MinifigFromSetDTO>>
+
+    @GET("/api/app/inventories/sets/containing_minifig/{minifigId}")
+    suspend fun getSetsContainingMinifig(
+        @Path("minifigId") minifigId: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PagedModelSetContainingBLMinifigDTO>
+
+    @GET("/api/app/inventories/parts/from_minifig/{minifigId}")
+    suspend fun getPartsFromMinifig(
+        @Path("minifigId") minifigId: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PagedModelPartFromItemDTO>
+
     @POST("/api/app/cart_items/create")
     suspend fun addCartItem(@Body dto: CartItemCreateDTO): Response<CartItemDefaultDTO>
 

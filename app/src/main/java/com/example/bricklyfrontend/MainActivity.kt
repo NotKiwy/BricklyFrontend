@@ -381,6 +381,12 @@ fun BricklyApp() {
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToListings = { itemId ->
                     navController.navigate("home_search/$itemId") { launchSingleTop = true }
+                },
+                onNavigateToSetDetail = { setId ->
+                    navController.navigate("set_detail/$setId") { launchSingleTop = true }
+                },
+                onNavigateToPartDetail = { partBlId ->
+                    navController.navigate("part_detail/$partBlId") { launchSingleTop = true }
                 }
             )
         }
@@ -396,6 +402,12 @@ fun BricklyApp() {
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToListings = { itemId ->
                     navController.navigate("home_search/$itemId") { launchSingleTop = true }
+                },
+                onNavigateToSetDetail = { setId ->
+                    navController.navigate("set_detail/$setId") { launchSingleTop = true }
+                },
+                onNavigateToMinifigDetail = { minifigBlId ->
+                    navController.navigate("minifig_detail/$minifigBlId") { launchSingleTop = true }
                 }
             )
         }
@@ -458,7 +470,13 @@ fun BricklyApp() {
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
                 onNavigateToCart = { navToTab("cart") },
-                onNavigateToBrickognize = { navToTab("brickognize") }
+                onNavigateToBrickognize = { navToTab("brickognize") },
+                onNavigateToPartDetail = { partBlId ->
+                    navController.navigate("part_detail/$partBlId") { launchSingleTop = true }
+                },
+                onNavigateToMinifigDetail = { minifigBlId ->
+                    navController.navigate("minifig_detail/$minifigBlId") { launchSingleTop = true }
+                }
             )
         }
     }
