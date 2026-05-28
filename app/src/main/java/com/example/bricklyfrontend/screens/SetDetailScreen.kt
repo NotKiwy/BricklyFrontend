@@ -50,7 +50,7 @@ fun SetDetailScreen(
 
     var parts by remember { mutableStateOf<List<PartFromItemDTO>>(emptyList()) }
     var partsPage by remember { mutableStateOf(0) }
-    var partsTotalPages by remember { mutableStateOf(1) }
+    var partsHasMore by remember { mutableStateOf(false) }
     var partsLoadingFirst by remember { mutableStateOf(false) }
     var partsLoadingMore by remember { mutableStateOf(false) }
 
@@ -66,9 +66,15 @@ fun SetDetailScreen(
             if (resp.isSuccessful) {
                 val body = resp.body()
                 val content = body?.content ?: emptyList()
-                parts = if (page == 0) content else parts + content
-                partsPage = page
-                partsTotalPages = body?.page?.totalPages?.toInt() ?: 1
+                if (content.isNotEmpty()) {
+                    parts = if (page == 0) content else parts + content
+                    partsPage = page
+                }
+                val apiTotalPages = body?.page?.totalPages?.toInt()
+                partsHasMore = when {
+                    apiTotalPages != null && apiTotalPages > 0 -> page + 1 < apiTotalPages
+                    else -> content.size >= 20
+                }
             }
         } catch (_: Exception) {}
         partsLoadingFirst = false
@@ -245,7 +251,7 @@ fun SetDetailScreen(
                                 isEmpty = parts.isEmpty(),
                                 isLoadingMore = partsLoadingMore,
                                 onLoadMore = {
-                                    if (!partsLoadingMore && partsPage + 1 < partsTotalPages) {
+                                    if (!partsLoadingMore && partsHasMore) {
                                         scope.launch { loadParts(partsPage + 1) }
                                     }
                                 }
