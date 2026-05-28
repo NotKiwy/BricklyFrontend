@@ -43,7 +43,7 @@ interface ApiService {
     @Multipart
     @POST("/api/app/meetings/create")
     suspend fun createMeeting(
-        @Part("creator_id") creatorId: RequestBody,
+        @Part("creatorId") creatorId: RequestBody,
         @Part("date") date: RequestBody,
         @Part("title") title: RequestBody,
         @Part("announceDate") announceDate: RequestBody,

@@ -246,18 +246,11 @@ private fun ListingCard(listing: ListingDefaultDTO, onClick: () -> Unit, onNavig
         if (path.isBlank()) {
             null
         } else {
-            try {
-                val cleanPath = path.trim().trimStart('/')
-                val url = if (cleanPath.startsWith("http")) {
-                    cleanPath
-                } else {
-                    "${RetrofitClient.BASE_URL}/$cleanPath"
-                }
-                android.util.Log.d("ListingCard", "Listing ${listing.id}: path=$path, cleanPath=$cleanPath, finalURL=$url")
-                url
-            } catch (e: Exception) {
-                android.util.Log.e("ListingCard", "Error constructing image URL: ${e.message}")
-                null
+            val cleanPath = path.trim().trimStart('/')
+            if (cleanPath.startsWith("http")) {
+                cleanPath
+            } else {
+                "${RetrofitClient.BASE_URL}/$cleanPath"
             }
         }
     }

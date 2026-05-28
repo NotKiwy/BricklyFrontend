@@ -465,14 +465,12 @@ fun CreateMeetingScreen(
                                 previewImage = imagePart
                             )
 
-                            android.util.Log.d("BRICKLY_MEETING", "code=${response.code()} body=${response.errorBody()?.string()}")
                             if (response.isSuccessful) {
                                 onMeetingCreated()
                             } else {
                                 errorMessage = "Ошибка создания (${response.code()}): ${response.errorBody()?.string() ?: response.message()}"
                             }
                         } catch (e: Exception) {
-                            android.util.Log.e("BRICKLY_MEETING", "exception", e)
                             errorMessage = "Ошибка: ${e.localizedMessage ?: "Неизвестная ошибка"}"
                         }
                         isSaving = false
