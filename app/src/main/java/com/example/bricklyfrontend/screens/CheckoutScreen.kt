@@ -22,11 +22,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bricklyfrontend.BuildConfig
-import com.example.bricklyfrontend.data.RetrofitClient
-import com.example.bricklyfrontend.data.TopUpRequestDTO
-import com.example.bricklyfrontend.data.UserPreferences
+import com.example.bricklyfrontend.data.*
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import ru.yoomoney.sdk.kassa.payments.Checkout
 import ru.yoomoney.sdk.kassa.payments.checkoutParameters.Amount
 import ru.yoomoney.sdk.kassa.payments.checkoutParameters.PaymentMethodType
@@ -40,13 +40,15 @@ import java.util.Locale
 fun CheckoutScreen(
     totalPrice: Int,
     onBack: () -> Unit,
-    onPaymentSuccess: () -> Unit = {}
+    onPaymentSuccess: () -> Unit = {},
+    onNavigateToTopUp: (Int) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val userId = remember { UserPreferences.getUserId(context) }
 
+    var userBalance by remember { mutableIntStateOf(0) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
     var pickupAddress by remember { mutableStateOf("") }
@@ -63,6 +65,15 @@ fun CheckoutScreen(
     var isProcessing by remember { mutableStateOf(false) }
     var pendingPaymentId by remember { mutableStateOf<String?>(null) }
 
+    LaunchedEffect(Unit) {
+        try {
+            val resp = RetrofitClient.api.getUserById(userId)
+            if (resp.isSuccessful) {
+                userBalance = resp.body()?.balance ?: 0
+            }
+        } catch (_: Exception) {}
+    }
+
     val threeDsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -77,6 +88,87 @@ fun CheckoutScreen(
                                 val body = resp.body()
                                 when {
                                     body?.status == "succeeded" -> {
+                                        try {
+                                            val cartResp = RetrofitClient.api.getCartItemsByUserId(userId)
+                                            if (cartResp.isSuccessful) {
+                                                val cartItems = cartResp.body() ?: emptyList()
+                                                val ticketItems = cartItems.filter { it.itemType == "M" }
+                                                val listingItems = cartItems.filter { it.itemType == "L" }
+
+                                                for (item in ticketItems) {
+                                                    val meetingId = item.itemId?.toLong() ?: continue
+                                                    val quantity = item.quantity ?: 1
+
+                                                    val meetingResp = RetrofitClient.api.getMeetingById(meetingId)
+                                                    val ticketPrice = if (meetingResp.isSuccessful) {
+                                                        meetingResp.body()?.ticketPrice ?: 0
+                                                    } else 0
+
+                                                    repeat(quantity) {
+                                                        try {
+                                                            RetrofitClient.api.createTicket(
+                                                                TicketCreateDTO(
+                                                                    userId = userId,
+                                                                    meetingId = meetingId,
+                                                                    pricePaid = ticketPrice,
+                                                                    state = 0
+                                                                )
+                                                            )
+                                                        } catch (_: Exception) {}
+                                                    }
+                                                }
+
+                                                if (listingItems.isNotEmpty()) {
+                                                    val orderItems = mutableListOf<OrderItemCreateDTO>()
+                                                    for (item in listingItems) {
+                                                        val listingId = item.itemId?.toLong() ?: continue
+                                                        val quantity = item.quantity ?: 1
+
+                                                        val listingResp = RetrofitClient.api.getListingById(listingId)
+                                                        val price = if (listingResp.isSuccessful) {
+                                                            listingResp.body()?.price ?: 0
+                                                        } else 0
+
+                                                        orderItems.add(
+                                                            OrderItemCreateDTO(
+                                                                status = "on_confirmation",
+                                                                price = price,
+                                                                quantity = quantity,
+                                                                listingId = listingId
+                                                            )
+                                                        )
+                                                    }
+
+                                                    val shippingMethod = if (selectedTab == 0) "shipping" else "delivery"
+                                                    val shippingAddress = if (selectedTab == 0) {
+                                                        pickupAddress
+                                                    } else {
+                                                        buildString {
+                                                            append(deliveryStreet)
+                                                            append(", д. ")
+                                                            append(deliveryHouse)
+                                                            if (deliveryEntrance.isNotBlank()) append(", подъезд $deliveryEntrance")
+                                                            if (deliveryApt.isNotBlank()) append(", кв. $deliveryApt")
+                                                            if (deliveryFloor.isNotBlank()) append(", этаж $deliveryFloor")
+                                                            if (deliveryCode.isNotBlank()) append(", код $deliveryCode")
+                                                            if (deliveryComment.isNotBlank()) append(" ($deliveryComment)")
+                                                        }
+                                                    }
+
+                                                    try {
+                                                        RetrofitClient.api.createOrder(
+                                                            OrderCreateDTO(
+                                                                shippingMethod = shippingMethod,
+                                                                shippingAddress = shippingAddress,
+                                                                createdAt = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                                                                userId = userId,
+                                                                orderItems = orderItems
+                                                            )
+                                                        )
+                                                    } catch (_: Exception) {}
+                                                }
+                                            }
+                                        } catch (_: Exception) {}
                                         isProcessing = false
                                         onPaymentSuccess()
                                     }
@@ -136,6 +228,87 @@ fun CheckoutScreen(
                                 val body = resp.body()
                                 when {
                                     body?.status == "succeeded" -> {
+                                        try {
+                                            val cartResp = RetrofitClient.api.getCartItemsByUserId(userId)
+                                            if (cartResp.isSuccessful) {
+                                                val cartItems = cartResp.body() ?: emptyList()
+                                                val ticketItems = cartItems.filter { it.itemType == "M" }
+                                                val listingItems = cartItems.filter { it.itemType == "L" }
+
+                                                for (item in ticketItems) {
+                                                    val meetingId = item.itemId?.toLong() ?: continue
+                                                    val quantity = item.quantity ?: 1
+
+                                                    val meetingResp = RetrofitClient.api.getMeetingById(meetingId)
+                                                    val ticketPrice = if (meetingResp.isSuccessful) {
+                                                        meetingResp.body()?.ticketPrice ?: 0
+                                                    } else 0
+
+                                                    repeat(quantity) {
+                                                        try {
+                                                            RetrofitClient.api.createTicket(
+                                                                TicketCreateDTO(
+                                                                    userId = userId,
+                                                                    meetingId = meetingId,
+                                                                    pricePaid = ticketPrice,
+                                                                    state = 0
+                                                                )
+                                                            )
+                                                        } catch (_: Exception) {}
+                                                    }
+                                                }
+
+                                                if (listingItems.isNotEmpty()) {
+                                                    val orderItems = mutableListOf<OrderItemCreateDTO>()
+                                                    for (item in listingItems) {
+                                                        val listingId = item.itemId?.toLong() ?: continue
+                                                        val quantity = item.quantity ?: 1
+
+                                                        val listingResp = RetrofitClient.api.getListingById(listingId)
+                                                        val price = if (listingResp.isSuccessful) {
+                                                            listingResp.body()?.price ?: 0
+                                                        } else 0
+
+                                                        orderItems.add(
+                                                            OrderItemCreateDTO(
+                                                                status = "on_confirmation",
+                                                                price = price,
+                                                                quantity = quantity,
+                                                                listingId = listingId
+                                                            )
+                                                        )
+                                                    }
+
+                                                    val shippingMethod = if (selectedTab == 0) "shipping" else "delivery"
+                                                    val shippingAddress = if (selectedTab == 0) {
+                                                        pickupAddress
+                                                    } else {
+                                                        buildString {
+                                                            append(deliveryStreet)
+                                                            append(", д. ")
+                                                            append(deliveryHouse)
+                                                            if (deliveryEntrance.isNotBlank()) append(", подъезд $deliveryEntrance")
+                                                            if (deliveryApt.isNotBlank()) append(", кв. $deliveryApt")
+                                                            if (deliveryFloor.isNotBlank()) append(", этаж $deliveryFloor")
+                                                            if (deliveryCode.isNotBlank()) append(", код $deliveryCode")
+                                                            if (deliveryComment.isNotBlank()) append(" ($deliveryComment)")
+                                                        }
+                                                    }
+
+                                                    try {
+                                                        RetrofitClient.api.createOrder(
+                                                            OrderCreateDTO(
+                                                                shippingMethod = shippingMethod,
+                                                                shippingAddress = shippingAddress,
+                                                                createdAt = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                                                                userId = userId,
+                                                                orderItems = orderItems
+                                                            )
+                                                        )
+                                                    } catch (_: Exception) {}
+                                                }
+                                            }
+                                        } catch (_: Exception) {}
                                         isProcessing = false
                                         onPaymentSuccess()
                                     }
@@ -187,6 +360,13 @@ fun CheckoutScreen(
             errorMessage = "Укажите улицу и номер дома"
             return
         }
+
+        if (userBalance < totalPrice) {
+            val deficit = totalPrice - userBalance
+            onNavigateToTopUp(deficit)
+            return
+        }
+
         errorMessage = null
 
         val subtitle = if (selectedTab == 0) {

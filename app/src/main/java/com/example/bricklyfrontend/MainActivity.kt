@@ -189,6 +189,11 @@ fun BricklyApp() {
                         popUpTo("cart") { inclusive = true }
                         launchSingleTop = true
                     }
+                },
+                onNavigateToTopUp = { deficit ->
+                    navController.navigate("top_up_with_amount/$deficit") {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -216,7 +221,9 @@ fun BricklyApp() {
             }
             ProfileScreen(
                 onNavigateToMeetings = { navToTab("meetings") },
-                onNavigateToOrders = {},
+                onNavigateToOrders = {
+                    navController.navigate("my_orders") { launchSingleTop = true }
+                },
                 onNavigateToShop = {},
                 onNavigateToEditProfile = {
                     navController.navigate("edit_profile") { launchSingleTop = true }
@@ -325,6 +332,23 @@ fun BricklyApp() {
             )
         }
 
+        composable("my_orders") {
+            MyOrdersScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToOrderDetail = { orderId ->
+                    navController.navigate("order_detail/$orderId") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("order_detail/{orderId}") { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId")?.toLongOrNull() ?: 0L
+            OrderDetailScreen(
+                orderId = orderId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable("feedbacks/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toLongOrNull() ?: -1L
             FeedbacksScreen(
@@ -421,6 +445,20 @@ fun BricklyApp() {
                         launchSingleTop = true
                     }
                 }
+            )
+        }
+
+        composable("top_up_with_amount/{amount}") { backStackEntry ->
+            val amount = backStackEntry.arguments?.getString("amount")?.toIntOrNull()
+            TopUpScreen(
+                onBack = { navController.popBackStack() },
+                onSuccess = { finalAmount ->
+                    navController.navigate("top_up_success/$finalAmount") {
+                        popUpTo("top_up_with_amount/{amount}") { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                initialAmount = amount
             )
         }
 

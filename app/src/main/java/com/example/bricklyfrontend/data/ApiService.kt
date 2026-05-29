@@ -218,6 +218,22 @@ interface ApiService {
 
     @POST("/api/app/payments/pay_for_cart")
     suspend fun payForCart(@Body dto: TopUpRequestDTO): Response<TopUpResponseDTO>
+
+    @POST("/api/app/orders/create")
+    suspend fun createOrder(@Body dto: OrderCreateDTO): Response<OrderDefaultDTO>
+
+    @GET("/api/app/orders/by_user_id/{userId}")
+    suspend fun getOrdersByUserId(
+        @Path("userId") userId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PagedModelOrderDefaultDTO>
+
+    @PUT("/api/app/orders/items/update/{id}")
+    suspend fun updateOrderItem(
+        @Path("id") id: Long,
+        @Body dto: OrderItemUpdateDTO
+    ): Response<OrderItemDefaultDTO>
 }
 
 interface BrickognizeApiService {

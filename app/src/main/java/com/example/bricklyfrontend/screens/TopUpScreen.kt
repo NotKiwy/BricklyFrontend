@@ -40,14 +40,15 @@ import java.util.Locale
 @Composable
 fun TopUpScreen(
     onBack: () -> Unit,
-    onSuccess: (Int) -> Unit = {}
+    onSuccess: (Int) -> Unit = {},
+    initialAmount: Int? = null
 ) {
     SetStatusBarColor(Accent)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val userId = remember { UserPreferences.getUserId(context) }
 
-    var amountInput by remember { mutableStateOf("") }
+    var amountInput by remember { mutableStateOf(initialAmount?.toString() ?: "") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isProcessing by remember { mutableStateOf(false) }
     var pendingPaymentId by remember { mutableStateOf<String?>(null) }

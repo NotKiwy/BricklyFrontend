@@ -345,3 +345,49 @@ data class MinifigFromSetDTO(
     val blImageUrl: String?,
     val blUrl: String?
 )
+
+data class OrderItemCreateDTO(
+    val status: String,
+    val price: Int,
+    val quantity: Int,
+    val listingId: Long
+)
+
+data class OrderCreateDTO(
+    val shippingMethod: String,
+    val shippingAddress: String,
+    val createdAt: String,
+    val userId: Long,
+    val orderItems: List<OrderItemCreateDTO>
+)
+
+data class OrderItemDefaultDTO(
+    val id: Long,
+    val status: String?,
+    val price: Int?,
+    val quantity: Int?,
+    val listing: ListingDefaultDTO?
+)
+
+data class OrderDefaultDTO(
+    val id: Long,
+    val shippingMethod: String?,
+    val shippingAddress: String?,
+    val createdAt: String?,
+    val user: UserShortDTO?,
+    val orderItems: List<OrderItemDefaultDTO>?
+)
+
+data class PagedModelOrderDefaultDTO(
+    val content: List<OrderDefaultDTO>?,
+    val page: PageMetadata?
+)
+
+data class OrderItemUpdateDTO(
+    val status: String
+)
+
+data class OrderUpdateDTO(
+    val shippingMethod: String?,
+    val shippingAddress: String?
+)
