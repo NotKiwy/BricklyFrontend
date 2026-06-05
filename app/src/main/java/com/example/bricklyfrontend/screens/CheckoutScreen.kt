@@ -33,6 +33,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
@@ -899,7 +903,13 @@ private fun CheckoutInteractiveMap(
         mapView.invalidate()
     }
 
-    AndroidView(factory = { mapView }, modifier = modifier)
+    val scrollConsumer = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset = available
+        }
+    }
+
+    AndroidView(factory = { mapView }, modifier = modifier.nestedScroll(scrollConsumer))
 }
 
 private data class ReverseGeoResult(
