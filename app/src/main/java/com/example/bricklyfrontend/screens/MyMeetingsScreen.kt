@@ -15,11 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.bricklyfrontend.data.MeetingShortDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
@@ -174,6 +176,10 @@ private fun MyMeetingCard(
         } catch (_: Exception) { it }
     }
 
+    val imageUrl = meeting.previewImagePath
+        ?.takeIf { it.isNotBlank() }
+        ?.let { if (it.startsWith("http")) it else "${RetrofitClient.BASE_URL}/${it.trimStart('/')}" }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -184,76 +190,104 @@ private fun MyMeetingCard(
         ),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+        Row(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Accent.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = meeting.title ?: "Без названия",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isPast) TextSecondary else TextPrimary
+                if (imageUrl != null) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
-                    if (isPast) {
-                        Spacer(Modifier.height(4.dp))
+                } else {
+                    Icon(Icons.Outlined.Event, null, tint = Accent, modifier = Modifier.size(32.dp))
+                }
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Прошедшее",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = TextSecondary
+                            text = meeting.title ?: "Без названия",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isPast) TextSecondary else TextPrimary
                         )
+                        if (isPast) {
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                "Прошедшее",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                    if (!isPast) {
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Accent)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Edit,
+                                contentDescription = "Редактировать",
+                                tint = Color.Black,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
-                if (!isPast) {
-                    IconButton(
-                        onClick = onEdit,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Accent)
-                    ) {
-                        Icon(
-                            Icons.Outlined.Edit,
-                            contentDescription = "Редактировать",
-                            tint = Color.Black,
-                            modifier = Modifier.size(18.dp)
+
+                Spacer(Modifier.height(6.dp))
+
+                if (dateFormatted != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Schedule, null, tint = IconInactive, modifier = Modifier.size(13.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(dateFormatted, fontSize = 12.sp, color = TextSecondary)
+                    }
+                    Spacer(Modifier.height(3.dp))
+                }
+
+                if (!meeting.address.isNullOrBlank()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.LocationOn, null, tint = IconInactive, modifier = Modifier.size(13.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            meeting.address,
+                            fontSize = 12.sp,
+                            color = TextSecondary,
+                            maxLines = 1
                         )
                     }
+                    Spacer(Modifier.height(3.dp))
                 }
-            }
 
-            Spacer(Modifier.height(10.dp))
-
-            if (dateFormatted != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Schedule, null, tint = IconInactive, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(dateFormatted, fontSize = 13.sp, color = TextSecondary)
+                    Icon(Icons.Outlined.ConfirmationNumber, null, tint = Accent, modifier = Modifier.size(13.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = if (ticketCount != null) "Записалось: $ticketCount" else "Загрузка...",
+                        fontSize = 12.sp,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
-                Spacer(Modifier.height(4.dp))
-            }
-
-            if (!meeting.address.isNullOrBlank()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.LocationOn, null, tint = IconInactive, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(meeting.address, fontSize = 13.sp, color = TextSecondary)
-                }
-                Spacer(Modifier.height(4.dp))
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.ConfirmationNumber, null, tint = Accent, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = if (ticketCount != null) "Записалось: $ticketCount" else "Загрузка...",
-                    fontSize = 13.sp,
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Medium
-                )
             }
         }
     }

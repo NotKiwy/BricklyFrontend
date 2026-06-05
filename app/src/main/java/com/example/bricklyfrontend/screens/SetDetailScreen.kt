@@ -58,6 +58,7 @@ fun SetDetailScreen(
     var minigifsLoadingFirst by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     suspend fun loadParts(page: Int) {
         if (page == 0) partsLoadingFirst = true else partsLoadingMore = true
@@ -108,10 +109,20 @@ fun SetDetailScreen(
 
     LaunchedEffect(activeTab) {
         when (activeTab) {
-            SetInventoryTab.PARTS -> if (parts.isEmpty()) loadParts(0)
-            SetInventoryTab.MINIFIGS -> if (minifigs.isEmpty()) loadMinifigs()
+            SetInventoryTab.PARTS -> {
+                if (parts.isEmpty()) loadParts(0)
+                scrollState.animateScrollTo(scrollState.maxValue)
+            }
+            SetInventoryTab.MINIFIGS -> {
+                if (minifigs.isEmpty()) loadMinifigs()
+                scrollState.animateScrollTo(scrollState.maxValue)
+            }
             null -> {}
         }
+    }
+
+    LaunchedEffect(scrollState.maxValue) {
+        if (activeTab != null) scrollState.animateScrollTo(scrollState.maxValue)
     }
 
     Scaffold(
@@ -164,7 +175,7 @@ fun SetDetailScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(scrollState)
                 ) {
                     Spacer(Modifier.height(16.dp))
 

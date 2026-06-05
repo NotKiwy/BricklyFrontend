@@ -51,8 +51,9 @@ fun BricklyApp() {
     val startDest = if (UserPreferences.isLoggedIn(context)) "meetings" else "login"
 
     fun navToTab(route: String) {
+        val tabRoot = if (UserPreferences.isLoggedIn(context)) "meetings" else startDest
         navController.navigate(route) {
-            popUpTo(navController.graph.findStartDestination().id) {
+            popUpTo(tabRoot) {
                 saveState = true
             }
             launchSingleTop = true
