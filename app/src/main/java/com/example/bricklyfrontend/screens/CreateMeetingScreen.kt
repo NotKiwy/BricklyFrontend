@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,31 +51,33 @@ fun CreateMeetingScreen(
     val scope = rememberCoroutineScope()
     val userId = UserPreferences.getUserId(context)
 
-    var title by remember { mutableStateOf("") }
-    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
-    var selectedHour by remember { mutableStateOf<Int?>(null) }
-    var selectedMinute by remember { mutableStateOf<Int?>(null) }
-    var duration by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var title by rememberSaveable { mutableStateOf("") }
+    var selectedDateMillis by rememberSaveable { mutableStateOf<Long?>(null) }
+    var selectedHour by rememberSaveable { mutableStateOf<Int?>(null) }
+    var selectedMinute by rememberSaveable { mutableStateOf<Int?>(null) }
+    var duration by rememberSaveable { mutableStateOf("") }
+    var address by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var selectedImageUriStr by rememberSaveable { mutableStateOf<String?>(null) }
+    val selectedImageUri = selectedImageUriStr?.let { Uri.parse(it) }
 
     var meetingTypes by remember { mutableStateOf<List<MeetingTypeDefaultDTO>>(emptyList()) }
-    var selectedType by remember { mutableStateOf<MeetingTypeDefaultDTO?>(null) }
+    var selectedTypeId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val selectedType = meetingTypes.firstOrNull { it.id == selectedTypeId }
 
-    var isPaidEntry by remember { mutableStateOf(false) }
-    var ticketPrice by remember { mutableStateOf("") }
+    var isPaidEntry by rememberSaveable { mutableStateOf(false) }
+    var ticketPrice by rememberSaveable { mutableStateOf("") }
 
-    var hasDiscount by remember { mutableStateOf(false) }
-    var discountDuration by remember { mutableStateOf("") }
-    var discountAmount by remember { mutableStateOf("") }
-    var discountFromAnnounce by remember { mutableStateOf(true) }
+    var hasDiscount by rememberSaveable { mutableStateOf(false) }
+    var discountDuration by rememberSaveable { mutableStateOf("") }
+    var discountAmount by rememberSaveable { mutableStateOf("") }
+    var discountFromAnnounce by rememberSaveable { mutableStateOf(true) }
 
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { selectedImageUri = it }
+        uri?.let { selectedImageUriStr = it.toString() }
     }
 
     LaunchedEffect(Unit) {
@@ -287,8 +290,8 @@ fun CreateMeetingScreen(
                     items(meetingTypes) { type ->
                         MeetingTypeCard(
                             type = type,
-                            isSelected = selectedType?.id == type.id,
-                            onClick = { selectedType = type }
+                            isSelected = selectedTypeId == type.id,
+                            onClick = { selectedTypeId = type.id }
                         )
                     }
                 }

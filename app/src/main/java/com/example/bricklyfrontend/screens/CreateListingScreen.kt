@@ -17,6 +17,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,14 +49,15 @@ fun CreateListingScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var itemType by remember { mutableStateOf("") }
-    var itemId by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var condition by remember { mutableStateOf("NEW") }
-    var conditionRate by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
-    var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var itemType by rememberSaveable { mutableStateOf("") }
+    var itemId by rememberSaveable { mutableStateOf("") }
+    var quantity by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var condition by rememberSaveable { mutableStateOf("NEW") }
+    var conditionRate by rememberSaveable { mutableStateOf("") }
+    var price by rememberSaveable { mutableStateOf("") }
+    var selectedImageStrings by rememberSaveable { mutableStateOf<List<String>>(emptyList()) }
+    val selectedImages = selectedImageStrings.map { Uri.parse(it) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showItemTypeDialog by remember { mutableStateOf(false) }
@@ -64,7 +66,7 @@ fun CreateListingScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        selectedImages = (selectedImages + uris).take(5)
+        selectedImageStrings = (selectedImageStrings + uris.map { it.toString() }).take(5)
     }
 
     fun createListing() {
@@ -174,7 +176,7 @@ fun CreateListingScreen(
                             contentScale = ContentScale.Crop
                         )
                         IconButton(
-                            onClick = { selectedImages = selectedImages - uri },
+                            onClick = { selectedImageStrings = selectedImageStrings - uri.toString() },
                             modifier = Modifier.align(Alignment.TopEnd).size(32.dp)
                         ) {
                             Icon(Icons.Outlined.Cancel, null, tint = Color.White, modifier = Modifier.size(20.dp))

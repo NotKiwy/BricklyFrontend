@@ -303,7 +303,9 @@ fun BricklyApp() {
                     navController.popBackStack()
                     navToTab("home")
                 },
-                onNavigateToBrickognize = { navToTab("brickognize") }
+                onNavigateToBrickognize = {
+                    navController.navigate("brickognize") { launchSingleTop = true }
+                }
             )
         }
 
