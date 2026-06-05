@@ -25,8 +25,7 @@ import com.example.bricklyfrontend.data.MinifigFromSetDTO
 import com.example.bricklyfrontend.data.PartFromItemDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.ui.theme.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 
 private enum class SetInventoryTab { PARTS, MINIFIGS }
 
@@ -58,7 +57,7 @@ fun SetDetailScreen(
     var minifigs by remember { mutableStateOf<List<MinifigFromSetDTO>>(emptyList()) }
     var minigifsLoadingFirst by remember { mutableStateOf(false) }
 
-    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
 
     suspend fun loadParts(page: Int) {
         if (page == 0) partsLoadingFirst = true else partsLoadingMore = true
@@ -109,28 +108,10 @@ fun SetDetailScreen(
 
     LaunchedEffect(activeTab) {
         when (activeTab) {
-            SetInventoryTab.PARTS -> {
-                if (parts.isEmpty()) loadParts(0)
-                delay(150)
-                scrollState.animateScrollTo(Int.MAX_VALUE)
-            }
-            SetInventoryTab.MINIFIGS -> {
-                if (minifigs.isEmpty()) loadMinifigs()
-                delay(150)
-                scrollState.animateScrollTo(Int.MAX_VALUE)
-            }
+            SetInventoryTab.PARTS -> if (parts.isEmpty()) loadParts(0)
+            SetInventoryTab.MINIFIGS -> if (minifigs.isEmpty()) loadMinifigs()
             null -> {}
         }
-    }
-
-    LaunchedEffect(scrollState) {
-        snapshotFlow { scrollState.value >= scrollState.maxValue - 400 && scrollState.maxValue > 0 }
-            .distinctUntilChanged()
-            .collect { nearBottom ->
-                if (nearBottom && activeTab == SetInventoryTab.PARTS && partsHasMore && !partsLoadingMore && !partsLoadingFirst) {
-                    loadParts(partsPage + 1)
-                }
-            }
     }
 
     Scaffold(
@@ -183,7 +164,7 @@ fun SetDetailScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .verticalScroll(scrollState)
+                        .verticalScroll(rememberScrollState())
                 ) {
                     Spacer(Modifier.height(16.dp))
 
@@ -264,42 +245,27 @@ fun SetDetailScreen(
 
                     if (activeTab == SetInventoryTab.PARTS) {
                         Spacer(Modifier.height(10.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardBackground),
-                            elevation = CardDefaults.cardElevation(0.dp)
-                        ) {
-                            when {
-                                partsLoadingFirst -> Box(
-                                    Modifier.fillMaxWidth().height(200.dp),
-                                    contentAlignment = Alignment.Center
-                                ) { CircularProgressIndicator(color = Accent) }
-                                parts.isEmpty() -> Box(
-                                    Modifier.fillMaxWidth().height(200.dp),
-                                    contentAlignment = Alignment.Center
-                                ) { Text("Ничего не найдено", color = TextSecondary, fontSize = 14.sp) }
-                                else -> Column(
-                                    modifier = Modifier.padding(10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    parts.forEach { part ->
-                                        InventoryPartCard(
-                                            blId = part.blId,
-                                            name = part.name,
-                                            imageUrl = part.imageUrl,
-                                            colorName = part.colorName,
-                                            colorRgb = part.colorRgb,
-                                            countLabel = "×${part.quantity ?: 1}",
-                                            onClick = { onNavigateToPartDetail(part.blId ?: part.id) }
-                                        )
+                        Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                            InventoryPanelBox(
+                                isLoadingFirst = partsLoadingFirst,
+                                isEmpty = parts.isEmpty(),
+                                isLoadingMore = partsLoadingMore,
+                                onLoadMore = {
+                                    if (!partsLoadingMore && partsHasMore) {
+                                        scope.launch { loadParts(partsPage + 1) }
                                     }
-                                    if (partsLoadingMore) {
-                                        Box(
-                                            Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) { CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Accent) }
-                                    }
+                                }
+                            ) {
+                                itemsIndexed(parts, key = { index, _ -> index }) { _, part ->
+                                    InventoryPartCard(
+                                        blId = part.blId,
+                                        name = part.name,
+                                        imageUrl = part.imageUrl,
+                                        colorName = part.colorName,
+                                        colorRgb = part.colorRgb,
+                                        countLabel = "×${part.quantity ?: 1}",
+                                        onClick = { onNavigateToPartDetail(part.blId ?: part.id) }
+                                    )
                                 }
                             }
                         }
