@@ -25,7 +25,8 @@ import com.example.bricklyfrontend.data.MinifigFromSetDTO
 import com.example.bricklyfrontend.data.PartFromItemDTO
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.ui.theme.*
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 private enum class SetInventoryTab { PARTS, MINIFIGS }
 
@@ -57,7 +58,6 @@ fun SetDetailScreen(
     var minifigs by remember { mutableStateOf<List<MinifigFromSetDTO>>(emptyList()) }
     var minigifsLoadingFirst by remember { mutableStateOf(false) }
 
-    val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     suspend fun loadParts(page: Int) {
@@ -111,18 +111,26 @@ fun SetDetailScreen(
         when (activeTab) {
             SetInventoryTab.PARTS -> {
                 if (parts.isEmpty()) loadParts(0)
-                scrollState.animateScrollTo(scrollState.maxValue)
+                delay(150)
+                scrollState.animateScrollTo(Int.MAX_VALUE)
             }
             SetInventoryTab.MINIFIGS -> {
                 if (minifigs.isEmpty()) loadMinifigs()
-                scrollState.animateScrollTo(scrollState.maxValue)
+                delay(150)
+                scrollState.animateScrollTo(Int.MAX_VALUE)
             }
             null -> {}
         }
     }
 
-    LaunchedEffect(scrollState.maxValue) {
-        if (activeTab != null) scrollState.animateScrollTo(scrollState.maxValue)
+    LaunchedEffect(scrollState) {
+        snapshotFlow { scrollState.value >= scrollState.maxValue - 400 && scrollState.maxValue > 0 }
+            .distinctUntilChanged()
+            .collect { nearBottom ->
+                if (nearBottom && activeTab == SetInventoryTab.PARTS && partsHasMore && !partsLoadingMore && !partsLoadingFirst) {
+                    loadParts(partsPage + 1)
+                }
+            }
     }
 
     Scaffold(
@@ -256,27 +264,42 @@ fun SetDetailScreen(
 
                     if (activeTab == SetInventoryTab.PARTS) {
                         Spacer(Modifier.height(10.dp))
-                        Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                            InventoryPanelBox(
-                                isLoadingFirst = partsLoadingFirst,
-                                isEmpty = parts.isEmpty(),
-                                isLoadingMore = partsLoadingMore,
-                                onLoadMore = {
-                                    if (!partsLoadingMore && partsHasMore) {
-                                        scope.launch { loadParts(partsPage + 1) }
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {
+                            when {
+                                partsLoadingFirst -> Box(
+                                    Modifier.fillMaxWidth().height(200.dp),
+                                    contentAlignment = Alignment.Center
+                                ) { CircularProgressIndicator(color = Accent) }
+                                parts.isEmpty() -> Box(
+                                    Modifier.fillMaxWidth().height(200.dp),
+                                    contentAlignment = Alignment.Center
+                                ) { Text("Ничего не найдено", color = TextSecondary, fontSize = 14.sp) }
+                                else -> Column(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    parts.forEach { part ->
+                                        InventoryPartCard(
+                                            blId = part.blId,
+                                            name = part.name,
+                                            imageUrl = part.imageUrl,
+                                            colorName = part.colorName,
+                                            colorRgb = part.colorRgb,
+                                            countLabel = "×${part.quantity ?: 1}",
+                                            onClick = { onNavigateToPartDetail(part.blId ?: part.id) }
+                                        )
                                     }
-                                }
-                            ) {
-                                itemsIndexed(parts, key = { index, _ -> index }) { _, part ->
-                                    InventoryPartCard(
-                                        blId = part.blId,
-                                        name = part.name,
-                                        imageUrl = part.imageUrl,
-                                        colorName = part.colorName,
-                                        colorRgb = part.colorRgb,
-                                        countLabel = "×${part.quantity ?: 1}",
-                                        onClick = { onNavigateToPartDetail(part.blId ?: part.id) }
-                                    )
+                                    if (partsLoadingMore) {
+                                        Box(
+                                            Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) { CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Accent) }
+                                    }
                                 }
                             }
                         }
