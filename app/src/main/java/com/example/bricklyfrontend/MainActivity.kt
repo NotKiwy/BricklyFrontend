@@ -183,7 +183,6 @@ fun BricklyApp() {
         composable("checkout/{totalPrice}") { backStackEntry ->
             val totalPrice = backStackEntry.arguments?.getString("totalPrice")?.toIntOrNull() ?: 0
             CheckoutScreen(
-                totalPrice = totalPrice,
                 onBack = { navController.popBackStack() },
                 onPaymentSuccess = {
                     navController.navigate("payment_success/$totalPrice") {

@@ -1,6 +1,5 @@
 package com.example.bricklyfrontend.screens
 
-import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,30 +21,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.bricklyfrontend.BuildConfig
 import com.example.bricklyfrontend.data.*
 import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import ru.yoomoney.sdk.kassa.payments.Checkout
-import ru.yoomoney.sdk.kassa.payments.checkoutParameters.Amount
-import ru.yoomoney.sdk.kassa.payments.checkoutParameters.PaymentMethodType
-import ru.yoomoney.sdk.kassa.payments.checkoutParameters.PaymentParameters
-import ru.yoomoney.sdk.kassa.payments.checkoutParameters.SavePaymentMethod
-import java.math.BigDecimal
-import java.util.Currency
 import java.util.Locale
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.osmdroid.config.Configuration
+import org.osmdroid.events.MapEventsReceiver
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.MapEventsOverlay
+import org.osmdroid.views.overlay.Marker
+import java.io.File
 
 private enum class CheckoutStep {
     TICKETS_CONFIRMATION,
-    SHIPPING_FORM,
-    PROCESSING
+    SHIPPING_FORM
 }
 
 @Composable
 fun CheckoutScreen(
-    totalPrice: Int,
     onBack: () -> Unit,
     onPaymentSuccess: () -> Unit = {},
     onNavigateToTopUp: (Int) -> Unit = {}
@@ -77,7 +84,6 @@ fun CheckoutScreen(
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isProcessing by remember { mutableStateOf(false) }
-    var pendingPaymentId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         try {
@@ -117,283 +123,6 @@ fun CheckoutScreen(
                 }
             }
         } catch (_: Exception) {}
-    }
-
-    val threeDsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val yooId = pendingPaymentId
-        when (result.resultCode) {
-            Activity.RESULT_OK -> {
-                if (yooId != null) {
-                    scope.launch {
-                        try {
-                            val resp = RetrofitClient.api.getPaymentByYooId(yooId)
-                            if (resp.isSuccessful) {
-                                val body = resp.body()
-                                when {
-                                    body?.status == "succeeded" -> {
-                                        try {
-                                            val cartResp = RetrofitClient.api.getCartItemsByUserId(userId)
-                                            if (cartResp.isSuccessful) {
-                                                val cartItems = cartResp.body() ?: emptyList()
-                                                val ticketItems = cartItems.filter { it.itemType == "M" }
-                                                val listingItems = cartItems.filter { it.itemType == "L" }
-
-                                                for (item in ticketItems) {
-                                                    val meetingId = item.itemId?.toLong() ?: continue
-                                                    val quantity = item.quantity ?: 1
-
-                                                    val meetingResp = RetrofitClient.api.getMeetingById(meetingId)
-                                                    val ticketPrice = if (meetingResp.isSuccessful) {
-                                                        meetingResp.body()?.ticketPrice ?: 0
-                                                    } else 0
-
-                                                    repeat(quantity) {
-                                                        try {
-                                                            RetrofitClient.api.createTicket(
-                                                                TicketCreateDTO(
-                                                                    userId = userId,
-                                                                    meetingId = meetingId,
-                                                                    pricePaid = ticketPrice,
-                                                                    state = 0
-                                                                )
-                                                            )
-                                                        } catch (_: Exception) {}
-                                                    }
-                                                }
-
-                                                if (listingItems.isNotEmpty()) {
-                                                    val orderItems = mutableListOf<OrderItemCreateDTO>()
-                                                    for (item in listingItems) {
-                                                        val listingId = item.itemId?.toLong() ?: continue
-                                                        val quantity = item.quantity ?: 1
-
-                                                        val listingResp = RetrofitClient.api.getListingById(listingId)
-                                                        val price = if (listingResp.isSuccessful) {
-                                                            listingResp.body()?.price ?: 0
-                                                        } else 0
-
-                                                        orderItems.add(
-                                                            OrderItemCreateDTO(
-                                                                status = "on_confirmation",
-                                                                price = price,
-                                                                quantity = quantity,
-                                                                listingId = listingId
-                                                            )
-                                                        )
-                                                    }
-
-                                                    val shippingMethod = if (selectedTab == 0) "shipping" else "delivery"
-                                                    val shippingAddress = if (selectedTab == 0) {
-                                                        pickupAddress
-                                                    } else {
-                                                        buildString {
-                                                            append(deliveryStreet)
-                                                            append(", д. ")
-                                                            append(deliveryHouse)
-                                                            if (deliveryEntrance.isNotBlank()) append(", подъезд $deliveryEntrance")
-                                                            if (deliveryApt.isNotBlank()) append(", кв. $deliveryApt")
-                                                            if (deliveryFloor.isNotBlank()) append(", этаж $deliveryFloor")
-                                                            if (deliveryCode.isNotBlank()) append(", код $deliveryCode")
-                                                            if (deliveryComment.isNotBlank()) append(" ($deliveryComment)")
-                                                        }
-                                                    }
-
-                                                    try {
-                                                        RetrofitClient.api.createOrder(
-                                                            OrderCreateDTO(
-                                                                shippingMethod = shippingMethod,
-                                                                shippingAddress = shippingAddress,
-                                                                createdAt = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-                                                                userId = userId,
-                                                                orderItems = orderItems
-                                                            )
-                                                        )
-                                                    } catch (_: Exception) {}
-                                                }
-                                            }
-                                        } catch (_: Exception) {}
-                                        isProcessing = false
-                                        onPaymentSuccess()
-                                    }
-                                    !body?.cancellationReason.isNullOrBlank() -> {
-                                        errorMessage = "Платёж отклонён: ${body?.cancellationReason}"
-                                        isProcessing = false
-                                    }
-                                    else -> {
-                                        errorMessage = "Платёж не подтверждён"
-                                        isProcessing = false
-                                    }
-                                }
-                            } else {
-                                errorMessage = "Ошибка проверки статуса (${resp.code()})"
-                                isProcessing = false
-                            }
-                        } catch (_: Exception) {
-                            errorMessage = "Нет соединения с сервером"
-                            isProcessing = false
-                        }
-                    }
-                } else {
-                    isProcessing = false
-                }
-            }
-            Activity.RESULT_CANCELED -> {
-                errorMessage = "Оплата отменена"
-                isProcessing = false
-            }
-            Checkout.RESULT_ERROR -> {
-                errorMessage = "Ошибка проведения 3D Secure"
-                isProcessing = false
-            }
-        }
-    }
-
-    val tokenizeLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        when (result.resultCode) {
-            Activity.RESULT_OK -> {
-                val data = result.data
-                if (data != null) {
-                    val tokenResult = Checkout.createTokenizationResult(data)
-                    isProcessing = true
-                    errorMessage = null
-                    scope.launch {
-                        try {
-                            val resp = RetrofitClient.api.payForCart(
-                                TopUpRequestDTO(
-                                    userId = userId,
-                                    amount = "$totalPrice.00",
-                                    paymentToken = tokenResult.paymentToken
-                                )
-                            )
-                            if (resp.isSuccessful) {
-                                val body = resp.body()
-                                when {
-                                    body?.status == "succeeded" -> {
-                                        try {
-                                            val cartResp = RetrofitClient.api.getCartItemsByUserId(userId)
-                                            if (cartResp.isSuccessful) {
-                                                val cartItems = cartResp.body() ?: emptyList()
-                                                val ticketItems = cartItems.filter { it.itemType == "M" }
-                                                val listingItems = cartItems.filter { it.itemType == "L" }
-
-                                                for (item in ticketItems) {
-                                                    val meetingId = item.itemId?.toLong() ?: continue
-                                                    val quantity = item.quantity ?: 1
-
-                                                    val meetingResp = RetrofitClient.api.getMeetingById(meetingId)
-                                                    val ticketPrice = if (meetingResp.isSuccessful) {
-                                                        meetingResp.body()?.ticketPrice ?: 0
-                                                    } else 0
-
-                                                    repeat(quantity) {
-                                                        try {
-                                                            RetrofitClient.api.createTicket(
-                                                                TicketCreateDTO(
-                                                                    userId = userId,
-                                                                    meetingId = meetingId,
-                                                                    pricePaid = ticketPrice,
-                                                                    state = 0
-                                                                )
-                                                            )
-                                                        } catch (_: Exception) {}
-                                                    }
-                                                }
-
-                                                if (listingItems.isNotEmpty()) {
-                                                    val orderItems = mutableListOf<OrderItemCreateDTO>()
-                                                    for (item in listingItems) {
-                                                        val listingId = item.itemId?.toLong() ?: continue
-                                                        val quantity = item.quantity ?: 1
-
-                                                        val listingResp = RetrofitClient.api.getListingById(listingId)
-                                                        val price = if (listingResp.isSuccessful) {
-                                                            listingResp.body()?.price ?: 0
-                                                        } else 0
-
-                                                        orderItems.add(
-                                                            OrderItemCreateDTO(
-                                                                status = "on_confirmation",
-                                                                price = price,
-                                                                quantity = quantity,
-                                                                listingId = listingId
-                                                            )
-                                                        )
-                                                    }
-
-                                                    val shippingMethod = if (selectedTab == 0) "shipping" else "delivery"
-                                                    val shippingAddress = if (selectedTab == 0) {
-                                                        pickupAddress
-                                                    } else {
-                                                        buildString {
-                                                            append(deliveryStreet)
-                                                            append(", д. ")
-                                                            append(deliveryHouse)
-                                                            if (deliveryEntrance.isNotBlank()) append(", подъезд $deliveryEntrance")
-                                                            if (deliveryApt.isNotBlank()) append(", кв. $deliveryApt")
-                                                            if (deliveryFloor.isNotBlank()) append(", этаж $deliveryFloor")
-                                                            if (deliveryCode.isNotBlank()) append(", код $deliveryCode")
-                                                            if (deliveryComment.isNotBlank()) append(" ($deliveryComment)")
-                                                        }
-                                                    }
-
-                                                    try {
-                                                        RetrofitClient.api.createOrder(
-                                                            OrderCreateDTO(
-                                                                shippingMethod = shippingMethod,
-                                                                shippingAddress = shippingAddress,
-                                                                createdAt = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-                                                                userId = userId,
-                                                                orderItems = orderItems
-                                                            )
-                                                        )
-                                                    } catch (_: Exception) {}
-                                                }
-                                            }
-                                        } catch (_: Exception) {}
-                                        isProcessing = false
-                                        onPaymentSuccess()
-                                    }
-                                    body?.status == "pending" && !body.confirmationUrl.isNullOrBlank() -> {
-                                        pendingPaymentId = body.paymentId
-                                        val intent = Checkout.createConfirmationIntent(
-                                            context,
-                                            body.confirmationUrl,
-                                            tokenResult.paymentMethodType,
-                                            BuildConfig.YOOKASSA_CLIENT_KEY,
-                                            BuildConfig.YOOKASSA_SHOP_ID
-                                        )
-                                        threeDsLauncher.launch(intent)
-                                    }
-                                    !body?.cancellationReason.isNullOrBlank() -> {
-                                        errorMessage = "Платёж отклонён: ${body?.cancellationReason}"
-                                        isProcessing = false
-                                    }
-                                    body?.status == "canceled" -> {
-                                        errorMessage = "Платёж отменён"
-                                        isProcessing = false
-                                    }
-                                    else -> {
-                                        errorMessage = "Ошибка обработки платежа"
-                                        isProcessing = false
-                                    }
-                                }
-                            } else {
-                                errorMessage = "Ошибка сервера (${resp.code()})"
-                                isProcessing = false
-                            }
-                        } catch (_: Exception) {
-                            errorMessage = "Нет соединения с сервером"
-                            isProcessing = false
-                        }
-                    }
-                }
-            }
-            Activity.RESULT_CANCELED -> {}
-        }
     }
 
     suspend fun createTicketsForItems() {
@@ -529,47 +258,6 @@ fun CheckoutScreen(
             val deficit = totalToPay - userBalance
             onNavigateToTopUp(deficit)
         }
-    }
-
-    fun validateAndPay() {
-        if (selectedTab == 0 && pickupAddress.isBlank()) {
-            errorMessage = "Укажите адрес пункта выдачи"
-            return
-        }
-        if (selectedTab == 1 && (deliveryStreet.isBlank() || deliveryHouse.isBlank())) {
-            errorMessage = "Укажите улицу и номер дома"
-            return
-        }
-
-        if (userBalance < totalPrice) {
-            val deficit = totalPrice - userBalance
-            onNavigateToTopUp(deficit)
-            return
-        }
-
-        errorMessage = null
-
-        val subtitle = if (selectedTab == 0) {
-            "Самовывоз: $pickupAddress"
-        } else {
-            "Доставка: $deliveryStreet, д. $deliveryHouse"
-        }
-
-        val paymentParameters = PaymentParameters(
-            amount = Amount(BigDecimal.valueOf(totalPrice.toLong()), Currency.getInstance("RUB")),
-            title = "Заказ Brickly",
-            subtitle = subtitle,
-            clientApplicationKey = BuildConfig.YOOKASSA_CLIENT_KEY,
-            shopId = BuildConfig.YOOKASSA_SHOP_ID,
-            savePaymentMethod = SavePaymentMethod.OFF,
-            paymentMethodTypes = setOf(PaymentMethodType.BANK_CARD, PaymentMethodType.SBP)
-        )
-
-        val ruConfig = android.content.res.Configuration(context.resources.configuration)
-            .also { it.setLocale(Locale("ru")) }
-        val ruContext = context.createConfigurationContext(ruConfig)
-        val intent = Checkout.createTokenizeIntent(ruContext, paymentParameters)
-        tokenizeLauncher.launch(intent)
     }
 
     Scaffold(
@@ -874,6 +562,53 @@ private fun ShippingFormContent(
     userBalance: Int,
     onConfirm: () -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var selectedGeoPoint by remember { mutableStateOf<GeoPoint?>(null) }
+    var locationError by remember { mutableStateOf<String?>(null) }
+    var locationGranted by remember { mutableStateOf<Boolean?>(null) }
+
+    val permLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) locationGranted = true
+        else locationError = "Геолокация недоступна. Выберите точку на карте вручную."
+    }
+
+    LaunchedEffect(Unit) {
+        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (fine || coarse) locationGranted = true
+        else permLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
+
+    LaunchedEffect(locationGranted) {
+        if (locationGranted != true) return@LaunchedEffect
+        val loc = withContext(Dispatchers.IO) { fetchUserLocation(context) }
+        if (loc != null) {
+            val gp = GeoPoint(loc.latitude, loc.longitude)
+            selectedGeoPoint = gp
+            val result = reverseGeocode(loc.latitude, loc.longitude)
+            if (result != null) {
+                if (selectedTab == 0) {
+                    onPickupAddressChange(listOfNotNull(
+                        result.road.takeIf { it.isNotBlank() },
+                        result.houseNumber.takeIf { it.isNotBlank() },
+                        result.city.takeIf { it.isNotBlank() }
+                    ).joinToString(", "))
+                } else {
+                    if (result.road.isNotBlank()) onDeliveryStreetChange(result.road)
+                    if (result.houseNumber.isNotBlank()) onDeliveryHouseChange(result.houseNumber)
+                }
+            }
+        } else {
+            locationError = "Не удалось определить местоположение. Выберите точку на карте."
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -883,17 +618,13 @@ private fun ShippingFormContent(
         Spacer(Modifier.height(16.dp))
 
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = CardBackground),
             elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
+                modifier = Modifier.fillMaxWidth().padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 listOf("Самовывоз", "Доставка").forEachIndexed { index, label ->
@@ -917,6 +648,47 @@ private fun ShippingFormContent(
                 }
             }
         }
+
+        Spacer(Modifier.height(16.dp))
+
+        FieldSectionLabel("Адрес на карте")
+
+        if (locationError != null) {
+            Text(
+                text = locationError!!,
+                color = TextSecondary,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(horizontal = 32.dp).padding(bottom = 6.dp)
+            )
+        }
+
+        CheckoutInteractiveMap(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .height(240.dp)
+                .clip(RoundedCornerShape(20.dp)),
+            selectedGeoPoint = selectedGeoPoint,
+            onLocationSelected = { gp ->
+                selectedGeoPoint = gp
+                scope.launch {
+                    val result = reverseGeocode(gp.latitude, gp.longitude)
+                    if (result != null) {
+                        locationError = null
+                        if (selectedTab == 0) {
+                            onPickupAddressChange(listOfNotNull(
+                                result.road.takeIf { it.isNotBlank() },
+                                result.houseNumber.takeIf { it.isNotBlank() },
+                                result.city.takeIf { it.isNotBlank() }
+                            ).joinToString(", "))
+                        } else {
+                            if (result.road.isNotBlank()) onDeliveryStreetChange(result.road)
+                            if (result.houseNumber.isNotBlank()) onDeliveryHouseChange(result.houseNumber)
+                        }
+                    }
+                }
+            }
+        )
 
         Spacer(Modifier.height(20.dp))
 
@@ -953,132 +725,59 @@ private fun ShippingFormContent(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(14.dp))
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        CheckoutField(
-                            value = deliveryHouse,
-                            onValueChange = onDeliveryHouseChange,
-                            label = "Дом",
-                            modifier = Modifier.weight(1f)
-                        )
-                        CheckoutField(
-                            value = deliveryEntrance,
-                            onValueChange = onDeliveryEntranceChange,
-                            label = "Подъезд",
-                            modifier = Modifier.weight(1f)
-                        )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        CheckoutField(value = deliveryHouse, onValueChange = onDeliveryHouseChange, label = "Дом", modifier = Modifier.weight(1f))
+                        CheckoutField(value = deliveryEntrance, onValueChange = onDeliveryEntranceChange, label = "Подъезд", modifier = Modifier.weight(1f))
                     }
                     Spacer(Modifier.height(14.dp))
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        CheckoutField(
-                            value = deliveryApt,
-                            onValueChange = onDeliveryAptChange,
-                            label = "Квартира",
-                            modifier = Modifier.weight(1f)
-                        )
-                        CheckoutField(
-                            value = deliveryFloor,
-                            onValueChange = onDeliveryFloorChange,
-                            label = "Этаж",
-                            modifier = Modifier.weight(1f)
-                        )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        CheckoutField(value = deliveryApt, onValueChange = onDeliveryAptChange, label = "Квартира", modifier = Modifier.weight(1f))
+                        CheckoutField(value = deliveryFloor, onValueChange = onDeliveryFloorChange, label = "Этаж", modifier = Modifier.weight(1f))
                     }
                     Spacer(Modifier.height(14.dp))
-                    CheckoutField(
-                        value = deliveryCode,
-                        onValueChange = onDeliveryCodeChange,
-                        label = "Код домофона",
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    CheckoutField(value = deliveryCode, onValueChange = onDeliveryCodeChange, label = "Код домофона", modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(14.dp))
-                    CheckoutField(
-                        value = deliveryComment,
-                        onValueChange = onDeliveryCommentChange,
-                        label = "Комментарий для курьера",
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    CheckoutField(value = deliveryComment, onValueChange = onDeliveryCommentChange, label = "Комментарий для курьера", modifier = Modifier.fillMaxWidth())
                 }
             }
         }
 
         if (errorMessage != null) {
             Spacer(Modifier.height(10.dp))
-            Text(
-                text = errorMessage,
-                color = ErrorColor,
-                fontSize = 13.sp,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
+            Text(text = errorMessage, color = ErrorColor, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 24.dp))
         }
 
         Spacer(Modifier.height(20.dp))
 
         FieldSectionLabel("Итого")
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = CardBackground),
             elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Ваш баланс", fontSize = 14.sp, color = TextSecondary)
-                    Text(
-                        "$userBalance ₽",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
-                    )
+                    Text("$userBalance ₽", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                 }
                 Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("К оплате", color = TextSecondary, fontSize = 14.sp)
-                    Text(
-                        "$listingsTotal ₽",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp,
-                        color = TextPrimary
-                    )
+                    Text("$listingsTotal ₽", fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = TextPrimary)
                 }
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = { if (!isProcessing) onConfirm() },
                     enabled = !isProcessing && userBalance >= listingsTotal,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Accent,
-                        contentColor = TextPrimary
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
                 ) {
                     if (isProcessing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(22.dp),
-                            color = TextPrimary,
-                            strokeWidth = 2.5.dp
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(22.dp), color = TextPrimary, strokeWidth = 2.5.dp)
                     } else {
-                        Text(
-                            "Оформить заказ",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
+                        Text("Оформить заказ", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             }
@@ -1145,4 +844,94 @@ private fun CheckoutField(
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary)
         )
     }
+}
+
+@Composable
+private fun CheckoutInteractiveMap(
+    modifier: Modifier = Modifier,
+    selectedGeoPoint: GeoPoint?,
+    onLocationSelected: (GeoPoint) -> Unit
+) {
+    val context = LocalContext.current
+
+    val mapView = remember {
+        Configuration.getInstance().apply {
+            userAgentValue = context.packageName
+            osmdroidBasePath = File(context.cacheDir, "osmdroid")
+            osmdroidTileCache = File(context.cacheDir, "osmdroid/tiles")
+        }
+        MapView(context).apply {
+            setTileSource(TileSourceFactory.MAPNIK)
+            setMultiTouchControls(true)
+            controller.setZoom(14.0)
+            controller.setCenter(GeoPoint(55.7558, 37.6173))
+        }
+    }
+
+    val onLocationSelectedState = rememberUpdatedState(onLocationSelected)
+
+    val eventsOverlay = remember {
+        MapEventsOverlay(object : MapEventsReceiver {
+            override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
+                onLocationSelectedState.value(p)
+                return true
+            }
+            override fun longPressHelper(p: GeoPoint): Boolean = false
+        })
+    }
+
+    DisposableEffect(mapView) {
+        mapView.overlays.add(eventsOverlay)
+        onDispose { mapView.onDetach() }
+    }
+
+    LaunchedEffect(selectedGeoPoint) {
+        val point = selectedGeoPoint ?: return@LaunchedEffect
+        mapView.overlays.remove(eventsOverlay)
+        mapView.overlays.removeAll { it is Marker }
+        val marker = Marker(mapView).apply {
+            position = point
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        }
+        mapView.overlays.add(marker)
+        mapView.overlays.add(eventsOverlay)
+        mapView.controller.animateTo(point)
+        mapView.invalidate()
+    }
+
+    AndroidView(factory = { mapView }, modifier = modifier)
+}
+
+private data class ReverseGeoResult(
+    val road: String,
+    val houseNumber: String,
+    val city: String
+)
+
+private suspend fun reverseGeocode(lat: Double, lon: Double): ReverseGeoResult? = withContext(Dispatchers.IO) {
+    try {
+        val client = okhttp3.OkHttpClient()
+        val request = okhttp3.Request.Builder()
+            .url("https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json&accept-language=ru")
+            .header("User-Agent", "BricklyApp/1.0")
+            .build()
+        val resp = client.newCall(request).execute()
+        val body = resp.body?.string() ?: return@withContext null
+        val obj = org.json.JSONObject(body)
+        val addr = obj.optJSONObject("address") ?: return@withContext null
+        ReverseGeoResult(
+            road = addr.optString("road").ifBlank { addr.optString("pedestrian") }.ifBlank { addr.optString("street") },
+            houseNumber = addr.optString("house_number"),
+            city = addr.optString("city").ifBlank { addr.optString("town") }.ifBlank { addr.optString("village") }
+        )
+    } catch (_: Exception) { null }
+}
+
+@SuppressLint("MissingPermission")
+private fun fetchUserLocation(context: Context): Location? {
+    val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    return listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)
+        .firstNotNullOfOrNull { provider ->
+            try { lm.getLastKnownLocation(provider) } catch (_: Exception) { null }
+        }
 }
