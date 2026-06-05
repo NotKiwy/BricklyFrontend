@@ -33,10 +33,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
@@ -569,6 +565,9 @@ private fun ShippingFormContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    var parentScrollEnabled by remember { mutableStateOf(true) }
+    val scrollState = rememberScrollState()
+
     var selectedGeoPoint by remember { mutableStateOf<GeoPoint?>(null) }
     var locationError by remember { mutableStateOf<String?>(null) }
     var locationGranted by remember { mutableStateOf<Boolean?>(null) }
@@ -617,7 +616,7 @@ private fun ShippingFormContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState, enabled = parentScrollEnabled)
     ) {
         Spacer(Modifier.height(16.dp))
 
@@ -673,6 +672,8 @@ private fun ShippingFormContent(
                 .height(240.dp)
                 .clip(RoundedCornerShape(20.dp)),
             selectedGeoPoint = selectedGeoPoint,
+            onTouchStart = { parentScrollEnabled = false },
+            onTouchEnd = { parentScrollEnabled = true },
             onLocationSelected = { gp ->
                 selectedGeoPoint = gp
                 scope.launch {
@@ -854,6 +855,8 @@ private fun CheckoutField(
 private fun CheckoutInteractiveMap(
     modifier: Modifier = Modifier,
     selectedGeoPoint: GeoPoint?,
+    onTouchStart: () -> Unit = {},
+    onTouchEnd: () -> Unit = {},
     onLocationSelected: (GeoPoint) -> Unit
 ) {
     val context = LocalContext.current
@@ -903,13 +906,20 @@ private fun CheckoutInteractiveMap(
         mapView.invalidate()
     }
 
-    val scrollConsumer = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset = available
+    AndroidView(
+        factory = { mapView },
+        modifier = modifier,
+        update = { view ->
+            view.setOnTouchListener { _, event ->
+                when (event.action) {
+                    android.view.MotionEvent.ACTION_DOWN -> onTouchStart()
+                    android.view.MotionEvent.ACTION_UP,
+                    android.view.MotionEvent.ACTION_CANCEL -> onTouchEnd()
+                }
+                false
+            }
         }
-    }
-
-    AndroidView(factory = { mapView }, modifier = modifier.nestedScroll(scrollConsumer))
+    )
 }
 
 private data class ReverseGeoResult(
