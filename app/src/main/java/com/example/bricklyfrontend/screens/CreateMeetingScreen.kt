@@ -52,17 +52,17 @@ fun CreateMeetingScreen(
     val userId = UserPreferences.getUserId(context)
 
     var title by rememberSaveable { mutableStateOf("") }
-    var selectedDateMillis by rememberSaveable { mutableStateOf<Long?>(null) }
-    var selectedHour by rememberSaveable { mutableStateOf<Int?>(null) }
-    var selectedMinute by rememberSaveable { mutableStateOf<Int?>(null) }
+    var selectedDateMillis: Long? by rememberSaveable { mutableStateOf<Long?>(null) }
+    var selectedHour: Int? by rememberSaveable { mutableStateOf<Int?>(null) }
+    var selectedMinute: Int? by rememberSaveable { mutableStateOf<Int?>(null) }
     var duration by rememberSaveable { mutableStateOf("") }
     var address by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
-    var selectedImageUriStr by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedImageUriStr: String? by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedImageUri = selectedImageUriStr?.let { Uri.parse(it) }
 
     var meetingTypes by remember { mutableStateOf<List<MeetingTypeDefaultDTO>>(emptyList()) }
-    var selectedTypeId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var selectedTypeId: Int? by rememberSaveable { mutableStateOf<Int?>(null) }
     val selectedType = meetingTypes.firstOrNull { it.id == selectedTypeId }
 
     var isPaidEntry by rememberSaveable { mutableStateOf(false) }
