@@ -64,8 +64,8 @@ fun CreateMeetingScreen(
     var meetingTypes by remember { mutableStateOf<List<MeetingTypeDefaultDTO>>(emptyList()) }
     var selectedTypeId: Int? by rememberSaveable { mutableStateOf<Int?>(null) }
     val selectedType = meetingTypes.firstOrNull { it.id == selectedTypeId }
+    val isPaidType = selectedTypeId == 2 || selectedTypeId == 4
 
-    var isPaidEntry by rememberSaveable { mutableStateOf(false) }
     var ticketPrice by rememberSaveable { mutableStateOf("") }
 
     var hasDiscount by rememberSaveable { mutableStateOf(false) }
@@ -299,28 +299,8 @@ fun CreateMeetingScreen(
                 Text("Загрузка...", color = TextSecondary, fontSize = 14.sp)
             }
 
-            Spacer(Modifier.height(16.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(CardBackground)
-                    .border(1.dp, Divider, RoundedCornerShape(10.dp))
-                    .clickable { isPaidEntry = !isPaidEntry }
-                    .padding(horizontal = 14.dp, vertical = 10.dp)
-            ) {
-                Checkbox(
-                    checked = isPaidEntry,
-                    onCheckedChange = { isPaidEntry = it },
-                    colors = CheckboxDefaults.colors(checkedColor = Accent)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("Платный вход", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Normal)
-            }
-
-            if (isPaidEntry) {
+            if (isPaidType) {
                 Spacer(Modifier.height(12.dp))
                 BricklyTextField(
                     value = ticketPrice,
@@ -410,7 +390,7 @@ fun CreateMeetingScreen(
                     duration.isNotBlank() &&
                     selectedType != null &&
                     selectedImageUri != null &&
-                    (!isPaidEntry || ticketPrice.isNotBlank()) &&
+                    (!isPaidType || ticketPrice.isNotBlank()) &&
                     (!hasDiscount || (discountDuration.isNotBlank() && discountAmount.isNotBlank()))
 
             Button(
@@ -444,7 +424,7 @@ fun CreateMeetingScreen(
                                 java.time.ZoneId.systemDefault()
                             ).format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
                             
-                            val priceValue = if (isPaidEntry) ticketPrice.toIntOrNull() ?: 0 else 0
+                            val priceValue = if (isPaidType) ticketPrice.toIntOrNull() ?: 0 else 0
                             
                             val durationInMinutes = (duration.toIntOrNull() ?: 0) * 60
 
