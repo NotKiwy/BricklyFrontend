@@ -33,17 +33,15 @@ import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
-import java.io.FileOutputStream
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateMeetingScreen(
     onBack: () -> Unit,
-    onMeetingCreated: () -> Unit = {}
+    onMeetingCreated: () -> Unit = {},
+    onNavigate: (String) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
     
@@ -91,6 +89,9 @@ fun CreateMeetingScreen(
 
     Scaffold(
         containerColor = Background,
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "meetings", onNavigate = onNavigate)
+        },
         topBar = {
             Box(
                 modifier = Modifier
@@ -399,11 +400,11 @@ fun CreateMeetingScreen(
                         isSaving = true
                         errorMessage = null
                         try {
-                            val imageFile = uriToFile(context, selectedImageUri!!)
+                            val imageBytes = compressImageBytes(context, selectedImageUri!!)
                             val imagePart = MultipartBody.Part.createFormData(
                                 "previewImage",
-                                imageFile.name,
-                                imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+                                "preview.jpg",
+                                imageBytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
                             )
 
                             val calendar = Calendar.getInstance()
@@ -540,13 +541,3 @@ fun DiscountModifierButton(
     }
 }
 
-private fun uriToFile(context: Context, uri: Uri): File {
-    val inputStream = context.contentResolver.openInputStream(uri)
-        ?: throw IllegalArgumentException("Cannot open input stream for URI: $uri")
-    val file = File(context.cacheDir, "temp_upload_${System.currentTimeMillis()}.jpg")
-    FileOutputStream(file).use { output ->
-        inputStream.copyTo(output)
-    }
-    inputStream.close()
-    return file
-}

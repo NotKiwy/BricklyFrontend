@@ -31,7 +31,7 @@ import okhttp3.OkHttpClient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MySalesScreen(onBack: () -> Unit) {
+fun MySalesScreen(onBack: () -> Unit, onNavigate: (String) -> Unit = {}) {
     SetStatusBarColor(Accent)
 
     val context = LocalContext.current
@@ -105,6 +105,9 @@ fun MySalesScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = Background,
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "profile", onNavigate = onNavigate)
+        },
         topBar = {
             Box(
                 modifier = Modifier
@@ -112,7 +115,7 @@ fun MySalesScreen(onBack: () -> Unit) {
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
                     Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
@@ -272,15 +275,6 @@ private fun SaleItemCard(
             if (item.status == "on_confirmation") {
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = onCancel,
-                        enabled = !isUpdating,
-                        modifier = Modifier.weight(1f).height(42.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorColor)
-                    ) {
-                        Text("Отменить", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    }
                     Button(
                         onClick = onConfirm,
                         enabled = !isUpdating,
@@ -294,6 +288,15 @@ private fun SaleItemCard(
                             Text("Подтвердить", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
+                    OutlinedButton(
+                        onClick = onCancel,
+                        enabled = !isUpdating,
+                        modifier = Modifier.weight(1f).height(42.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorColor)
+                    ) {
+                        Text("Отменить", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
@@ -303,7 +306,7 @@ private fun SaleItemCard(
 private data class StatusInfo(val label: String, val color: Color)
 
 private fun statusLabel(status: String?): StatusInfo = when (status) {
-    "on_confirmation" -> StatusInfo("Ожидает подтверждения", Accent)
+    "on_confirmation" -> StatusInfo("Ожидает подтверждения", Color(0xFFE65100))
     "processing" -> StatusInfo("В обработке", Color(0xFF2E7D32))
     "canceled" -> StatusInfo("Отменён", ErrorColor)
     else -> StatusInfo(status ?: "—", TextSecondary)

@@ -41,7 +41,8 @@ import java.util.Locale
 fun TopUpScreen(
     onBack: () -> Unit,
     onSuccess: (Int) -> Unit = {},
-    initialAmount: Int? = null
+    initialAmount: Int? = null,
+    onNavigate: (String) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
     val context = LocalContext.current
@@ -205,6 +206,9 @@ fun TopUpScreen(
 
     Scaffold(
         containerColor = Background,
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "profile", onNavigate = onNavigate)
+        },
         topBar = {
             Box(
                 modifier = Modifier
@@ -212,7 +216,7 @@ fun TopUpScreen(
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
                     Icon(Icons.Outlined.ArrowBackIosNew, null, tint = TextPrimary)

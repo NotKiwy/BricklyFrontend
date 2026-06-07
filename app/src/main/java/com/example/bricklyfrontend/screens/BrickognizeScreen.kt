@@ -393,10 +393,7 @@ private fun createCameraUri(context: Context): Uri {
 
 private suspend fun uploadImage(context: Context, uri: Uri): BrickState {
     return try {
-        val stream: InputStream = context.contentResolver.openInputStream(uri)
-            ?: return BrickState.Error("Не удалось открыть изображение")
-        val bytes = stream.readBytes()
-        stream.close()
+        val bytes = compressImageBytes(context, uri)
         val mediaType = "image/jpeg".toMediaTypeOrNull()
         val requestBody = object : okhttp3.RequestBody() {
             override fun contentType() = mediaType

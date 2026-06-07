@@ -269,15 +269,15 @@ fun BricklyApp() {
         }
 
         composable("my_listings") {
-            MyListingsScreen(onBack = { navController.popBackStack() })
+            MyListingsScreen(onBack = { navController.popBackStack() }, onNavigate = { navToTab(it) })
         }
 
         composable("my_sales") {
-            MySalesScreen(onBack = { navController.popBackStack() })
+            MySalesScreen(onBack = { navController.popBackStack() }, onNavigate = { navToTab(it) })
         }
 
         composable("user_permissions") {
-            UserPermissionsScreen(onBack = { navController.popBackStack() })
+            UserPermissionsScreen(onBack = { navController.popBackStack() }, onNavigate = { navToTab(it) })
         }
 
         composable("edit_profile") {
@@ -306,7 +306,8 @@ fun BricklyApp() {
                         popUpTo("create_meeting") { inclusive = true }
                         launchSingleTop = true
                     }
-                }
+                },
+                onNavigate = { navToTab(it) }
             )
         }
 
@@ -319,7 +320,8 @@ fun BricklyApp() {
                 },
                 onNavigateToBrickognize = {
                     navController.navigate("brickognize") { launchSingleTop = true }
-                }
+                },
+                onNavigate = { navToTab(it) }
             )
         }
 
@@ -353,7 +355,8 @@ fun BricklyApp() {
                 onBack = { navController.popBackStack() },
                 onNavigateToOrderDetail = { orderId ->
                     navController.navigate("order_detail/$orderId") { launchSingleTop = true }
-                }
+                },
+                onNavigate = { navToTab(it) }
             )
         }
 
@@ -361,7 +364,8 @@ fun BricklyApp() {
             val orderId = backStackEntry.arguments?.getString("orderId")?.toLongOrNull() ?: 0L
             OrderDetailScreen(
                 orderId = orderId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigate = { navToTab(it) }
             )
         }
 
@@ -461,7 +465,8 @@ fun BricklyApp() {
                         popUpTo("top_up") { inclusive = true }
                         launchSingleTop = true
                     }
-                }
+                },
+                onNavigate = { navToTab(it) }
             )
         }
 
@@ -475,7 +480,8 @@ fun BricklyApp() {
                         launchSingleTop = true
                     }
                 },
-                initialAmount = amount
+                initialAmount = amount,
+                onNavigate = { navToTab(it) }
             )
         }
 
@@ -504,7 +510,8 @@ fun BricklyApp() {
                 onBack = { navController.popBackStack() },
                 onNavigateToEditMeeting = { meetingId ->
                     navController.navigate("edit_meeting/$meetingId") { launchSingleTop = true }
-                }
+                },
+                onNavigate = { navToTab(it) }
             )
         }
 
@@ -513,7 +520,8 @@ fun BricklyApp() {
             EditMeetingScreen(
                 meetingId = meetingId,
                 onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() }
+                onSaved = { navController.popBackStack() },
+                onNavigate = { navToTab(it) }
             )
         }
 

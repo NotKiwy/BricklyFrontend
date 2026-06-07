@@ -100,7 +100,7 @@ fun ListingDetailScreen(
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
                     Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)

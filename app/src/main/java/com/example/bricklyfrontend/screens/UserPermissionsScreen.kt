@@ -1,5 +1,6 @@
 package com.example.bricklyfrontend.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -26,11 +30,16 @@ import com.example.bricklyfrontend.ui.theme.*
 import kotlinx.coroutines.launch
 
 @Composable
-fun UserPermissionsScreen(onBack: () -> Unit) {
+fun UserPermissionsScreen(
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit = {}
+) {
     SetStatusBarColor(Accent)
 
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
@@ -92,25 +101,28 @@ fun UserPermissionsScreen(onBack: () -> Unit) {
                     user.id,
                     UserAuthoritiesPatchDTO(checkedRoles.toList())
                 )
+                isSaving = false
                 if (resp.isSuccessful) {
-                    snackbarHostState.showSnackbar("Роли сохранены")
+                    Toast.makeText(context, "Роли сохранены", Toast.LENGTH_SHORT).show()
                     resp.body()?.let {
                         selectedUser = it
                         checkedRoles = it.authorities?.map { a -> a.authority }?.toSet() ?: checkedRoles
                     }
                 } else {
-                    snackbarHostState.showSnackbar("Ошибка сохранения (${resp.code()})")
+                    Toast.makeText(context, "Ошибка сохранения (${resp.code()})", Toast.LENGTH_SHORT).show()
                 }
             } catch (_: Exception) {
-                snackbarHostState.showSnackbar("Нет соединения")
+                isSaving = false
+                Toast.makeText(context, "Нет соединения", Toast.LENGTH_SHORT).show()
             }
-            isSaving = false
         }
     }
 
     Scaffold(
         containerColor = Background,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "profile", onNavigate = onNavigate)
+        },
         topBar = {
             Box(
                 modifier = Modifier
@@ -145,8 +157,15 @@ fun UserPermissionsScreen(onBack: () -> Unit) {
                         placeholder = { Text("Имя пользователя...", color = TextSecondary, style = MaterialTheme.typography.bodyLarge) },
                         leadingIcon = { Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(20.dp)) },
                         trailingIcon = {
-                            if (isSearching) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Accent, strokeWidth = 2.dp)
+                            when {
+                                isSearching -> CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Accent, strokeWidth = 2.dp)
+                                searchQuery.isNotEmpty() -> IconButton(onClick = {
+                                    searchQuery = ""
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                }) {
+                                    Icon(Icons.Outlined.Close, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+                                }
                             }
                         },
                         shape = RoundedCornerShape(16.dp),
@@ -241,14 +260,11 @@ fun UserPermissionsScreen(onBack: () -> Unit) {
                     ) {
                         Icon(Icons.Outlined.Person, null, tint = Accent, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(10.dp))
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column {
                             Text(user.username, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                             if (!user.name.isNullOrBlank()) {
                                 Text(user.name, fontSize = 12.sp, color = TextSecondary)
                             }
-                        }
-                        TextButton(onClick = { selectedUser = null; searchResults = emptyList() }) {
-                            Text("Изменить", fontSize = 13.sp, color = TextSecondary)
                         }
                     }
                 }
@@ -278,14 +294,18 @@ fun UserPermissionsScreen(onBack: () -> Unit) {
                     ) {
                         Column {
                             allRoles.forEachIndexed { index, role ->
+                                val isChecked = role.authority in checkedRoles
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .clickable {
+                                            checkedRoles = if (isChecked) checkedRoles - role.authority else checkedRoles + role.authority
+                                        }
                                         .padding(horizontal = 16.dp, vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
-                                        checked = role.authority in checkedRoles,
+                                        checked = isChecked,
                                         onCheckedChange = { checked ->
                                             checkedRoles = if (checked) checkedRoles + role.authority else checkedRoles - role.authority
                                         },
@@ -295,7 +315,12 @@ fun UserPermissionsScreen(onBack: () -> Unit) {
                                         )
                                     )
                                     Spacer(Modifier.width(8.dp))
-                                    Text(role.authority, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
+                                    Text(
+                                        role.authority.removePrefix("ROLE_"),
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = TextPrimary
+                                    )
                                 }
                                 if (index < allRoles.lastIndex) {
                                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = Divider, thickness = 1.dp)

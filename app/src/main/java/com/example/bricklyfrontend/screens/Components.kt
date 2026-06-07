@@ -1,6 +1,10 @@
 package com.example.bricklyfrontend.screens
 
 import android.app.Activity
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -28,6 +32,7 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.bricklyfrontend.ui.theme.*
+import java.io.ByteArrayOutputStream
 
 @Composable
 fun SetStatusBarColor(color: Color) {
@@ -248,4 +253,20 @@ fun BricklyBottomBar(
             }
         }
     }
+}
+
+fun compressImageBytes(context: Context, uri: Uri): ByteArray {
+    val inputStream = context.contentResolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("Cannot open URI")
+    val bitmap = BitmapFactory.decodeStream(inputStream)
+    inputStream.close()
+    var quality = 90
+    val baos = ByteArrayOutputStream()
+    do {
+        baos.reset()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos)
+        quality -= 10
+    } while (baos.size() > 1_000_000 && quality > 10)
+    bitmap.recycle()
+    return baos.toByteArray()
 }

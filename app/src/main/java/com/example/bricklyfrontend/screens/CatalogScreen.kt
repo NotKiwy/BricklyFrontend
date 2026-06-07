@@ -13,8 +13,11 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -52,6 +55,8 @@ fun CatalogScreen(
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     val isSeller = UserPreferences.isSeller(context)
 
@@ -59,7 +64,7 @@ fun CatalogScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var searchQuery by remember { mutableStateOf(initialSearchQuery) }
+    var searchQuery by rememberSaveable { mutableStateOf(initialSearchQuery) }
 
     fun loadListings(silent: Boolean = false) {
         scope.launch {
@@ -92,7 +97,7 @@ fun CatalogScreen(
     }
 
     LaunchedEffect(searchQuery) {
-        delay(if (searchQuery == initialSearchQuery) 0L else 400L)
+        delay(300L)
         loadListings()
     }
 
@@ -121,7 +126,11 @@ fun CatalogScreen(
                         leadingIcon = { Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(20.dp)) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
+                                IconButton(onClick = {
+                                    searchQuery = ""
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                }) {
                                     Icon(Icons.Outlined.Close, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
                                 }
                             }

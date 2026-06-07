@@ -36,13 +36,13 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
 
 @Composable
 fun CreateListingScreen(
     onNavigateBack: () -> Unit,
     onListingCreated: () -> Unit,
-    onNavigateToBrickognize: () -> Unit = {}
+    onNavigateToBrickognize: () -> Unit = {},
+    onNavigate: (String) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
 
@@ -82,16 +82,14 @@ fun CreateListingScreen(
                 }
 
                 val imageParts = selectedImages.mapIndexed { index, uri ->
-                    val inputStream = context.contentResolver.openInputStream(uri)
-                    val bytes = inputStream?.readBytes()
-                    inputStream?.close()
-
-                    if (bytes == null) {
+                    val bytes = try {
+                        compressImageBytes(context, uri)
+                    } catch (_: Exception) {
                         errorMessage = "Ошибка чтения изображения $index"
                         return@launch
                     }
 
-                    val requestBody = bytes.toRequestBody("image/*".toMediaTypeOrNull())
+                    val requestBody = bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
                     MultipartBody.Part.createFormData("images", "image_$index.jpg", requestBody)
                 }
 
@@ -123,6 +121,9 @@ fun CreateListingScreen(
 
     Scaffold(
         containerColor = Background,
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "home", onNavigate = onNavigate)
+        },
         topBar = {
             Box(
                 modifier = Modifier
@@ -130,7 +131,7 @@ fun CreateListingScreen(
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

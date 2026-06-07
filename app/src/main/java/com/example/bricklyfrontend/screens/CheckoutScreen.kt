@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material.icons.outlined.ConfirmationNumber
+import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -269,7 +270,7 @@ fun CheckoutScreen(
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
                     Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
@@ -569,6 +570,7 @@ private fun ShippingFormContent(
     val scrollState = rememberScrollState()
 
     var selectedGeoPoint by remember { mutableStateOf<GeoPoint?>(null) }
+    var userGeoPoint by remember { mutableStateOf<GeoPoint?>(null) }
     var locationError by remember { mutableStateOf<String?>(null) }
     var locationGranted by remember { mutableStateOf<Boolean?>(null) }
 
@@ -594,6 +596,7 @@ private fun ShippingFormContent(
         if (loc != null) {
             val gp = GeoPoint(loc.latitude, loc.longitude)
             selectedGeoPoint = gp
+            userGeoPoint = gp
             val result = reverseGeocode(loc.latitude, loc.longitude)
             if (result != null) {
                 if (selectedTab == 0) {
@@ -665,35 +668,53 @@ private fun ShippingFormContent(
             )
         }
 
-        CheckoutInteractiveMap(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
                 .height(240.dp)
-                .clip(RoundedCornerShape(20.dp)),
-            selectedGeoPoint = selectedGeoPoint,
-            onTouchStart = { parentScrollEnabled = false },
-            onTouchEnd = { parentScrollEnabled = true },
-            onLocationSelected = { gp ->
-                selectedGeoPoint = gp
-                scope.launch {
-                    val result = reverseGeocode(gp.latitude, gp.longitude)
-                    if (result != null) {
-                        locationError = null
-                        if (selectedTab == 0) {
-                            onPickupAddressChange(listOfNotNull(
-                                result.road.takeIf { it.isNotBlank() },
-                                result.houseNumber.takeIf { it.isNotBlank() },
-                                result.city.takeIf { it.isNotBlank() }
-                            ).joinToString(", "))
-                        } else {
-                            if (result.road.isNotBlank()) onDeliveryStreetChange(result.road)
-                            if (result.houseNumber.isNotBlank()) onDeliveryHouseChange(result.houseNumber)
+                .clip(RoundedCornerShape(20.dp))
+        ) {
+            CheckoutInteractiveMap(
+                modifier = Modifier.fillMaxSize(),
+                selectedGeoPoint = selectedGeoPoint,
+                onTouchStart = { parentScrollEnabled = false },
+                onTouchEnd = { parentScrollEnabled = true },
+                onLocationSelected = { gp ->
+                    selectedGeoPoint = gp
+                    scope.launch {
+                        val result = reverseGeocode(gp.latitude, gp.longitude)
+                        if (result != null) {
+                            locationError = null
+                            if (selectedTab == 0) {
+                                onPickupAddressChange(listOfNotNull(
+                                    result.road.takeIf { it.isNotBlank() },
+                                    result.houseNumber.takeIf { it.isNotBlank() },
+                                    result.city.takeIf { it.isNotBlank() }
+                                ).joinToString(", "))
+                            } else {
+                                if (result.road.isNotBlank()) onDeliveryStreetChange(result.road)
+                                if (result.houseNumber.isNotBlank()) onDeliveryHouseChange(result.houseNumber)
+                            }
                         }
                     }
                 }
+            )
+            if (userGeoPoint != null) {
+                FloatingActionButton(
+                    onClick = { selectedGeoPoint = userGeoPoint },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(10.dp)
+                        .size(40.dp),
+                    containerColor = Color.White,
+                    contentColor = Accent,
+                    elevation = FloatingActionButtonDefaults.elevation(4.dp, 4.dp)
+                ) {
+                    Icon(Icons.Outlined.MyLocation, null, modifier = Modifier.size(20.dp))
+                }
             }
-        )
+        }
 
         Spacer(Modifier.height(20.dp))
 

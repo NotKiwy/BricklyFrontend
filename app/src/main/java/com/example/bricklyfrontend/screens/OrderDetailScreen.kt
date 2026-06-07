@@ -36,7 +36,8 @@ import java.util.Locale
 @Composable
 fun OrderDetailScreen(
     orderId: Long,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
     val context = LocalContext.current
@@ -92,6 +93,9 @@ fun OrderDetailScreen(
 
     Scaffold(
         containerColor = Background,
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "profile", onNavigate = onNavigate)
+        },
         topBar = {
             Box(
                 modifier = Modifier
@@ -99,7 +103,7 @@ fun OrderDetailScreen(
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
                     Icon(Icons.Outlined.ArrowBackIosNew, null, tint = TextPrimary)

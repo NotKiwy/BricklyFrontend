@@ -35,7 +35,8 @@ import java.util.Calendar
 fun EditMeetingScreen(
     meetingId: Long,
     onBack: () -> Unit,
-    onSaved: () -> Unit = {}
+    onSaved: () -> Unit = {},
+    onNavigate: (String) -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
 
@@ -111,6 +112,9 @@ fun EditMeetingScreen(
 
     Scaffold(
         containerColor = Background,
+        bottomBar = {
+            BricklyBottomBar(currentRoute = "meetings", onNavigate = onNavigate)
+        },
         topBar = {
             Box(
                 modifier = Modifier
@@ -118,7 +122,7 @@ fun EditMeetingScreen(
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onBack) {

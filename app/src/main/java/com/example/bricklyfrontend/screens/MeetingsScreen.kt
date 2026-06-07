@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,6 +54,8 @@ fun MeetingsScreen(
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     var meetings by remember { mutableStateOf<List<MeetingDefaultDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -109,6 +113,17 @@ fun MeetingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Искать...", color = TextSecondary, style = MaterialTheme.typography.bodyLarge) },
                         leadingIcon = { Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(20.dp)) },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    searchQuery = ""
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                }) {
+                                    Icon(Icons.Outlined.Close, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+                                }
+                            }
+                        },
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color.Transparent,
