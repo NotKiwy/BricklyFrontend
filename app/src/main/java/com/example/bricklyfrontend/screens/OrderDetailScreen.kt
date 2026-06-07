@@ -54,6 +54,7 @@ fun OrderDetailScreen(
     }
 
     var order by remember { mutableStateOf<OrderDefaultDTO?>(null) }
+    var listings by remember { mutableStateOf<Map<Long, ListingDefaultDTO>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -63,8 +64,20 @@ fun OrderDetailScreen(
             try {
                 val resp = RetrofitClient.api.getOrdersByUserId(UserPreferences.getUserId(context))
                 if (resp.isSuccessful) {
-                    order = resp.body()?.content?.find { it.id == orderId }
-                    if (order == null) errorMessage = "Заказ не найден"
+                    val found = resp.body()?.content?.find { it.id == orderId }
+                    order = found
+                    if (found == null) {
+                        errorMessage = "Заказ не найден"
+                    } else {
+                        val map = mutableMapOf<Long, ListingDefaultDTO>()
+                        found.orderItems?.forEach { item ->
+                            try {
+                                val lr = RetrofitClient.api.getListingById(item.listingId)
+                                if (lr.isSuccessful) lr.body()?.let { map[item.listingId] = it }
+                            } catch (_: Exception) {}
+                        }
+                        listings = map
+                    }
                 } else {
                     errorMessage = "Ошибка загрузки (${resp.code()})"
                 }
@@ -173,6 +186,7 @@ fun OrderDetailScreen(
                             o.orderItems?.forEach { item ->
                                 OrderItemCard(
                                     item = item,
+                                    listing = listings[item.listingId],
                                     imageLoader = imageLoader,
                                     onCancel = {
                                         scope.launch {
@@ -210,10 +224,10 @@ private fun OrderInfoRow(label: String, value: String) {
 @Composable
 private fun OrderItemCard(
     item: OrderItemDefaultDTO,
+    listing: ListingDefaultDTO?,
     imageLoader: ImageLoader,
     onCancel: () -> Unit
 ) {
-    val listing = item.listing
     val imageUrl = listing?.listingImage
         ?.firstOrNull { it.positionId == 0 }?.imagePath
         ?.takeIf { it.isNotBlank() }

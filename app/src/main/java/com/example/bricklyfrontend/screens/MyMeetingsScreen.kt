@@ -44,7 +44,6 @@ fun MyMeetingsScreen(
     val userId = UserPreferences.getUserId(context)
 
     var meetings by remember { mutableStateOf<List<MeetingShortDTO>>(emptyList()) }
-    var ticketCounts by remember { mutableStateOf<Map<Long, Int>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -56,16 +55,7 @@ fun MyMeetingsScreen(
             try {
                 val resp = RetrofitClient.api.getMeetingsByCreatorId(userId)
                 if (resp.isSuccessful) {
-                    val list = resp.body()?.content ?: emptyList()
-                    meetings = list
-                    val counts = mutableMapOf<Long, Int>()
-                    list.forEach { meeting ->
-                        try {
-                            val r = RetrofitClient.api.getTicketsByMeetingId(meeting.id)
-                            if (r.isSuccessful) counts[meeting.id] = r.body()?.size ?: 0
-                        } catch (_: Exception) {}
-                    }
-                    ticketCounts = counts
+                    meetings = resp.body()?.content ?: emptyList()
                 } else {
                     errorMessage = "Ошибка загрузки (${resp.code()})"
                 }
@@ -150,7 +140,6 @@ fun MyMeetingsScreen(
                         } ?: false
                         MyMeetingCard(
                             meeting = meeting,
-                            ticketCount = ticketCounts[meeting.id],
                             isPast = isPast,
                             onEdit = { onNavigateToEditMeeting(meeting.id) }
                         )
@@ -164,7 +153,6 @@ fun MyMeetingsScreen(
 @Composable
 private fun MyMeetingCard(
     meeting: MeetingShortDTO,
-    ticketCount: Int?,
     isPast: Boolean,
     onEdit: () -> Unit
 ) {
@@ -282,7 +270,7 @@ private fun MyMeetingCard(
                     Icon(Icons.Outlined.ConfirmationNumber, null, tint = Accent, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = if (ticketCount != null) "Записалось: $ticketCount" else "Загрузка...",
+                        text = "Записалось: ${meeting.registeredCount ?: 0}",
                         fontSize = 12.sp,
                         color = TextPrimary,
                         fontWeight = FontWeight.Medium

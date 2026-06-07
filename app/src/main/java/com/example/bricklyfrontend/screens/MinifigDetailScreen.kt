@@ -80,9 +80,10 @@ fun MinifigDetailScreen(
     }
 
     suspend fun loadParts(page: Int) {
+        val rebrickableId = minifig?.id ?: return
         if (page == 0) partsLoadingFirst = true else partsLoadingMore = true
         try {
-            val resp = RetrofitClient.api.getPartsFromMinifig(blId, page)
+            val resp = RetrofitClient.api.getPartsFromMinifig(rebrickableId, page)
             if (resp.isSuccessful) {
                 val body = resp.body()
                 val content = body?.content ?: emptyList()

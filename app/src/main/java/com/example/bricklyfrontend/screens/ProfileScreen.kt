@@ -36,6 +36,7 @@ fun ProfileScreen(
     onNavigateToCreateMeeting: () -> Unit = {},
     onNavigateToCreateListing: () -> Unit = {},
     onNavigateToMyListings: () -> Unit = {},
+    onNavigateToMySales: () -> Unit = {},
     onNavigateToMyTickets: () -> Unit = {},
     onNavigateToTopUp: () -> Unit = {},
     onNavigateToCart: () -> Unit = {},
@@ -206,6 +207,7 @@ fun ProfileScreen(
                     ProfileMenuItem(icon = Icons.Outlined.ShoppingBag, text = "Заказы", onClick = onNavigateToOrders, showDivider = true)
                     if (isSeller) {
                         ProfileMenuItem(icon = Icons.Outlined.Storefront, text = "Мой магазин", onClick = onNavigateToMyListings, showDivider = true)
+                        ProfileMenuItem(icon = Icons.Outlined.LocalShipping, text = "Мои продажи", onClick = onNavigateToMySales, showDivider = true)
                     }
                     ProfileMenuItem(icon = Icons.Outlined.Star, text = "Отзывы", onClick = onNavigateToFeedbacks, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = true)

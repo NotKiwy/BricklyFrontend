@@ -234,6 +234,11 @@ interface ApiService {
         @Path("id") id: Long,
         @Body dto: OrderItemUpdateDTO
     ): Response<OrderItemDefaultDTO>
+
+    @GET("/api/app/orders/items/by_seller/{id}")
+    suspend fun getOrderItemsBySellerId(
+        @Path("id") sellerId: Long
+    ): Response<List<OrderItemDefaultDTO>>
 }
 
 interface BrickognizeApiService {

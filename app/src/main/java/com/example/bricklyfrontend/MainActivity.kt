@@ -241,6 +241,9 @@ fun BricklyApp() {
                 onNavigateToMyListings = {
                     navController.navigate("my_listings") { launchSingleTop = true }
                 },
+                onNavigateToMySales = {
+                    navController.navigate("my_sales") { launchSingleTop = true }
+                },
                 onNavigateToMyTickets = {
                     navController.navigate("my_tickets") { launchSingleTop = true }
                 },
@@ -264,6 +267,10 @@ fun BricklyApp() {
 
         composable("my_listings") {
             MyListingsScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable("my_sales") {
+            MySalesScreen(onBack = { navController.popBackStack() })
         }
 
         composable("edit_profile") {

@@ -79,7 +79,8 @@ data class MeetingDefaultDTO(
     val description: String?,
     val discountDuration: Int?,
     val discountAmount: Int?,
-    val discountModifier: Int?
+    val discountModifier: Int?,
+    val registeredCount: Int?
 )
 
 data class PageMetadata(
@@ -107,7 +108,8 @@ data class MeetingShortDTO(
     val type: MeetingTypeDefaultDTO?,
     val title: String?,
     val previewImagePath: String?,
-    val duration: Int?
+    val duration: Int?,
+    val registeredCount: Int?
 )
 
 data class PagedModelMeetingShortDTO(
@@ -366,7 +368,8 @@ data class OrderItemDefaultDTO(
     val status: String?,
     val price: Int?,
     val quantity: Int?,
-    val listing: ListingDefaultDTO?
+    val listingId: Long,
+    val orderId: Long
 )
 
 data class OrderDefaultDTO(
