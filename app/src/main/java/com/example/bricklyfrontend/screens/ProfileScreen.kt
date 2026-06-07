@@ -54,7 +54,7 @@ fun ProfileScreen(
     val userId = remember { UserPreferences.getUserId(context) }
     val savedUsername = remember { UserPreferences.getUsername(context) }
     val role = remember { UserPreferences.getRole(context) }
-    val canCreateMeeting = remember { role == "ROLE_ADMIN" || role == "ROLE_MEETING_CREATOR" }
+    val canCreateMeeting = remember { role == "ROLE_ADMIN" || role == "ROLE_MEETING_CREATOR" || role == "ROLE_SUPERADMIN" }
     val isSeller = remember { UserPreferences.isSeller(context) }
     val isSuperAdmin = remember { UserPreferences.isSuperAdmin(context) }
 
@@ -201,7 +201,6 @@ fun ProfileScreen(
                 elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Column {
-                    ProfileMenuItem(icon = Icons.Outlined.CalendarMonth, text = "Записи на мероприятия", onClick = onNavigateToMeetings, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.ConfirmationNumber, text = "Мои билеты", onClick = onNavigateToMyTickets, showDivider = true)
                     if (canCreateMeeting) {
                         ProfileMenuItem(icon = Icons.Outlined.Event, text = "Мои мероприятия", onClick = onNavigateToMyMeetings, showDivider = true)

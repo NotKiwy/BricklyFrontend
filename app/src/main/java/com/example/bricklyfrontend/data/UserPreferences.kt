@@ -34,11 +34,11 @@ object UserPreferences {
     fun getRole(context: Context): String =
         prefs(context).getString(KEY_ROLE, "ROLE_USER") ?: "ROLE_USER"
 
-    fun isAdmin(context: Context): Boolean =
-        getRole(context) == "ROLE_ADMIN"
-
     fun isSuperAdmin(context: Context): Boolean =
         getRole(context) == "ROLE_SUPERADMIN"
+
+    fun isAdmin(context: Context): Boolean =
+        getRole(context) == "ROLE_ADMIN" || isSuperAdmin(context)
 
     fun isMeetingCreator(context: Context): Boolean =
         getRole(context) == "ROLE_MEETING_CREATOR" || isAdmin(context)

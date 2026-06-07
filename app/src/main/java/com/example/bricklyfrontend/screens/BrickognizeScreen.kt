@@ -16,8 +16,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -256,18 +255,13 @@ private fun ResultContent(
     onNavigateToListingsByItem: (String) -> Unit = {}
 ) {
     if (items.isEmpty()) {
-        Column(modifier = Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Box(modifier = Modifier.size(72.dp).clip(CircleShape).background(Color(0xFFF0F0F0)), contentAlignment = Alignment.Center) {
-                Text("🧱", fontSize = 32.sp)
-            }
-            Spacer(Modifier.height(16.dp))
-            Text("Ничего не найдено", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-            Spacer(Modifier.height(6.dp))
-            Text("Попробуйте сделать более чёткий снимок", fontSize = 14.sp, color = TextSecondary, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(28.dp))
-            Button(onClick = onReset, colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Text("Распознать ещё", fontWeight = FontWeight.SemiBold)
-            }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            EmptyStateBox(
+                icon = Icons.Outlined.ImageSearch,
+                title = "Ничего не найдено",
+                subtitle = "Попробуйте сделать более чёткий снимок",
+                onRefresh = onReset
+            )
         }
     } else {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
