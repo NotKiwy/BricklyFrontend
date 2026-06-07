@@ -239,6 +239,22 @@ interface ApiService {
     suspend fun getOrderItemsBySellerId(
         @Path("id") sellerId: Long
     ): Response<List<OrderItemDefaultDTO>>
+
+    @GET("/api/app/authorities")
+    suspend fun getAllAuthorities(): Response<List<AuthorityDefaultDTO>>
+
+    @GET("/api/app/users/by_username_containing/{usernameContaining}")
+    suspend fun getUsersByUsernameContaining(
+        @Path("usernameContaining") usernameContaining: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PagedModelUserDefaultDTO>
+
+    @PATCH("/api/app/users/change_authorities/{id}")
+    suspend fun changeUserAuthorities(
+        @Path("id") id: Long,
+        @Body dto: UserAuthoritiesPatchDTO
+    ): Response<UserDefaultDTO>
 }
 
 interface BrickognizeApiService {

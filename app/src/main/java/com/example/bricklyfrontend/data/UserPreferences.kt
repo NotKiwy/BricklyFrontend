@@ -37,6 +37,9 @@ object UserPreferences {
     fun isAdmin(context: Context): Boolean =
         getRole(context) == "ROLE_ADMIN"
 
+    fun isSuperAdmin(context: Context): Boolean =
+        getRole(context) == "ROLE_SUPERADMIN"
+
     fun isMeetingCreator(context: Context): Boolean =
         getRole(context) == "ROLE_MEETING_CREATOR" || isAdmin(context)
 

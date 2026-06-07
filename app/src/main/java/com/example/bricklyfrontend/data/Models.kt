@@ -394,3 +394,17 @@ data class OrderUpdateDTO(
     val shippingMethod: String?,
     val shippingAddress: String?
 )
+
+data class AuthorityDefaultDTO(
+    val id: Long,
+    val authority: String
+)
+
+data class UserAuthoritiesPatchDTO(
+    val authorities: List<String>
+)
+
+data class PagedModelUserDefaultDTO(
+    val content: List<UserDefaultDTO>?,
+    val page: PageMetadata?
+)

@@ -256,6 +256,9 @@ fun BricklyApp() {
                 onNavigateToCart = { navToTab("cart") },
                 onNavigateToHome = { navToTab("home") },
                 onNavigateToBrickognize = { navToTab("brickognize") },
+                onNavigateToUserPermissions = {
+                    navController.navigate("user_permissions") { launchSingleTop = true }
+                },
                 onLogout = {
                     navController.navigate("login") {
                         popUpTo(0) { inclusive = true }
@@ -271,6 +274,10 @@ fun BricklyApp() {
 
         composable("my_sales") {
             MySalesScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable("user_permissions") {
+            UserPermissionsScreen(onBack = { navController.popBackStack() })
         }
 
         composable("edit_profile") {
@@ -377,6 +384,7 @@ fun BricklyApp() {
                 onNavigateToCart = { navToTab("cart") },
                 onNavigateToProfile = { navToTab("profile") },
                 onNavigateToListingsByItem = { itemId ->
+                    navToTab("home")
                     navController.navigate("home_search/$itemId") { launchSingleTop = true }
                 }
             )

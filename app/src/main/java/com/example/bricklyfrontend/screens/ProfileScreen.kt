@@ -42,6 +42,7 @@ fun ProfileScreen(
     onNavigateToCart: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
+    onNavigateToUserPermissions: () -> Unit = {},
     onLogout: () -> Unit = {},
     toastMessage: String? = null
 ) {
@@ -55,6 +56,7 @@ fun ProfileScreen(
     val role = remember { UserPreferences.getRole(context) }
     val canCreateMeeting = remember { role == "ROLE_ADMIN" || role == "ROLE_MEETING_CREATOR" }
     val isSeller = remember { UserPreferences.isSeller(context) }
+    val isSuperAdmin = remember { UserPreferences.isSuperAdmin(context) }
 
     var balance by remember { mutableStateOf<Int?>(null) }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -211,6 +213,9 @@ fun ProfileScreen(
                     }
                     ProfileMenuItem(icon = Icons.Outlined.Star, text = "Отзывы", onClick = onNavigateToFeedbacks, showDivider = true)
                     ProfileMenuItem(icon = Icons.Outlined.Edit, text = "Изменить профиль", onClick = onNavigateToEditProfile, showDivider = true)
+                    if (isSuperAdmin) {
+                        ProfileMenuItem(icon = Icons.Outlined.AdminPanelSettings, text = "Управление ролями", onClick = onNavigateToUserPermissions, showDivider = true)
+                    }
                     ProfileMenuItem(
                         icon = Icons.Outlined.Logout,
                         text = "Выйти из аккаунта",
