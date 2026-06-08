@@ -673,10 +673,11 @@ private fun ShippingFormContent(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
                 .height(240.dp)
-                .clip(RoundedCornerShape(20.dp))
         ) {
             CheckoutInteractiveMap(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(20.dp)),
                 selectedGeoPoint = selectedGeoPoint,
                 onTouchStart = { parentScrollEnabled = false },
                 onTouchEnd = { parentScrollEnabled = true },
@@ -702,7 +703,7 @@ private fun ShippingFormContent(
             )
             if (userGeoPoint != null) {
                 FloatingActionButton(
-                    onClick = { selectedGeoPoint = userGeoPoint },
+                    onClick = { selectedGeoPoint = GeoPoint(userGeoPoint!!.latitude, userGeoPoint!!.longitude) },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(10.dp)

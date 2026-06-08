@@ -59,6 +59,7 @@ fun MySalesScreen(onBack: () -> Unit, onNavigate: (String) -> Unit = {}) {
     var isRefreshing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var updatingId by remember { mutableStateOf<Long?>(null) }
+    var updatingAction by remember { mutableStateOf<String?>(null) }
 
     fun load(silent: Boolean = false) {
         scope.launch {
@@ -90,6 +91,7 @@ fun MySalesScreen(onBack: () -> Unit, onNavigate: (String) -> Unit = {}) {
 
     suspend fun updateStatus(item: OrderItemDefaultDTO, newStatus: String) {
         updatingId = item.id
+        updatingAction = newStatus
         try {
             val resp = RetrofitClient.api.updateOrderItem(item.id, OrderItemUpdateDTO(newStatus))
             if (resp.isSuccessful) {
@@ -99,6 +101,7 @@ fun MySalesScreen(onBack: () -> Unit, onNavigate: (String) -> Unit = {}) {
             }
         } catch (_: Exception) {}
         updatingId = null
+        updatingAction = null
     }
 
     LaunchedEffect(Unit) { load() }
@@ -176,6 +179,7 @@ fun MySalesScreen(onBack: () -> Unit, onNavigate: (String) -> Unit = {}) {
                             listing = listings[item.listingId],
                             imageLoader = imageLoader,
                             isUpdating = updatingId == item.id,
+                            updatingAction = if (updatingId == item.id) updatingAction else null,
                             onConfirm = { scope.launch { updateStatus(item, "processing") } },
                             onCancel = { scope.launch { updateStatus(item, "canceled") } }
                         )
@@ -199,6 +203,7 @@ private fun SaleItemCard(
     listing: ListingDefaultDTO?,
     imageLoader: ImageLoader,
     isUpdating: Boolean,
+    updatingAction: String? = null,
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -282,7 +287,7 @@ private fun SaleItemCard(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
                     ) {
-                        if (isUpdating) {
+                        if (updatingAction == "processing") {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), color = TextPrimary, strokeWidth = 2.dp)
                         } else {
                             Text("Подтвердить", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
@@ -295,7 +300,11 @@ private fun SaleItemCard(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorColor)
                     ) {
-                        Text("Отменить", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        if (updatingAction == "canceled") {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = ErrorColor, strokeWidth = 2.dp)
+                        } else {
+                            Text("Отменить", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
             }
