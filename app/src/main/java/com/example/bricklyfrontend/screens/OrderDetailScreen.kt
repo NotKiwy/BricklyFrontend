@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -71,6 +72,7 @@ fun OrderDetailScreen(
     var feedbackRating by remember { mutableStateOf(5) }
     var feedbackComment by remember { mutableStateOf("") }
     var feedbackLoading by remember { mutableStateOf(false) }
+    var feedbackError by remember { mutableStateOf<String?>(null) }
 
     fun loadOrder() {
         scope.launch {
@@ -231,6 +233,7 @@ fun OrderDetailScreen(
                                         feedbackItem = item
                                         feedbackRating = 5
                                         feedbackComment = ""
+                                        feedbackError = null
                                     }
                                 )
                                 Spacer(Modifier.height(8.dp))
@@ -270,26 +273,34 @@ fun OrderDetailScreen(
                         value = feedbackRating.toFloat(),
                         onValueChange = { feedbackRating = it.roundToInt() },
                         valueRange = 1f..10f,
+                        interactionSource = remember { MutableInteractionSource() },
                         thumb = {
                             Box(
                                 modifier = Modifier
-                                    .size(22.dp)
+                                    .size(16.dp)
                                     .background(Color.White, CircleShape)
                                     .border(2.dp, Color.Black, CircleShape)
                             )
                         },
                         track = { sliderState ->
-                            SliderDefaults.Track(
-                                sliderState = sliderState,
+                            val fraction = ((sliderState.value - sliderState.valueRange.start) /
+                                    (sliderState.valueRange.endInclusive - sliderState.valueRange.start))
+                                .coerceIn(0f, 1f)
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(6.dp),
-                                colors = SliderDefaults.colors(
-                                    activeTrackColor = Color.Black,
-                                    inactiveTrackColor = Color(0xFFE0E0E0)
-                                ),
-                                drawStopIndicator = null
-                            )
+                                    .height(6.dp)
+                                    .border(1.dp, Color.Black, RoundedCornerShape(3.dp))
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(Color(0xFFE0E0E0))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(fraction)
+                                        .fillMaxHeight()
+                                        .background(Accent)
+                                )
+                            }
                         }
                     )
                     Spacer(Modifier.height(8.dp))
@@ -310,6 +321,10 @@ fun OrderDetailScreen(
                         maxLines = 4,
                         textStyle = MaterialTheme.typography.bodyMedium.copy(color = TextPrimary)
                     )
+                    if (feedbackError != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(feedbackError!!, color = ErrorColor, fontSize = 12.sp)
+                    }
                 }
             },
             confirmButton = {
@@ -331,8 +346,14 @@ fun OrderDetailScreen(
                                 if (resp.isSuccessful) {
                                     submittedFeedbacks = submittedFeedbacks + item.id
                                     feedbackItem = null
+                                } else if (resp.code() == 400) {
+                                    feedbackError = "Нельзя оставить отзыв самому себе"
+                                } else {
+                                    feedbackError = "Ошибка отправки (${resp.code()})"
                                 }
-                            } catch (_: Exception) {}
+                            } catch (_: Exception) {
+                                feedbackError = "Нет соединения"
+                            }
                             feedbackLoading = false
                         }
                     },
@@ -436,32 +457,51 @@ private fun OrderItemCard(
                         fontSize = 12.sp,
                         color = TextSecondary
                     )
-                    Spacer(Modifier.height(4.dp))
-                    val statusText = when (item.status) {
-                        "on_confirmation" -> "Ожидает подтверждения"
-                        "processing" -> "В обработке"
-                        "received" -> "Получен"
-                        "canceled" -> "Отменён"
-                        else -> item.status ?: ""
-                    }
-                    val statusColor = when (item.status) {
-                        "processing" -> Color(0xFF2E7D32)
-                        "received" -> Color(0xFF1565C0)
-                        "canceled" -> ErrorColor
-                        else -> TextSecondary
-                    }
-                    if (statusText.isNotBlank()) {
-                        Text(statusText, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = statusColor)
+                }
+                Spacer(Modifier.width(8.dp))
+                val statusLabel = when (item.status) {
+                    "on_confirmation" -> "Ожидает"
+                    "processing" -> "В обработке"
+                    "received" -> "Получен"
+                    "canceled" -> "Отменён"
+                    else -> item.status ?: ""
+                }
+                val statusColor = when (item.status) {
+                    "on_confirmation" -> Color(0xFFE65100)
+                    "processing" -> Color(0xFF2E7D32)
+                    "received" -> Color(0xFF1565C0)
+                    "canceled" -> ErrorColor
+                    else -> TextSecondary
+                }
+                if (statusLabel.isNotBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = statusColor.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            statusLabel,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = statusColor
+                        )
                     }
                 }
+            }
 
-                if (isOnConfirmation) {
-                    TextButton(onClick = onCancel, enabled = !isUpdating) {
-                        if (isUpdating) {
-                            CircularProgressIndicator(modifier = Modifier.size(14.dp), color = ErrorColor, strokeWidth = 2.dp)
-                        } else {
-                            Text("Отменить", fontSize = 12.sp, color = ErrorColor)
-                        }
+            if (isOnConfirmation) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onCancel,
+                    enabled = !isUpdating,
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorColor)
+                ) {
+                    if (isUpdating) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = ErrorColor, strokeWidth = 2.dp)
+                    } else {
+                        Text("Отменить заказ", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

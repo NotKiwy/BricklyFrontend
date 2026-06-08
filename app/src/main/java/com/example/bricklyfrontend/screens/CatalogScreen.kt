@@ -59,6 +59,7 @@ fun CatalogScreen(
     val focusManager = LocalFocusManager.current
 
     val isSeller = UserPreferences.isSeller(context)
+    val userId = remember { UserPreferences.getUserId(context) }
 
     var listings by remember { mutableStateOf<List<ListingDefaultDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -75,14 +76,14 @@ fun CatalogScreen(
                 if (query.isNotBlank()) {
                     val response = RetrofitClient.api.searchListings(query)
                     if (response.isSuccessful) {
-                        listings = (response.body()?.content ?: emptyList()).filter { it.status == "active" }
+                        listings = (response.body()?.content ?: emptyList()).filter { it.status == "active" && it.seller?.id != userId }
                     } else {
                         errorMessage = "Ошибка загрузки (${response.code()})"
                     }
                 } else {
                     val response = RetrofitClient.api.getListingsByStatus("active", page = 0, size = 50)
                     if (response.isSuccessful) {
-                        listings = response.body()?.content ?: emptyList()
+                        listings = (response.body()?.content ?: emptyList()).filter { it.seller?.id != userId }
                     } else {
                         errorMessage = "Ошибка загрузки (${response.code()})"
                     }
