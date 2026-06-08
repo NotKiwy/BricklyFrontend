@@ -34,6 +34,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderDetailScreen(
     orderId: Long,
@@ -254,27 +255,38 @@ fun OrderDetailScreen(
                 Column {
                     val sellerName = listings[currentFeedbackItem.listingId]?.seller?.username ?: "продавцу"
                     Text("Оценка для @$sellerName", fontSize = 13.sp, color = TextSecondary)
-                    Spacer(Modifier.height(12.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "$feedbackRating",
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = TextPrimary,
-                            modifier = Modifier.width(36.dp)
-                        )
-                        Text("/10", fontSize = 14.sp, color = TextSecondary)
-                    }
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "$feedbackRating/10",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(4.dp))
                     Slider(
                         value = feedbackRating.toFloat(),
                         onValueChange = { feedbackRating = it.roundToInt() },
                         valueRange = 1f..10f,
-                        steps = 8,
                         colors = SliderDefaults.colors(
-                            thumbColor = Accent,
-                            activeTrackColor = Accent,
-                            inactiveTrackColor = Divider
-                        )
+                            thumbColor = Color.Black,
+                            activeTrackColor = Color.Black,
+                            inactiveTrackColor = Color(0xFFE0E0E0)
+                        ),
+                        track = { sliderState ->
+                            SliderDefaults.Track(
+                                sliderState = sliderState,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp),
+                                colors = SliderDefaults.colors(
+                                    activeTrackColor = Color.Black,
+                                    inactiveTrackColor = Color(0xFFE0E0E0)
+                                ),
+                                drawStopIndicator = null
+                            )
+                        }
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
@@ -480,11 +492,12 @@ private fun OrderItemCard(
                         onClick = onLeaveFeedback,
                         modifier = Modifier.fillMaxWidth().height(40.dp),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Accent)
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Divider)
                     ) {
-                        Icon(Icons.Outlined.StarOutline, null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Outlined.StarOutline, null, modifier = Modifier.size(16.dp), tint = TextPrimary)
                         Spacer(Modifier.width(6.dp))
-                        Text("Оставить отзыв", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Оставить отзыв", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                     }
                 }
             }

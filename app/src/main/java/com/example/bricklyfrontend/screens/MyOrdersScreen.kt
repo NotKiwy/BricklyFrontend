@@ -59,7 +59,7 @@ fun MyOrdersScreen(
                         val body = resp.body()
                         val content = body?.content ?: emptyList()
                         if (content.isNotEmpty()) {
-                            orders = orders + content
+                            orders = (orders + content).sortedByDescending { it.createdAt }
                             currentPage++
                         }
                         val totalPages = body?.page?.totalPages?.toInt() ?: 1
@@ -87,7 +87,7 @@ fun MyOrdersScreen(
             val resp = RetrofitClient.api.getOrdersByUserId(userId, 0)
             if (resp.isSuccessful) {
                 val body = resp.body()
-                orders = body?.content ?: emptyList()
+                orders = (body?.content ?: emptyList()).sortedByDescending { it.createdAt }
                 currentPage = 0
                 val totalPages = body?.page?.totalPages?.toInt() ?: 1
                 hasMore = currentPage + 1 < totalPages
