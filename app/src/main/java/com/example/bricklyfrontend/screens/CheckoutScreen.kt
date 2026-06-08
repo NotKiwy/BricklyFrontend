@@ -571,6 +571,7 @@ private fun ShippingFormContent(
 
     var selectedGeoPoint by remember { mutableStateOf<GeoPoint?>(null) }
     var userGeoPoint by remember { mutableStateOf<GeoPoint?>(null) }
+    var animateKey by remember { mutableStateOf(0) }
     var locationError by remember { mutableStateOf<String?>(null) }
     var locationGranted by remember { mutableStateOf<Boolean?>(null) }
 
@@ -679,6 +680,7 @@ private fun ShippingFormContent(
                     .fillMaxSize()
                     .clip(RoundedCornerShape(20.dp)),
                 selectedGeoPoint = selectedGeoPoint,
+                animateKey = animateKey,
                 onTouchStart = { parentScrollEnabled = false },
                 onTouchEnd = { parentScrollEnabled = true },
                 onLocationSelected = { gp ->
@@ -703,7 +705,12 @@ private fun ShippingFormContent(
             )
             if (userGeoPoint != null) {
                 FloatingActionButton(
-                    onClick = { selectedGeoPoint = GeoPoint(userGeoPoint!!.latitude, userGeoPoint!!.longitude) },
+                    onClick = {
+                        userGeoPoint?.let { gp ->
+                            selectedGeoPoint = GeoPoint(gp.latitude, gp.longitude)
+                            animateKey++
+                        }
+                    },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(10.dp)
@@ -877,6 +884,7 @@ private fun CheckoutField(
 private fun CheckoutInteractiveMap(
     modifier: Modifier = Modifier,
     selectedGeoPoint: GeoPoint?,
+    animateKey: Int = 0,
     onTouchStart: () -> Unit = {},
     onTouchEnd: () -> Unit = {},
     onLocationSelected: (GeoPoint) -> Unit
@@ -914,7 +922,7 @@ private fun CheckoutInteractiveMap(
         onDispose { mapView.onDetach() }
     }
 
-    LaunchedEffect(selectedGeoPoint) {
+    LaunchedEffect(selectedGeoPoint, animateKey) {
         val point = selectedGeoPoint ?: return@LaunchedEffect
         mapView.overlays.remove(eventsOverlay)
         mapView.overlays.removeAll { it is Marker }
