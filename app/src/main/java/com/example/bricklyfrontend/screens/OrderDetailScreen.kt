@@ -1,7 +1,9 @@
 package com.example.bricklyfrontend.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -268,17 +270,20 @@ fun OrderDetailScreen(
                         value = feedbackRating.toFloat(),
                         onValueChange = { feedbackRating = it.roundToInt() },
                         valueRange = 1f..10f,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color.Black,
-                            activeTrackColor = Color.Black,
-                            inactiveTrackColor = Color(0xFFE0E0E0)
-                        ),
+                        thumb = {
+                            Box(
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .background(Color.White, CircleShape)
+                                    .border(2.dp, Color.Black, CircleShape)
+                            )
+                        },
                         track = { sliderState ->
                             SliderDefaults.Track(
                                 sliderState = sliderState,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(4.dp),
+                                    .height(6.dp),
                                 colors = SliderDefaults.colors(
                                     activeTrackColor = Color.Black,
                                     inactiveTrackColor = Color(0xFFE0E0E0)
