@@ -46,7 +46,6 @@ fun OrderDetailScreen(
     val scope = rememberCoroutineScope()
 
     val userId = remember { UserPreferences.getUserId(context) }
-    val username = remember { UserPreferences.getUsername(context) }
 
     val imageLoader = remember {
         val u = UserPreferences.getUsername(context)
@@ -316,16 +315,18 @@ fun OrderDetailScreen(
                         scope.launch {
                             feedbackLoading = true
                             try {
-                                RetrofitClient.api.createFeedback(
+                                val resp = RetrofitClient.api.createFeedback(
                                     FeedbackCreateDTO(
                                         target_id = sellerId,
-                                        author = UserShortDTO(id = userId, username = username, name = null),
+                                        author_id = userId,
                                         rate = feedbackRating,
                                         comment = feedbackComment.takeIf { it.isNotBlank() }
                                     )
                                 )
-                                submittedFeedbacks = submittedFeedbacks + item.id
-                                feedbackItem = null
+                                if (resp.isSuccessful) {
+                                    submittedFeedbacks = submittedFeedbacks + item.id
+                                    feedbackItem = null
+                                }
                             } catch (_: Exception) {}
                             feedbackLoading = false
                         }

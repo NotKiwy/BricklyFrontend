@@ -347,11 +347,7 @@ fun FeedbacksScreen(
                             try {
                                 val dto = FeedbackCreateDTO(
                                     target_id = targetUserId,
-                                    author = UserShortDTO(
-                                        id = currentUserId,
-                                        username = currentUsername,
-                                        name = null
-                                    ),
+                                    author_id = currentUserId,
                                     rate = dialogRate,
                                     comment = dialogComment.ifBlank { null }
                                 )

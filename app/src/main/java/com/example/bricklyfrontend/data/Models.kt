@@ -56,7 +56,7 @@ data class FeedbackDefaultDTO(
 
 data class FeedbackCreateDTO(
     val target_id: Long,
-    val author: UserShortDTO,
+    val author_id: Long,
     val rate: Int,
     val comment: String?
 )
