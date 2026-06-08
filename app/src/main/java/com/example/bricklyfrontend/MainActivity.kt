@@ -50,6 +50,17 @@ fun BricklyApp() {
 
     val startDest = if (UserPreferences.isLoggedIn(context)) "meetings" else "login"
 
+    fun navToProfile() {
+        val popped = navController.popBackStack("profile", inclusive = false)
+        if (!popped) {
+            navController.navigate("profile") {
+                popUpTo("meetings") { saveState = false }
+                launchSingleTop = true
+                restoreState = false
+            }
+        }
+    }
+
     fun navToTab(route: String) {
         val tabRoot = if (UserPreferences.isLoggedIn(context)) "meetings" else startDest
         navController.navigate(route) {
@@ -269,15 +280,15 @@ fun BricklyApp() {
         }
 
         composable("my_listings") {
-            MyListingsScreen(onBack = { navController.popBackStack() }, onNavigate = { navToTab(it) })
+            MyListingsScreen(onBack = { navController.popBackStack() }, onNavigate = { if (it == "profile") navToProfile() else navToTab(it) })
         }
 
         composable("my_sales") {
-            MySalesScreen(onBack = { navController.popBackStack() }, onNavigate = { navToTab(it) })
+            MySalesScreen(onBack = { navController.popBackStack() }, onNavigate = { if (it == "profile") navToProfile() else navToTab(it) })
         }
 
         composable("user_permissions") {
-            UserPermissionsScreen(onBack = { navController.popBackStack() }, onNavigate = { navToTab(it) })
+            UserPermissionsScreen(onBack = { navController.popBackStack() }, onNavigate = { if (it == "profile") navToProfile() else navToTab(it) })
         }
 
         composable("edit_profile") {
@@ -356,7 +367,7 @@ fun BricklyApp() {
                 onNavigateToOrderDetail = { orderId ->
                     navController.navigate("order_detail/$orderId") { launchSingleTop = true }
                 },
-                onNavigate = { navToTab(it) }
+                onNavigate = { if (it == "profile") navToProfile() else navToTab(it) }
             )
         }
 
@@ -365,7 +376,7 @@ fun BricklyApp() {
             OrderDetailScreen(
                 orderId = orderId,
                 onBack = { navController.popBackStack() },
-                onNavigate = { navToTab(it) }
+                onNavigate = { if (it == "profile") navToProfile() else navToTab(it) }
             )
         }
 
@@ -511,7 +522,7 @@ fun BricklyApp() {
                 onNavigateToEditMeeting = { meetingId ->
                     navController.navigate("edit_meeting/$meetingId") { launchSingleTop = true }
                 },
-                onNavigate = { navToTab(it) }
+                onNavigate = { if (it == "profile") navToProfile() else navToTab(it) }
             )
         }
 

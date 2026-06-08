@@ -66,7 +66,8 @@ fun OrderDetailScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var updatingItemId by remember { mutableStateOf<Long?>(null) }
-    var submittedFeedbacks by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var existingFeedbackSellerIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var submittedFeedbackSellerIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
 
     var feedbackItem by remember { mutableStateOf<OrderItemDefaultDTO?>(null) }
     var feedbackRating by remember { mutableStateOf(5) }
@@ -93,6 +94,15 @@ fun OrderDetailScreen(
                             } catch (_: Exception) {}
                         }
                         listings = map
+
+                        try {
+                            val fbResp = RetrofitClient.api.getFeedbacksByAuthorId(userId)
+                            if (fbResp.isSuccessful) {
+                                existingFeedbackSellerIds = fbResp.body()
+                                    ?.map { it.target_id }
+                                    ?.toSet() ?: emptySet()
+                            }
+                        } catch (_: Exception) {}
                     }
                 } else {
                     errorMessage = "Ошибка загрузки (${resp.code()})"
@@ -147,6 +157,16 @@ fun OrderDetailScreen(
                         OffsetDateTime.parse(dateStr).format(DateTimeFormatter.ofPattern("d MMMM yyyy, HH:mm", Locale("ru")))
                     } catch (_: Exception) { dateStr }
                 }
+
+                val reviewedSellerIds = existingFeedbackSellerIds + submittedFeedbackSellerIds
+
+                val firstReceivedItemBySeller: Map<Long, Long> = o.orderItems
+                    ?.filter { it.status == "received" }
+                    ?.groupBy { listings[it.listingId]?.seller?.id }
+                    ?.filterKeys { it != null }
+                    ?.mapKeys { it.key!! }
+                    ?.mapValues { (_, items) -> items.first().id }
+                    ?: emptyMap()
 
                 Column(
                     modifier = Modifier
@@ -203,12 +223,18 @@ fun OrderDetailScreen(
                     ) {
                         Column(modifier = Modifier.padding(10.dp)) {
                             o.orderItems?.forEach { item ->
+                                val sellerId = listings[item.listingId]?.seller?.id
+                                val isFirstReceivedForSeller = sellerId != null &&
+                                    firstReceivedItemBySeller[sellerId] == item.id
+                                val sellerAlreadyReviewed = sellerId != null && sellerId in reviewedSellerIds
+
                                 OrderItemCard(
                                     item = item,
                                     listing = listings[item.listingId],
                                     imageLoader = imageLoader,
                                     isUpdating = updatingItemId == item.id,
-                                    feedbackSubmitted = item.id in submittedFeedbacks,
+                                    showFeedbackButton = isFirstReceivedForSeller && !sellerAlreadyReviewed,
+                                    feedbackAlreadyLeft = isFirstReceivedForSeller && sellerAlreadyReviewed,
                                     onCancel = {
                                         scope.launch {
                                             updatingItemId = item.id
@@ -261,7 +287,7 @@ fun OrderDetailScreen(
                     Text("Оценка для @$sellerName", fontSize = 13.sp, color = TextSecondary)
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "$feedbackRating/10",
+                        "$feedbackRating/5",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
@@ -272,7 +298,7 @@ fun OrderDetailScreen(
                     Slider(
                         value = feedbackRating.toFloat(),
                         onValueChange = { feedbackRating = it.roundToInt() },
-                        valueRange = 1f..10f,
+                        valueRange = 1f..5f,
                         interactionSource = remember { MutableInteractionSource() },
                         thumb = {
                             Box(
@@ -344,7 +370,7 @@ fun OrderDetailScreen(
                                     )
                                 )
                                 if (resp.isSuccessful) {
-                                    submittedFeedbacks = submittedFeedbacks + item.id
+                                    submittedFeedbackSellerIds = submittedFeedbackSellerIds + sellerId
                                     feedbackItem = null
                                 } else if (resp.code() == 400) {
                                     feedbackError = "Нельзя оставить отзыв самому себе"
@@ -398,7 +424,8 @@ private fun OrderItemCard(
     listing: ListingDefaultDTO?,
     imageLoader: ImageLoader,
     isUpdating: Boolean,
-    feedbackSubmitted: Boolean,
+    showFeedbackButton: Boolean,
+    feedbackAlreadyLeft: Boolean,
     onCancel: () -> Unit,
     onConfirmReceived: () -> Unit,
     onLeaveFeedback: () -> Unit
@@ -430,7 +457,7 @@ private fun OrderItemCard(
                     model = ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true).build(),
                     imageLoader = imageLoader,
                     contentDescription = null,
-                    modifier = Modifier.size(70.dp).clip(RoundedCornerShape(10.dp)),
+                    modifier = Modifier.size(80.dp).clip(RoundedCornerShape(14.dp)),
                     contentScale = ContentScale.Crop,
                     loading = { Box(Modifier.fillMaxSize().background(Accent.copy(alpha = 0.12f))) },
                     error = {
@@ -442,7 +469,7 @@ private fun OrderItemCard(
                         }
                     }
                 )
-                Spacer(Modifier.width(10.dp))
+                Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         listing?.itemId ?: "Товар",
@@ -524,26 +551,30 @@ private fun OrderItemCard(
             }
 
             if (isReceived) {
-                Spacer(Modifier.height(8.dp))
-                if (feedbackSubmitted) {
-                    Text(
-                        "Отзыв оставлен",
-                        fontSize = 12.sp,
-                        color = Color(0xFF1565C0),
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else {
-                    OutlinedButton(
-                        onClick = onLeaveFeedback,
-                        modifier = Modifier.fillMaxWidth().height(40.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Divider)
-                    ) {
-                        Icon(Icons.Outlined.StarOutline, null, modifier = Modifier.size(16.dp), tint = TextPrimary)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Оставить отзыв", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                when {
+                    feedbackAlreadyLeft -> {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Отзыв оставлен",
+                            fontSize = 12.sp,
+                            color = Color(0xFF1565C0),
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    showFeedbackButton -> {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = onLeaveFeedback,
+                            modifier = Modifier.fillMaxWidth().height(40.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Divider)
+                        ) {
+                            Icon(Icons.Outlined.StarOutline, null, modifier = Modifier.size(16.dp), tint = TextPrimary)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Оставить отзыв", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                        }
                     }
                 }
             }

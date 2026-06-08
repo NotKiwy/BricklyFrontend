@@ -1,6 +1,10 @@
 package com.example.bricklyfrontend.screens
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -131,7 +135,7 @@ fun UserPermissionsScreen(
                     .background(Accent)
                     .statusBarsPadding()
                     .padding(horizontal = 20.dp)
-                    .padding(top = 16.dp, bottom = 20.dp)
+                    .padding(top = 20.dp, bottom = 20.dp)
             ) {
                 Column {
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -149,7 +153,7 @@ fun UserPermissionsScreen(
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -193,6 +197,25 @@ fun UserPermissionsScreen(
                 .padding(horizontal = 20.dp)
         ) {
             Spacer(Modifier.height(16.dp))
+
+            val showEmptyHint = searchQuery.isEmpty() && searchResults.isEmpty() && selectedUser == null && !isSearching && searchError == null
+            if (showEmptyHint) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(top = 48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Outlined.ManageAccounts, null, tint = IconInactive, modifier = Modifier.size(52.dp))
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            "Введите имя пользователя в поиск",
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
 
             if (searchError != null) {
                 Text(
@@ -246,84 +269,29 @@ fun UserPermissionsScreen(
                 }
             }
 
-            val user = selectedUser
-            if (user != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBackground),
-                    elevation = CardDefaults.cardElevation(0.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Outlined.Person, null, tint = Accent, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Column {
-                            Text(user.username, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                            if (!user.name.isNullOrBlank()) {
-                                Text(user.name, fontSize = 12.sp, color = TextSecondary)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                Text(
-                    "РОЛИ",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary.copy(alpha = 0.5f),
-                    letterSpacing = 0.8.sp
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                if (rolesLoading) {
-                    Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Accent)
-                    }
-                } else {
+            AnimatedVisibility(
+                visible = selectedUser != null,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it / 4 }),
+                exit = fadeOut()
+            ) {
+                val user = selectedUser ?: return@AnimatedVisibility
+                Column {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = CardBackground),
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
-                        Column {
-                            allRoles.forEachIndexed { index, role ->
-                                val isChecked = role.authority in checkedRoles
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            checkedRoles = if (isChecked) checkedRoles - role.authority else checkedRoles + role.authority
-                                        }
-                                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Checkbox(
-                                        checked = isChecked,
-                                        onCheckedChange = { checked ->
-                                            checkedRoles = if (checked) checkedRoles + role.authority else checkedRoles - role.authority
-                                        },
-                                        colors = CheckboxDefaults.colors(
-                                            checkedColor = Accent,
-                                            checkmarkColor = TextPrimary
-                                        )
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        role.authority.removePrefix("ROLE_"),
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = TextPrimary
-                                    )
-                                }
-                                if (index < allRoles.lastIndex) {
-                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = Divider, thickness = 1.dp)
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Outlined.Person, null, tint = IconInactive, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Column {
+                                Text(user.username, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                if (!user.name.isNullOrBlank()) {
+                                    Text(user.name, fontSize = 12.sp, color = TextSecondary)
                                 }
                             }
                         }
@@ -331,17 +299,78 @@ fun UserPermissionsScreen(
 
                     Spacer(Modifier.height(16.dp))
 
-                    Button(
-                        onClick = { save() },
-                        enabled = !isSaving,
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
-                    ) {
-                        if (isSaving) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = TextPrimary, strokeWidth = 2.dp)
-                        } else {
-                            Text("Сохранить роли", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "РОЛИ",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary.copy(alpha = 0.5f),
+                        letterSpacing = 0.8.sp
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    if (rolesLoading) {
+                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = Accent)
+                        }
+                    } else {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {
+                            Column {
+                                allRoles.forEachIndexed { index, role ->
+                                    val isChecked = role.authority in checkedRoles
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                checkedRoles = if (isChecked) checkedRoles - role.authority else checkedRoles + role.authority
+                                            }
+                                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = isChecked,
+                                            onCheckedChange = { checked ->
+                                                checkedRoles = if (checked) checkedRoles + role.authority else checkedRoles - role.authority
+                                            },
+                                            colors = CheckboxDefaults.colors(
+                                                checkedColor = Accent,
+                                                checkmarkColor = TextPrimary
+                                            )
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            role.authority.removePrefix("ROLE_"),
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = TextPrimary
+                                        )
+                                    }
+                                    if (index < allRoles.lastIndex) {
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = Divider, thickness = 1.dp)
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { save() },
+                            enabled = !isSaving,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
+                        ) {
+                            if (isSaving) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = TextPrimary, strokeWidth = 2.dp)
+                            } else {
+                                Text("Сохранить роли", fontWeight = FontWeight.SemiBold)
+                            }
                         }
                     }
                 }

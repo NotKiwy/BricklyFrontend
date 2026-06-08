@@ -230,10 +230,7 @@ private fun MyMeetingCard(
                     if (!isPast) {
                         IconButton(
                             onClick = onEdit,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Accent)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 Icons.Outlined.Edit,
@@ -271,7 +268,7 @@ private fun MyMeetingCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.ConfirmationNumber, null, tint = Accent, modifier = Modifier.size(13.dp))
+                    Icon(Icons.Outlined.ConfirmationNumber, null, tint = IconInactive, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = "Записалось: ${meeting.registeredCount ?: 0}",

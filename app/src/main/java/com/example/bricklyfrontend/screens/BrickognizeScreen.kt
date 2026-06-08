@@ -270,22 +270,13 @@ private fun ResultContent(
                 Spacer(Modifier.height(12.dp))
             }
             Spacer(Modifier.height(8.dp))
-            val topItemId = items.firstOrNull()?.id ?: ""
-            Button(
-                onClick = { onNavigateToListingsByItem(topItemId) },
-                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth().height(52.dp)
-            ) {
-                Text("Показать предложения", fontWeight = FontWeight.SemiBold)
-            }
-            Spacer(Modifier.height(10.dp))
-            TextButton(
+            OutlinedButton(
                 onClick = onReset,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(14.dp)
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
             ) {
-                Text("Распознать ещё", fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                Text("Распознать ещё", fontWeight = FontWeight.SemiBold)
             }
         }
     }
