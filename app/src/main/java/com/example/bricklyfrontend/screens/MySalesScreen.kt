@@ -193,8 +193,9 @@ fun MySalesScreen(onBack: () -> Unit, onNavigate: (String) -> Unit = {}) {
 private fun statusOrder(status: String?): Int = when (status) {
     "on_confirmation" -> 0
     "processing" -> 1
-    "canceled" -> 2
-    else -> 3
+    "received" -> 2
+    "canceled" -> 3
+    else -> 4
 }
 
 @Composable
@@ -317,6 +318,7 @@ private data class StatusInfo(val label: String, val color: Color)
 private fun statusLabel(status: String?): StatusInfo = when (status) {
     "on_confirmation" -> StatusInfo("Ожидает подтверждения", Color(0xFFE65100))
     "processing" -> StatusInfo("В обработке", Color(0xFF2E7D32))
+    "received" -> StatusInfo("Завершён", Color(0xFF1565C0))
     "canceled" -> StatusInfo("Отменён", ErrorColor)
     else -> StatusInfo(status ?: "—", TextSecondary)
 }

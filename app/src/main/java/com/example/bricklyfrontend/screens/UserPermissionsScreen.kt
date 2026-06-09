@@ -134,14 +134,16 @@ fun UserPermissionsScreen(
                     .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
                     .background(Accent)
                     .statusBarsPadding()
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 20.dp, bottom = 20.dp)
             ) {
                 Column {
-                    Box(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 8.dp)
+                    ) {
                         IconButton(
                             onClick = onBack,
-                            modifier = Modifier.align(Alignment.CenterStart).offset(x = (-12).dp)
+                            modifier = Modifier.align(Alignment.CenterStart)
                         ) {
                             Icon(Icons.Outlined.ArrowBackIosNew, "Назад", tint = TextPrimary)
                         }
@@ -153,11 +155,10 @@ fun UserPermissionsScreen(
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 12.dp),
                         placeholder = { Text("Имя пользователя...", color = TextSecondary, style = MaterialTheme.typography.bodyLarge) },
                         leadingIcon = { Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(20.dp)) },
                         trailingIcon = {

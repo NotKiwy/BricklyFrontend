@@ -215,54 +215,83 @@ fun OrderDetailScreen(
                         modifier = Modifier.padding(horizontal = 32.dp).padding(bottom = 8.dp)
                     )
 
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardBackground),
-                        elevation = CardDefaults.cardElevation(0.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
-                            o.orderItems?.forEach { item ->
-                                val sellerId = listings[item.listingId]?.seller?.id
-                                val isFirstReceivedForSeller = sellerId != null &&
-                                    firstReceivedItemBySeller[sellerId] == item.id
-                                val sellerAlreadyReviewed = sellerId != null && sellerId in reviewedSellerIds
+                    val sellerGroups = (o.orderItems
+                        ?.groupBy { listings[it.listingId]?.seller?.id }
+                        ?: emptyMap()).entries.toList()
 
-                                OrderItemCard(
-                                    item = item,
-                                    listing = listings[item.listingId],
-                                    imageLoader = imageLoader,
-                                    isUpdating = updatingItemId == item.id,
-                                    showFeedbackButton = isFirstReceivedForSeller && !sellerAlreadyReviewed,
-                                    feedbackAlreadyLeft = isFirstReceivedForSeller && sellerAlreadyReviewed,
-                                    onCancel = {
-                                        scope.launch {
-                                            updatingItemId = item.id
-                                            try {
-                                                RetrofitClient.api.updateOrderItem(item.id, OrderItemUpdateDTO("canceled"))
-                                                loadOrder()
-                                            } catch (_: Exception) {}
-                                            updatingItemId = null
-                                        }
-                                    },
-                                    onConfirmReceived = {
-                                        scope.launch {
-                                            updatingItemId = item.id
-                                            try {
-                                                RetrofitClient.api.updateOrderItem(item.id, OrderItemUpdateDTO("received"))
-                                                loadOrder()
-                                            } catch (_: Exception) {}
-                                            updatingItemId = null
-                                        }
-                                    },
-                                    onLeaveFeedback = {
-                                        feedbackItem = item
-                                        feedbackRating = 5
-                                        feedbackComment = ""
-                                        feedbackError = null
-                                    }
+                    sellerGroups.forEachIndexed { groupIndex, (sellerId, sellerItems) ->
+                        if (groupIndex > 0) Spacer(Modifier.height(12.dp))
+
+                        val sellerUsername = sellerItems.firstOrNull()
+                            ?.let { listings[it.listingId]?.seller?.username }
+
+                        if (sellerUsername != null) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(horizontal = 32.dp)
+                                    .padding(bottom = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Outlined.Person, null, tint = IconInactive, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    "@$sellerUsername",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = TextSecondary
                                 )
-                                Spacer(Modifier.height(8.dp))
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                sellerItems.forEachIndexed { itemIndex, item ->
+                                    val isFirstReceivedForSeller = sellerId != null &&
+                                        firstReceivedItemBySeller[sellerId] == item.id
+                                    val sellerAlreadyReviewed = sellerId != null && sellerId in reviewedSellerIds
+
+                                    OrderItemCard(
+                                        item = item,
+                                        listing = listings[item.listingId],
+                                        imageLoader = imageLoader,
+                                        isUpdating = updatingItemId == item.id,
+                                        showFeedbackButton = isFirstReceivedForSeller && !sellerAlreadyReviewed,
+                                        onCancel = {
+                                            scope.launch {
+                                                updatingItemId = item.id
+                                                try {
+                                                    RetrofitClient.api.updateOrderItem(item.id, OrderItemUpdateDTO("canceled"))
+                                                    loadOrder()
+                                                } catch (_: Exception) {}
+                                                updatingItemId = null
+                                            }
+                                        },
+                                        onConfirmReceived = {
+                                            scope.launch {
+                                                updatingItemId = item.id
+                                                try {
+                                                    RetrofitClient.api.updateOrderItem(item.id, OrderItemUpdateDTO("received"))
+                                                    loadOrder()
+                                                } catch (_: Exception) {}
+                                                updatingItemId = null
+                                            }
+                                        },
+                                        onLeaveFeedback = {
+                                            feedbackItem = item
+                                            feedbackRating = 5
+                                            feedbackComment = ""
+                                            feedbackError = null
+                                        }
+                                    )
+                                    if (itemIndex < sellerItems.lastIndex) {
+                                        Spacer(Modifier.height(8.dp))
+                                    }
+                                }
                             }
                         }
                     }
@@ -425,7 +454,6 @@ private fun OrderItemCard(
     imageLoader: ImageLoader,
     isUpdating: Boolean,
     showFeedbackButton: Boolean,
-    feedbackAlreadyLeft: Boolean,
     onCancel: () -> Unit,
     onConfirmReceived: () -> Unit,
     onLeaveFeedback: () -> Unit
@@ -487,7 +515,7 @@ private fun OrderItemCard(
                 }
                 Spacer(Modifier.width(8.dp))
                 val statusLabel = when (item.status) {
-                    "on_confirmation" -> "Ожидает"
+                    "on_confirmation" -> "Ожидает подтверждения"
                     "processing" -> "В обработке"
                     "received" -> "Получен"
                     "canceled" -> "Отменён"
@@ -550,32 +578,18 @@ private fun OrderItemCard(
                 }
             }
 
-            if (isReceived) {
-                when {
-                    feedbackAlreadyLeft -> {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Отзыв оставлен",
-                            fontSize = 12.sp,
-                            color = Color(0xFF1565C0),
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    showFeedbackButton -> {
-                        Spacer(Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = onLeaveFeedback,
-                            modifier = Modifier.fillMaxWidth().height(40.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Divider)
-                        ) {
-                            Icon(Icons.Outlined.StarOutline, null, modifier = Modifier.size(16.dp), tint = TextPrimary)
-                            Spacer(Modifier.width(6.dp))
-                            Text("Оставить отзыв", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                        }
-                    }
+            if (isReceived && showFeedbackButton) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onLeaveFeedback,
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Divider)
+                ) {
+                    Icon(Icons.Outlined.StarOutline, null, modifier = Modifier.size(16.dp), tint = TextPrimary)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Оставить отзыв", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                 }
             }
         }

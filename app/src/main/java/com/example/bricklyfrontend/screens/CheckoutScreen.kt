@@ -115,12 +115,10 @@ fun CheckoutScreen(
                     }
                 }
 
-                currentStep = if (ticketItems.isNotEmpty()) {
-                    CheckoutStep.TICKETS_CONFIRMATION
-                } else if (listingItems.isNotEmpty()) {
-                    CheckoutStep.SHIPPING_FORM
-                } else {
-                    null
+                currentStep = when {
+                    listingItems.isNotEmpty() -> CheckoutStep.SHIPPING_FORM
+                    ticketItems.isNotEmpty() -> CheckoutStep.TICKETS_CONFIRMATION
+                    else -> null
                 }
             }
         } catch (_: Exception) {}
@@ -241,17 +239,18 @@ fun CheckoutScreen(
         }
 
         errorMessage = null
-        val totalToPay = listingsTotal
+        val totalToPay = listingsTotal + ticketsTotal
 
         if (userBalance >= totalToPay) {
             isProcessing = true
             scope.launch {
                 try {
+                    if (ticketItems.isNotEmpty()) createTicketsForItems()
                     createOrderForListings()
                     isProcessing = false
                     onPaymentSuccess()
                 } catch (_: Exception) {
-                    errorMessage = "Ошибка создания заказа"
+                    errorMessage = "Ошибка оформления"
                     isProcessing = false
                 }
             }
@@ -321,6 +320,7 @@ fun CheckoutScreen(
                 onDeliveryCommentChange = { deliveryComment = it },
                 errorMessage = errorMessage,
                 isProcessing = isProcessing,
+                ticketsTotal = ticketsTotal,
                 listingsTotal = listingsTotal,
                 userBalance = userBalance,
                 onConfirm = { confirmOrderPurchase() }
@@ -559,6 +559,7 @@ private fun ShippingFormContent(
     onDeliveryCommentChange: (String) -> Unit,
     errorMessage: String?,
     isProcessing: Boolean,
+    ticketsTotal: Int = 0,
     listingsTotal: Int,
     userBalance: Int,
     onConfirm: () -> Unit
@@ -795,15 +796,22 @@ private fun ShippingFormContent(
                     Text("Ваш баланс", fontSize = 14.sp, color = TextSecondary)
                     Text("$userBalance ₽", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                 }
+                if (ticketsTotal > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Билеты", fontSize = 14.sp, color = TextSecondary)
+                        Text("$ticketsTotal ₽", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("К оплате", color = TextSecondary, fontSize = 14.sp)
-                    Text("$listingsTotal ₽", fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = TextPrimary)
+                    Text("${listingsTotal + ticketsTotal} ₽", fontWeight = FontWeight.ExtraBold, fontSize = 24.sp, color = TextPrimary)
                 }
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = { if (!isProcessing) onConfirm() },
-                    enabled = !isProcessing && userBalance >= listingsTotal,
+                    enabled = !isProcessing && userBalance >= listingsTotal + ticketsTotal,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
@@ -817,7 +825,7 @@ private fun ShippingFormContent(
             }
         }
 
-        if (userBalance < listingsTotal) {
+        if (userBalance < listingsTotal + ticketsTotal) {
             Spacer(Modifier.height(12.dp))
             Text(
                 "Недостаточно средств. Пополните баланс в профиле.",
