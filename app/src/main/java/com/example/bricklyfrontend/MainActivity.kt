@@ -357,7 +357,8 @@ fun BricklyApp() {
                 onBack = { navController.popBackStack() },
                 onNavigateToMeetingDetail = { meetingId ->
                     navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
-                }
+                },
+                onNavigate = { if (it == "profile") navToProfile() else navToTab(it) }
             )
         }
 

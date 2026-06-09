@@ -53,17 +53,37 @@ fun ProfileScreen(
 
     val userId = remember { UserPreferences.getUserId(context) }
     val savedUsername = remember { UserPreferences.getUsername(context) }
-    val role = remember { UserPreferences.getRole(context) }
-    val canCreateMeeting = remember { role == "ROLE_ADMIN" || role == "ROLE_MEETING_CREATOR" || role == "ROLE_SUPERADMIN" }
-    val isSeller = remember { UserPreferences.isSeller(context) }
-    val isSuperAdmin = remember { UserPreferences.isSuperAdmin(context) }
+    var role by remember { mutableStateOf(UserPreferences.getRole(context)) }
+    val canCreateMeeting by remember { derivedStateOf {
+        val r = role.split(",")
+        "ROLE_ADMIN" in r || "ROLE_MEETING_CREATOR" in r || "ROLE_SUPERADMIN" in r
+    } }
+    val isSeller by remember { derivedStateOf {
+        val r = role.split(",")
+        "ROLE_SELLER" in r || "ROLE_ADMIN" in r || "ROLE_SUPERADMIN" in r
+    } }
+    val isSuperAdmin by remember { derivedStateOf { "ROLE_SUPERADMIN" in role.split(",") } }
 
     var balance by remember { mutableStateOf<Int?>(null) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     LaunchedEffect(userId) {
         try {
             val resp = RetrofitClient.api.getUserById(userId)
-            if (resp.isSuccessful) balance = resp.body()?.balance
+            if (resp.isSuccessful) {
+                val user = resp.body()
+                balance = user?.balance
+                val serverRole = UserPreferences.extractRole(user?.authorities)
+                if (serverRole != role) {
+                    UserPreferences.saveUser(
+                        context = context,
+                        id = userId,
+                        username = savedUsername,
+                        password = UserPreferences.getPassword(context),
+                        role = serverRole
+                    )
+                    role = serverRole
+                }
+            }
         } catch (_: Exception) {}
     }
 

@@ -390,6 +390,23 @@ data class OrderItemUpdateDTO(
     val status: String
 )
 
+data class OrderShortDTO(
+    val id: Long,
+    val shippingMethod: String?,
+    val shippingAddress: String?,
+    val createdAt: String?,
+    val user: UserShortDTO?
+)
+
+data class OrderItemWithOrderDTO(
+    val id: Long,
+    val status: String?,
+    val price: Int?,
+    val quantity: Int?,
+    val listingId: Long,
+    val order: OrderShortDTO?
+)
+
 data class OrderUpdateDTO(
     val shippingMethod: String?,
     val shippingAddress: String?

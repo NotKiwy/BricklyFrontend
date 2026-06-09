@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -270,11 +271,11 @@ private fun ResultContent(
                 Spacer(Modifier.height(12.dp))
             }
             Spacer(Modifier.height(8.dp))
-            OutlinedButton(
+            Button(
                 onClick = onReset,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
             ) {
                 Text("Распознать ещё", fontWeight = FontWeight.SemiBold)
             }
@@ -345,7 +346,8 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int, onSearch: () -> Un
                     }
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = Accent,
+                        color = CardBackground,
+                        border = BorderStroke(1.dp, TextSecondary.copy(alpha = 0.35f)),
                         onClick = onSearch
                     ) {
                         Row(
@@ -353,8 +355,8 @@ private fun BrickResultCard(item: BrickognizeItem, rank: Int, onSearch: () -> Un
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Icon(Icons.Outlined.Search, null, tint = TextPrimary, modifier = Modifier.size(14.dp))
-                            Text("Искать", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                            Icon(Icons.Outlined.Search, null, tint = TextSecondary, modifier = Modifier.size(14.dp))
+                            Text("Искать", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
                         }
                     }
                 }

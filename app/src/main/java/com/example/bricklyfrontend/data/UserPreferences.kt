@@ -34,28 +34,29 @@ object UserPreferences {
     fun getRole(context: Context): String =
         prefs(context).getString(KEY_ROLE, "ROLE_USER") ?: "ROLE_USER"
 
+    private fun roles(context: Context): List<String> =
+        getRole(context).split(",").map { it.trim() }
+
     fun isSuperAdmin(context: Context): Boolean =
-        getRole(context) == "ROLE_SUPERADMIN"
+        "ROLE_SUPERADMIN" in roles(context)
 
-    fun isAdmin(context: Context): Boolean =
-        getRole(context) == "ROLE_ADMIN" || isSuperAdmin(context)
-
-    fun isMeetingCreator(context: Context): Boolean =
-        getRole(context) == "ROLE_MEETING_CREATOR" || isAdmin(context)
-
-    fun isSeller(context: Context): Boolean =
-        getRole(context) == "ROLE_SELLER" || isAdmin(context)
-
-    fun extractRole(authorities: List<AuthorityShortDTO>?): String {
-        val list = authorities?.map { it.authority } ?: emptyList()
-        return when {
-            "ROLE_SUPERADMIN" in list -> "ROLE_SUPERADMIN"
-            "ROLE_ADMIN" in list -> "ROLE_ADMIN"
-            "ROLE_MEETING_CREATOR" in list -> "ROLE_MEETING_CREATOR"
-            "ROLE_SELLER" in list -> "ROLE_SELLER"
-            else -> list.firstOrNull() ?: "ROLE_USER"
-        }
+    fun isAdmin(context: Context): Boolean {
+        val r = roles(context)
+        return "ROLE_ADMIN" in r || "ROLE_SUPERADMIN" in r
     }
+
+    fun isMeetingCreator(context: Context): Boolean {
+        val r = roles(context)
+        return "ROLE_MEETING_CREATOR" in r || "ROLE_ADMIN" in r || "ROLE_SUPERADMIN" in r
+    }
+
+    fun isSeller(context: Context): Boolean {
+        val r = roles(context)
+        return "ROLE_SELLER" in r || "ROLE_ADMIN" in r || "ROLE_SUPERADMIN" in r
+    }
+
+    fun extractRole(authorities: List<AuthorityShortDTO>?): String =
+        authorities?.map { it.authority }?.joinToString(",") ?: "ROLE_USER"
 
     fun isLoggedIn(context: Context): Boolean =
         getUserId(context) != -1L

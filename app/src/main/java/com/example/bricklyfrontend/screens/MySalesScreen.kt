@@ -1,6 +1,11 @@
 package com.example.bricklyfrontend.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -53,7 +58,7 @@ fun MySalesScreen(onBack: () -> Unit, onNavigate: (String) -> Unit = {}) {
         ImageLoader.Builder(context).okHttpClient(client).build()
     }
 
-    var items by remember { mutableStateOf<List<OrderItemDefaultDTO>>(emptyList()) }
+    var items by remember { mutableStateOf<List<OrderItemWithOrderDTO>>(emptyList()) }
     var listings by remember { mutableStateOf<Map<Long, ListingDefaultDTO>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -89,7 +94,7 @@ fun MySalesScreen(onBack: () -> Unit, onNavigate: (String) -> Unit = {}) {
         }
     }
 
-    suspend fun updateStatus(item: OrderItemDefaultDTO, newStatus: String) {
+    suspend fun updateStatus(item: OrderItemWithOrderDTO, newStatus: String) {
         updatingId = item.id
         updatingAction = newStatus
         try {
@@ -200,7 +205,7 @@ private fun statusOrder(status: String?): Int = when (status) {
 
 @Composable
 private fun SaleItemCard(
-    item: OrderItemDefaultDTO,
+    item: OrderItemWithOrderDTO,
     listing: ListingDefaultDTO?,
     imageLoader: ImageLoader,
     isUpdating: Boolean,
@@ -208,6 +213,9 @@ private fun SaleItemCard(
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
+    var deliveryExpanded by remember { mutableStateOf(false) }
+    val hasDeliveryInfo = item.order?.shippingMethod != null || item.order?.shippingAddress?.isNotBlank() == true
+
     val imageUrl = listing?.listingImage
         ?.firstOrNull { it.positionId == 0 }?.imagePath
         ?.takeIf { it.isNotBlank() }
@@ -252,7 +260,7 @@ private fun SaleItemCard(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Заказ #${item.orderId} · ×${item.quantity ?: 1}",
+                        "Заказ #${item.order?.id ?: "—"} · ×${item.quantity ?: 1}",
                         fontSize = 12.sp,
                         color = TextSecondary
                     )
@@ -279,6 +287,10 @@ private fun SaleItemCard(
             }
 
             if (item.status == "on_confirmation") {
+                if (hasDeliveryInfo) {
+                    Spacer(Modifier.height(10.dp))
+                    DeliveryInfoPanel(item.order)
+                }
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
@@ -309,6 +321,85 @@ private fun SaleItemCard(
                     }
                 }
             }
+
+            if (item.status == "processing" && hasDeliveryInfo) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { deliveryExpanded = !deliveryExpanded }
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(Icons.Outlined.LocalShipping, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                        Text("Информация о доставке", fontSize = 13.sp, color = TextSecondary)
+                    }
+                    Icon(
+                        if (deliveryExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
+                        null,
+                        tint = TextSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                AnimatedVisibility(
+                    visible = deliveryExpanded,
+                    enter = expandVertically(animationSpec = tween(200)),
+                    exit = shrinkVertically(animationSpec = tween(200))
+                ) {
+                    Column {
+                        Spacer(Modifier.height(4.dp))
+                        DeliveryInfoPanel(item.order)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeliveryInfoPanel(order: OrderShortDTO?) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(CardBackground)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        order?.shippingMethod?.let { method ->
+            Row(verticalAlignment = Alignment.Top) {
+                Icon(Icons.Outlined.LocalShipping, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Column {
+                    Text("Способ доставки", fontSize = 11.sp, color = TextSecondary)
+                    Text(
+                        when (method) {
+                            "shipping" -> "Самовывоз"
+                            "delivery" -> "Доставка"
+                            else -> method
+                        },
+                        fontSize = 13.sp,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+        order?.shippingAddress?.takeIf { it.isNotBlank() }?.let { address ->
+            Row(verticalAlignment = Alignment.Top) {
+                Icon(Icons.Outlined.LocationOn, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(8.dp))
+                Column {
+                    Text("Адрес", fontSize = 11.sp, color = TextSecondary)
+                    Text(address, fontSize = 13.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+                }
+            }
         }
     }
 }
@@ -316,7 +407,7 @@ private fun SaleItemCard(
 private data class StatusInfo(val label: String, val color: Color)
 
 private fun statusLabel(status: String?): StatusInfo = when (status) {
-    "on_confirmation" -> StatusInfo("Ожидает подтверждения", Color(0xFFE65100))
+    "on_confirmation" -> StatusInfo("На подтверждении", Color(0xFFE65100))
     "processing" -> StatusInfo("В обработке", Color(0xFF2E7D32))
     "received" -> StatusInfo("Завершён", Color(0xFF1565C0))
     "canceled" -> StatusInfo("Отменён", ErrorColor)

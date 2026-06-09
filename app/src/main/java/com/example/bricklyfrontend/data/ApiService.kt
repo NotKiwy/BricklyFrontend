@@ -90,6 +90,12 @@ interface ApiService {
         @Path("authorId") authorId: Long
     ): Response<List<FeedbackDefaultDTO>>
 
+    @GET("/api/app/feedbacks/by_author_id_and_target_id")
+    suspend fun getFeedbacksByAuthorAndTarget(
+        @Query("authorId") authorId: Long,
+        @Query("targetId") targetId: Long
+    ): Response<List<FeedbackDefaultDTO>>
+
     @POST("/api/app/feedbacks/create")
     suspend fun createFeedback(@Body dto: FeedbackCreateDTO): Response<FeedbackDefaultDTO>
 
@@ -238,7 +244,7 @@ interface ApiService {
     @GET("/api/app/orders/items/by_seller/{id}")
     suspend fun getOrderItemsBySellerId(
         @Path("id") sellerId: Long
-    ): Response<List<OrderItemDefaultDTO>>
+    ): Response<List<OrderItemWithOrderDTO>>
 
     @GET("/api/app/authorities")
     suspend fun getAllAuthorities(): Response<List<AuthorityDefaultDTO>>

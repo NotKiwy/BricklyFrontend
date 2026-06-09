@@ -58,7 +58,7 @@ fun CatalogScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
-    val isSeller = UserPreferences.isSeller(context)
+    var isSeller by remember { mutableStateOf(UserPreferences.isSeller(context)) }
     val userId = remember { UserPreferences.getUserId(context) }
 
     var listings by remember { mutableStateOf<List<ListingDefaultDTO>>(emptyList()) }
@@ -95,6 +95,25 @@ fun CatalogScreen(
                 isRefreshing = false
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        try {
+            val resp = RetrofitClient.api.getUserById(userId)
+            if (resp.isSuccessful) {
+                val serverRole = UserPreferences.extractRole(resp.body()?.authorities)
+                if (serverRole != UserPreferences.getRole(context)) {
+                    UserPreferences.saveUser(
+                        context = context,
+                        id = userId,
+                        username = UserPreferences.getUsername(context),
+                        password = UserPreferences.getPassword(context),
+                        role = serverRole
+                    )
+                }
+                isSeller = UserPreferences.isSeller(context)
+            }
+        } catch (_: Exception) {}
     }
 
     LaunchedEffect(searchQuery) {

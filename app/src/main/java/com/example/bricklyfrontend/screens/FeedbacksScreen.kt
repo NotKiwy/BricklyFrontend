@@ -48,6 +48,7 @@ fun FeedbacksScreen(
     var feedbacks by remember { mutableStateOf<List<FeedbackDefaultDTO>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var hasLeftFeedback by remember { mutableStateOf(false) }
 
     var showDialog by remember { mutableStateOf(false) }
     var dialogRate by remember { mutableIntStateOf(5) }
@@ -74,7 +75,17 @@ fun FeedbacksScreen(
         }
     }
 
-    LaunchedEffect(targetUserId) { loadFeedbacks() }
+    LaunchedEffect(targetUserId) {
+        loadFeedbacks()
+        if (currentUserId != targetUserId) {
+            try {
+                val check = RetrofitClient.api.getFeedbacksByAuthorAndTarget(currentUserId, targetUserId)
+                if (check.isSuccessful) {
+                    hasLeftFeedback = check.body()?.isNotEmpty() == true
+                }
+            } catch (_: Exception) {}
+        }
+    }
 
     val averageRating = if (feedbacks.isEmpty()) null
     else feedbacks.map { it.rate }.average()
@@ -100,7 +111,7 @@ fun FeedbacksScreen(
                     fontSize = 18.sp,
                     modifier = Modifier.align(Alignment.Center)
                 )
-                if (currentUserId != targetUserId) {
+                if (currentUserId != targetUserId && !hasLeftFeedback) {
                     TextButton(
                         onClick = { showDialog = true },
                         modifier = Modifier.align(Alignment.CenterEnd)
