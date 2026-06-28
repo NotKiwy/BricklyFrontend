@@ -515,7 +515,7 @@ private fun OrderItemCard(
                 }
                 Spacer(Modifier.width(8.dp))
                 val statusLabel = when (item.status) {
-                    "on_confirmation" -> "Ожидает подтверждения"
+                    "on_confirmation" -> "На верификации"
                     "processing" -> "В обработке"
                     "received" -> "Получен"
                     "canceled" -> "Отменён"
