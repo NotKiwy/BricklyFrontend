@@ -164,7 +164,7 @@ fun BricklyBottomBar(
         BottomNavItem("meetings", Icons.Outlined.Language, "Сходки"),
         BottomNavItem("home", Icons.Outlined.Storefront, "Маркет"),
         BottomNavItem("scan", Icons.Outlined.DocumentScanner, "Сканер"),
-        BottomNavItem("cart", Icons.Outlined.ShoppingBag, "Корзина"),
+        BottomNavItem("chats", Icons.Outlined.Chat, "Чаты"),
         BottomNavItem("profile", Icons.Outlined.Person, "Профиль"),
     )
 
@@ -177,7 +177,7 @@ fun BricklyBottomBar(
         items.forEach { item ->
             if (item.route == "scan") {
                 NavigationBarItem(
-                    selected = currentRoute == "brickognize",
+                    selected = currentRoute.startsWith("brickognize"),
                     onClick = { onScanClick?.invoke() ?: onNavigate("brickognize") },
                     icon = {
                         Box(

@@ -45,7 +45,7 @@ import java.util.Locale
 fun MeetingsScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToMeetingDetail: (Long) -> Unit = {},
-    onNavigateToCart: () -> Unit = {},
+    onNavigateToChats: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
     onNavigateToCreateMeeting: () -> Unit = {}
@@ -142,7 +142,7 @@ fun MeetingsScreen(
             BricklyBottomBar(currentRoute = "meetings", onNavigate = { route ->
                 when (route) {
                     "profile" -> onNavigateToProfile()
-                    "cart" -> onNavigateToCart()
+                    "chats" -> onNavigateToChats()
                     "home" -> onNavigateToHome()
                     "brickognize" -> onNavigateToBrickognize()
                 }

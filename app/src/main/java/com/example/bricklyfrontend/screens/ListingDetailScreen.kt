@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
-import kotlinx.coroutines.launch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,15 +43,14 @@ fun ListingDetailScreen(
     onNavigateToPartDetail: (String) -> Unit = {},
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToCart: () -> Unit = {},
+    onNavigateToChats: () -> Unit = {},
+    onOpenChat: (Long) -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {}
 ) {
     SetStatusBarColor(Accent)
-    
+
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val userId = UserPreferences.getUserId(context)
-    
+
     var listing by remember { mutableStateOf<ListingDefaultDTO?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -61,17 +59,7 @@ fun ListingDetailScreen(
         try {
             val response = RetrofitClient.api.getListingById(listingId)
             if (response.isSuccessful) {
-                val l = response.body()
-                listing = l
-                if (l != null) {
-                    ListingCartState.syncSingleItem(
-                        userId = userId,
-                        listingId = l.id,
-                        title = l.itemId ?: "",
-                        unitPrice = l.price ?: 0,
-                        maxQuantity = l.quantity ?: 1
-                    )
-                }
+                listing = response.body()
             } else {
                 errorMessage = "Ошибка загрузки (${response.code()})"
             }
@@ -87,7 +75,7 @@ fun ListingDetailScreen(
             BricklyBottomBar(currentRoute = "home", onNavigate = { route ->
                 when (route) {
                     "profile" -> onNavigateToProfile()
-                    "cart" -> onNavigateToCart()
+                    "chats" -> onNavigateToChats()
                     "meetings" -> onNavigateToMeetings()
                     "brickognize" -> onNavigateToBrickognize()
                 }
@@ -142,10 +130,6 @@ fun ListingDetailScreen(
                 ) {
                     Spacer(Modifier.height(16.dp))
 
-                    var isInCart by remember { mutableStateOf(ListingCartState.items.any { it.listingId == item.id }) }
-                    val cartItem by remember { derivedStateOf { ListingCartState.items.find { it.listingId == item.id } } }
-                    isInCart = cartItem != null
-                    
                     val imageLoader = remember {
                         val username = UserPreferences.getUsername(context)
                         val password = UserPreferences.getPassword(context)
@@ -363,79 +347,18 @@ fun ListingDetailScreen(
                     Spacer(Modifier.height(16.dp))
 
 
-                    val maxQty = item.quantity ?: 1
-                    val displayQty = cartItem?.quantity ?: 0
-
-                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-                        if (!isInCart) {
+                    val sellerId = item.seller?.id
+                    if (sellerId != null && sellerId != UserPreferences.getUserId(context)) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
                             Button(
-                                onClick = {
-                                    scope.launch {
-                                        ListingCartState.addExactQuantityWithApi(
-                                            userId = userId,
-                                            item = ListingCartItem(
-                                                listingId = item.id,
-                                                title = item.itemId ?: "",
-                                                unitPrice = item.price ?: 0,
-                                                quantity = 1,
-                                                maxQuantity = maxQty
-                                            )
-                                        )
-                                    }
-                                },
+                                onClick = { onOpenChat(sellerId) },
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
                             ) {
-                                Icon(Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Outlined.ChatBubbleOutline, null, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("В корзину", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            }
-                        } else {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(Accent),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        scope.launch { ListingCartState.decrementQuantityWithApi(item.id) }
-                                    },
-                                    modifier = Modifier.size(56.dp)
-                                ) {
-                                    Icon(
-                                        if (displayQty <= 1) Icons.Outlined.Delete else Icons.Outlined.Remove,
-                                        null,
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                                Text(
-                                    "В корзине: $displayQty",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 16.sp
-                                    ),
-                                    color = Color.Black
-                                )
-                                IconButton(
-                                    onClick = {
-                                        scope.launch { ListingCartState.incrementQuantityWithApi(item.id) }
-                                    },
-                                    modifier = Modifier.size(56.dp),
-                                    enabled = displayQty < maxQty
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.Add,
-                                        null,
-                                        tint = if (displayQty < maxQty) Color.Black else Color.Black.copy(alpha = 0.3f),
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
+                                Text("Написать продавцу", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             }
                         }
                     }

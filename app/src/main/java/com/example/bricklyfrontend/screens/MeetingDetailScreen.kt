@@ -19,8 +19,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.viewinterop.AndroidView
-import com.example.bricklyfrontend.data.CartItemCreateDTO
-import com.example.bricklyfrontend.data.CartItemUpdateDTO
 import com.example.bricklyfrontend.data.TicketCreateDTO
 import com.example.bricklyfrontend.data.UserPreferences
 import kotlinx.coroutines.Dispatchers
@@ -42,33 +40,10 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-data class CartItem(
-    val meetingId: Long,
-    val meetingTitle: String,
-    val meetingDate: String?,
-    val meetingAddress: String?,
-    val ticketPrice: Int,
-    val quantity: Int
-)
-
-object CartState {
-    var items by mutableStateOf<List<CartItem>>(emptyList())
-
-    fun addItem(item: CartItem) {
-        val existing = items.find { it.meetingId == item.meetingId }
-        items = if (existing != null) {
-            items.map { if (it.meetingId == item.meetingId) it.copy(quantity = it.quantity + item.quantity) else it }
-        } else {
-            items + item
-        }
-    }
-}
-
 @Composable
 fun MeetingDetailScreen(
     meetingId: Long,
     onBack: () -> Unit,
-    onNavigateToCart: () -> Unit,
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToMyTickets: () -> Unit = {}
 ) {
@@ -81,9 +56,6 @@ fun MeetingDetailScreen(
     var meeting by remember { mutableStateOf<MeetingDefaultDTO?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var ticketCount by remember { mutableIntStateOf(1) }
-    var serverCartItemId by remember { mutableStateOf<Long?>(null) }
-    val addedToCart = serverCartItemId != null
     var isMapFullscreen by remember { mutableStateOf(false) }
     var parentScrollEnabled by remember { mutableStateOf(true) }
     val scrollState = rememberScrollState()
@@ -95,15 +67,6 @@ fun MeetingDetailScreen(
             val response = RetrofitClient.api.getMeetingById(meetingId)
             if (response.isSuccessful) meeting = response.body()
             else errorMessage = "Ошибка загрузки (${response.code()})"
-
-            val cartResp = RetrofitClient.api.getCartItemsByUserId(userId)
-            if (cartResp.isSuccessful) {
-                val match = cartResp.body()?.find { it.itemType == "M" && it.itemId?.toLong() == meetingId }
-                if (match != null) {
-                    serverCartItemId = match.id
-                    ticketCount = match.quantity ?: 1
-                }
-            }
 
             val ticketsResp = RetrofitClient.api.getTicketsByUserId(userId)
             if (ticketsResp.isSuccessful) {
@@ -301,111 +264,17 @@ fun MeetingDetailScreen(
                                     }
                                 }
                             } else {
-                                Text("Количество билетов", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = TextPrimary)
-                                Spacer(Modifier.height(16.dp))
-
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    IconButton(
-                                        onClick = {
-                                            if (addedToCart) {
-                                                val newQty = ticketCount - 1
-                                                val serverId = serverCartItemId
-                                                if (newQty <= 0 && serverId != null) {
-                                                    scope.launch {
-                                                        try { RetrofitClient.api.deleteCartItem(serverId) } catch (_: Exception) {}
-                                                        serverCartItemId = null
-                                                        ticketCount = 1
-                                                    }
-                                                } else if (newQty >= 1 && serverId != null) {
-                                                    ticketCount = newQty
-                                                    scope.launch {
-                                                        try { RetrofitClient.api.updateCartItem(serverId, CartItemUpdateDTO(newQty)) } catch (_: Exception) {}
-                                                    }
-                                                }
-                                            } else if (ticketCount > 1) {
-                                                ticketCount--
-                                            }
-                                        },
-                                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF0F0F0))
-                                    ) {
-                                        Icon(Icons.Filled.Remove, null, tint = TextPrimary)
-                                    }
-                                    Text("$ticketCount", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = TextPrimary, modifier = Modifier.padding(horizontal = 28.dp))
-                                    IconButton(
-                                        onClick = {
-                                            val newQty = ticketCount + 1
-                                            if (addedToCart) {
-                                                val serverId = serverCartItemId ?: return@IconButton
-                                                ticketCount = newQty
-                                                scope.launch {
-                                                    try { RetrofitClient.api.updateCartItem(serverId, CartItemUpdateDTO(newQty)) } catch (_: Exception) {}
-                                                }
-                                            } else {
-                                                ticketCount = newQty
-                                            }
-                                        },
-                                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Accent)
-                                    ) {
-                                        Icon(Icons.Filled.Add, null, tint = TextPrimary)
-                                    }
-                                }
-
+                                Text(
+                                    "Стоимость билета",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = TextPrimary
+                                )
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Итого: ${m.ticketPrice!! * ticketCount} ₽",
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                    color = TextSecondary
+                                    "${m.ticketPrice} ₽",
+                                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                                    color = TextPrimary
                                 )
-
-                                Spacer(Modifier.height(16.dp))
-
-                                if (addedToCart) {
-                                    Text(
-                                        text = "В корзине: $ticketCount",
-                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                        color = TextSecondary,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    Button(
-                                        onClick = onNavigateToCart,
-                                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = TextPrimary, contentColor = Accent)
-                                    ) {
-                                        Icon(Icons.Outlined.ShoppingBag, null, modifier = Modifier.size(18.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("Перейти в корзину", fontWeight = FontWeight.SemiBold)
-                                    }
-                                } else {
-                                    Button(
-                                        onClick = {
-                                            scope.launch {
-                                                try {
-                                                    val resp = RetrofitClient.api.addCartItem(
-                                                        CartItemCreateDTO(
-                                                            userId = userId,
-                                                            itemType = "M",
-                                                            itemId = m.id,
-                                                            quantity = ticketCount
-                                                        )
-                                                    )
-                                                    if (resp.isSuccessful) {
-                                                        serverCartItemId = resp.body()?.id
-                                                    }
-                                                } catch (_: Exception) {}
-                                            }
-                                        },
-                                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = TextPrimary)
-                                    ) {
-                                        Icon(Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(18.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("В корзину ($ticketCount)", fontWeight = FontWeight.SemiBold)
-                                    }
-                                }
                             }
                         }
                     }

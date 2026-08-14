@@ -35,7 +35,7 @@ fun PartDetailScreen(
     onBack: () -> Unit,
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToCart: () -> Unit = {},
+    onNavigateToChats: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
     onNavigateToListings: (String) -> Unit = {},
     onNavigateToSetDetail: (String) -> Unit = {},
@@ -124,7 +124,7 @@ fun PartDetailScreen(
             BricklyBottomBar(currentRoute = "home", onNavigate = { route ->
                 when (route) {
                     "profile" -> onNavigateToProfile()
-                    "cart" -> onNavigateToCart()
+                    "chats" -> onNavigateToChats()
                     "meetings" -> onNavigateToMeetings()
                     "brickognize" -> onNavigateToBrickognize()
                 }

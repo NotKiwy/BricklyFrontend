@@ -176,9 +176,6 @@ interface ApiService {
         @Query("size") size: Int = 20
     ): Response<PagedModelPartFromItemDTO>
 
-    @POST("/api/app/cart_items/create")
-    suspend fun addCartItem(@Body dto: CartItemCreateDTO): Response<CartItemDefaultDTO>
-
     @GET("/api/app/minifigs/by_bl_id/{blId}")
     suspend fun getMinifigByBlId(@Path("blId") blId: String): Response<List<MinifigDTO>>
 
@@ -187,15 +184,6 @@ interface ApiService {
 
     @GET("/api/app/listings/by_description_or_itemId_containing/{stringContained}")
     suspend fun searchListings(@Path("stringContained") query: String): Response<PagedModelListingDefaultDTO>
-
-    @GET("/api/app/cart_items/by_user_id/{userId}")
-    suspend fun getCartItemsByUserId(@Path("userId") userId: Long): Response<List<CartItemDefaultDTO>>
-
-    @DELETE("/api/app/cart_items/delete/{id}")
-    suspend fun deleteCartItem(@Path("id") id: Long): Response<Unit>
-
-    @PUT("/api/app/cart_items/update/{id}")
-    suspend fun updateCartItem(@Path("id") id: Long, @Body dto: CartItemUpdateDTO): Response<CartItemDefaultDTO>
 
     @GET("/api/app/listings/by_seller_id/{sellerId}")
     suspend fun getListingsBySellerId(
@@ -216,30 +204,6 @@ interface ApiService {
     @GET("/api/app/payments/by_yookassa_id/{yooId}")
     suspend fun getPaymentByYooId(@Path("yooId") yooId: String): Response<TopUpResponseDTO>
 
-    @POST("/api/app/payments/pay_for_cart")
-    suspend fun payForCart(@Body dto: TopUpRequestDTO): Response<TopUpResponseDTO>
-
-    @POST("/api/app/orders/create")
-    suspend fun createOrder(@Body dto: OrderCreateDTO): Response<OrderDefaultDTO>
-
-    @GET("/api/app/orders/by_user_id/{userId}")
-    suspend fun getOrdersByUserId(
-        @Path("userId") userId: Long,
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 20
-    ): Response<PagedModelOrderDefaultDTO>
-
-    @PUT("/api/app/orders/items/update/{id}")
-    suspend fun updateOrderItem(
-        @Path("id") id: Long,
-        @Body dto: OrderItemUpdateDTO
-    ): Response<OrderItemDefaultDTO>
-
-    @GET("/api/app/orders/items/by_seller/{id}")
-    suspend fun getOrderItemsBySellerId(
-        @Path("id") sellerId: Long
-    ): Response<List<OrderItemDefaultDTO>>
-
     @GET("/api/app/authorities")
     suspend fun getAllAuthorities(): Response<List<AuthorityDefaultDTO>>
 
@@ -255,6 +219,25 @@ interface ApiService {
         @Path("id") id: Long,
         @Body dto: UserAuthoritiesPatchDTO
     ): Response<UserDefaultDTO>
+
+    @GET("/api/app/messages/by_members")
+    suspend fun getMessagesByMembers(
+        @Query("user2Id") user2Id: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 50
+    ): Response<PagedModelMessageDefaultDTO>
+
+    @GET("/api/app/messages/last_activity")
+    suspend fun getMessagesLastActivity(
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 50
+    ): Response<PagedModelMessageDefaultDTO>
+
+    @POST("/api/app/messages/send")
+    suspend fun sendMessage(@Body dto: MessageCreateDTO): Response<MessageDefaultDTO>
+
+    @DELETE("/api/app/messages/delete/{id}")
+    suspend fun deleteMessage(@Path("id") id: Long): Response<Unit>
 }
 
 interface BrickognizeApiService {

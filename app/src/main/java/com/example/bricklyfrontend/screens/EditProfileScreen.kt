@@ -28,7 +28,7 @@ fun EditProfileScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit = {},
     onNavigateToMeetings: () -> Unit = {},
-    onNavigateToCart: () -> Unit = {},
+    onNavigateToChats: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {}
 ) {
@@ -88,7 +88,7 @@ fun EditProfileScreen(
             BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
                 when (route) {
                     "meetings" -> onNavigateToMeetings()
-                    "cart" -> onNavigateToCart()
+                    "chats" -> onNavigateToChats()
                     "home" -> onNavigateToHome()
                     "brickognize" -> onNavigateToBrickognize()
                 }

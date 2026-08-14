@@ -242,26 +242,6 @@ fun DetailPageSkeleton() {
     }
 }
 
-@Composable
-fun CartSkeleton(modifier: Modifier = Modifier) {
-    val brush = shimmerBrush()
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        repeat(4) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(brush)
-            )
-        }
-    }
-}
 
 @Composable
 fun FeedbackListSkeleton() {

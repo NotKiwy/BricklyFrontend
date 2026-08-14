@@ -58,7 +58,7 @@ private sealed class BrickState {
 fun BrickognizeScreen(
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
-    onNavigateToCart: () -> Unit = {},
+    onNavigateToChats: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToListingsByItem: (String) -> Unit = {}
 ) {
@@ -130,7 +130,7 @@ fun BrickognizeScreen(
                     when (route) {
                         "meetings" -> onNavigateToMeetings()
                         "home" -> onNavigateToHome()
-                        "cart" -> onNavigateToCart()
+                        "chats" -> onNavigateToChats()
                         "profile" -> onNavigateToProfile()
                     }
                 },

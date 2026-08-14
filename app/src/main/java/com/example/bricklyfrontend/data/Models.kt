@@ -22,7 +22,6 @@ data class UserDefaultDTO(
     val email: String?,
     val city: String?,
     val balance: Int?,
-    val cartItems: List<CartItemDefaultDTO>?,
     val authorities: List<AuthorityShortDTO>?
 )
 
@@ -166,14 +165,6 @@ data class ListingDefaultDTO(
     val listingImage: List<ListingImageDefaultDTO>?
 )
 
-data class CartItemDefaultDTO(
-    val id: Long,
-    val userId: Long,
-    val itemType: String?,
-    val itemId: Int?,
-    val quantity: Int?
-)
-
 data class PagedModelListingDefaultDTO(
     val content: List<ListingDefaultDTO>?,
     val page: PageMetadata?
@@ -190,15 +181,6 @@ data class ListingCreateDTO(
     val price: Int,
     val status: String
 )
-
-data class CartItemCreateDTO(
-    val userId: Long,
-    val itemType: String,
-    val itemId: Long,
-    val quantity: Int
-)
-
-data class CartItemUpdateDTO(val quantity: Int)
 
 data class ListingUpdateDTO(
     val status: String,
@@ -348,53 +330,6 @@ data class MinifigFromSetDTO(
     val blUrl: String?
 )
 
-data class OrderItemCreateDTO(
-    val status: String,
-    val price: Int,
-    val quantity: Int,
-    val listingId: Long
-)
-
-data class OrderCreateDTO(
-    val shippingMethod: String,
-    val shippingAddress: String,
-    val createdAt: String,
-    val userId: Long,
-    val orderItems: List<OrderItemCreateDTO>
-)
-
-data class OrderItemDefaultDTO(
-    val id: Long,
-    val status: String?,
-    val price: Int?,
-    val quantity: Int?,
-    val listingId: Long,
-    val orderId: Long
-)
-
-data class OrderDefaultDTO(
-    val id: Long,
-    val shippingMethod: String?,
-    val shippingAddress: String?,
-    val createdAt: String?,
-    val user: UserShortDTO?,
-    val orderItems: List<OrderItemDefaultDTO>?
-)
-
-data class PagedModelOrderDefaultDTO(
-    val content: List<OrderDefaultDTO>?,
-    val page: PageMetadata?
-)
-
-data class OrderItemUpdateDTO(
-    val status: String
-)
-
-data class OrderUpdateDTO(
-    val shippingMethod: String?,
-    val shippingAddress: String?
-)
-
 data class AuthorityDefaultDTO(
     val id: Long,
     val authority: String
@@ -406,5 +341,23 @@ data class UserAuthoritiesPatchDTO(
 
 data class PagedModelUserDefaultDTO(
     val content: List<UserDefaultDTO>?,
+    val page: PageMetadata?
+)
+
+data class MessageCreateDTO(
+    val text: String,
+    val targetId: Long
+)
+
+data class MessageDefaultDTO(
+    val id: Long,
+    val text: String?,
+    val date: String?,
+    val author: UserShortDTO?,
+    val target: UserShortDTO?
+)
+
+data class PagedModelMessageDefaultDTO(
+    val content: List<MessageDefaultDTO>?,
     val page: PageMetadata?
 )

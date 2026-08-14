@@ -17,7 +17,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.bricklyfrontend.data.RetrofitClient
 import com.example.bricklyfrontend.data.UserPreferences
 import com.example.bricklyfrontend.screens.*
-import com.example.bricklyfrontend.screens.ListingCartScreen
 import com.example.bricklyfrontend.ui.theme.Accent
 import com.example.bricklyfrontend.ui.theme.BricklyFrontendTheme
 
@@ -120,7 +119,7 @@ fun BricklyApp() {
                 onNavigateToMeetingDetail = { meetingId ->
                     navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
                 },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToHome = { navToTab("home") },
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToCreateMeeting = {
@@ -133,7 +132,7 @@ fun BricklyApp() {
             CatalogScreen(
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToMeetingDetail = { meetingId ->
                     navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
                 },
@@ -155,7 +154,7 @@ fun BricklyApp() {
             CatalogScreen(
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToMeetingDetail = { meetingId ->
                     navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
                 },
@@ -173,55 +172,6 @@ fun BricklyApp() {
             )
         }
 
-        composable("cart") {
-            CartScreen(
-                onNavigateToMeetings = { navToTab("meetings") },
-                onNavigateToProfile = { navToTab("profile") },
-                onNavigateToHome = { navToTab("home") },
-                onNavigateToBrickognize = { navToTab("brickognize") },
-                onNavigateToCheckout = { totalPrice ->
-                    navController.navigate("checkout/$totalPrice") { launchSingleTop = true }
-                },
-                onNavigateToListingDetail = { listingId ->
-                    navController.navigate("listing_detail/$listingId") { launchSingleTop = true }
-                },
-                onNavigateToMeetingDetail = { meetingId ->
-                    navController.navigate("meeting_detail/$meetingId") { launchSingleTop = true }
-                }
-            )
-        }
-
-        composable("checkout/{totalPrice}") { backStackEntry ->
-            val totalPrice = backStackEntry.arguments?.getString("totalPrice")?.toIntOrNull() ?: 0
-            CheckoutScreen(
-                onBack = { navController.popBackStack() },
-                onPaymentSuccess = {
-                    navController.navigate("payment_success/$totalPrice") {
-                        popUpTo("cart") { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateToTopUp = { deficit ->
-                    navController.navigate("top_up_with_amount/$deficit") {
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-
-        composable("payment_success/{totalPrice}") { backStackEntry ->
-            val totalPrice = backStackEntry.arguments?.getString("totalPrice")?.toIntOrNull() ?: 0
-            PaymentSuccessScreen(
-                totalPrice = totalPrice,
-                onGoHome = {
-                    navController.navigate("home") {
-                        popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-
         composable("profile") {
             val savedState = navController.currentBackStackEntry?.savedStateHandle
             val toast = savedState?.get<String>("toast")
@@ -232,9 +182,6 @@ fun BricklyApp() {
             }
             ProfileScreen(
                 onNavigateToMeetings = { navToTab("meetings") },
-                onNavigateToOrders = {
-                    navController.navigate("my_orders") { launchSingleTop = true }
-                },
                 onNavigateToShop = {},
                 onNavigateToEditProfile = {
                     navController.navigate("edit_profile") { launchSingleTop = true }
@@ -252,9 +199,6 @@ fun BricklyApp() {
                 onNavigateToMyListings = {
                     navController.navigate("my_listings") { launchSingleTop = true }
                 },
-                onNavigateToMySales = {
-                    navController.navigate("my_sales") { launchSingleTop = true }
-                },
                 onNavigateToMyTickets = {
                     navController.navigate("my_tickets") { launchSingleTop = true }
                 },
@@ -264,7 +208,7 @@ fun BricklyApp() {
                 onNavigateToCreateListing = {
                     navController.navigate("create_listing") { launchSingleTop = true }
                 },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToHome = { navToTab("home") },
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToUserPermissions = {
@@ -283,10 +227,6 @@ fun BricklyApp() {
             MyListingsScreen(onBack = { navController.popBackStack() }, onNavigate = { if (it == "profile") navToProfile() else navToTab(it) })
         }
 
-        composable("my_sales") {
-            MySalesScreen(onBack = { navController.popBackStack() }, onNavigate = { if (it == "profile") navToProfile() else navToTab(it) })
-        }
-
         composable("user_permissions") {
             UserPermissionsScreen(onBack = { navController.popBackStack() }, onNavigate = { if (it == "profile") navToProfile() else navToTab(it) })
         }
@@ -301,7 +241,7 @@ fun BricklyApp() {
                     navController.popBackStack()
                 },
                 onNavigateToMeetings = { navToTab("meetings") },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToHome = { navToTab("home") },
                 onNavigateToBrickognize = { navToTab("brickognize") }
             )
@@ -341,7 +281,6 @@ fun BricklyApp() {
             MeetingDetailScreen(
                 meetingId = meetingId,
                 onBack = { navController.popBackStack() },
-                onNavigateToCart = { navToTab("cart") },
                 onNavigateToEditProfile = {
                     navController.navigate("edit_profile") { launchSingleTop = true }
                 },
@@ -361,32 +300,13 @@ fun BricklyApp() {
             )
         }
 
-        composable("my_orders") {
-            MyOrdersScreen(
-                onBack = { navController.popBackStack() },
-                onNavigateToOrderDetail = { orderId ->
-                    navController.navigate("order_detail/$orderId") { launchSingleTop = true }
-                },
-                onNavigate = { if (it == "profile") navToProfile() else navToTab(it) }
-            )
-        }
-
-        composable("order_detail/{orderId}") { backStackEntry ->
-            val orderId = backStackEntry.arguments?.getString("orderId")?.toLongOrNull() ?: 0L
-            OrderDetailScreen(
-                orderId = orderId,
-                onBack = { navController.popBackStack() },
-                onNavigate = { if (it == "profile") navToProfile() else navToTab(it) }
-            )
-        }
-
         composable("feedbacks/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toLongOrNull() ?: -1L
             FeedbacksScreen(
                 targetUserId = userId,
                 onBack = { navController.popBackStack() },
                 onNavigateToMeetings = { navToTab("meetings") },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToHome = { navToTab("home") },
                 onNavigateToBrickognize = { navToTab("brickognize") }
             )
@@ -396,7 +316,7 @@ fun BricklyApp() {
             BrickognizeScreen(
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToHome = { navToTab("home") },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToProfile = { navToTab("profile") },
                 onNavigateToListingsByItem = { itemId ->
                     navToTab("home")
@@ -421,7 +341,10 @@ fun BricklyApp() {
                 },
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
+                onOpenChat = { sellerId ->
+                    navController.navigate("chat_detail/$sellerId") { launchSingleTop = true }
+                },
                 onNavigateToBrickognize = { navToTab("brickognize") }
             )
         }
@@ -433,7 +356,7 @@ fun BricklyApp() {
                 onBack = { navController.popBackStack() },
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToListings = { itemId ->
                     navController.navigate("home_search/$itemId") { launchSingleTop = true }
@@ -454,7 +377,7 @@ fun BricklyApp() {
                 onBack = { navController.popBackStack() },
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToListings = { itemId ->
                     navController.navigate("home_search/$itemId") { launchSingleTop = true }
@@ -512,10 +435,6 @@ fun BricklyApp() {
             )
         }
 
-        composable("listing_cart") {
-            ListingCartScreen(onBack = { navController.popBackStack() })
-        }
-
         composable("my_meetings") {
             MyMeetingsScreen(
                 onBack = { navController.popBackStack() },
@@ -543,7 +462,7 @@ fun BricklyApp() {
                 onBack = { navController.popBackStack() },
                 onNavigateToMeetings = { navToTab("meetings") },
                 onNavigateToProfile = { navToTab("profile") },
-                onNavigateToCart = { navToTab("cart") },
+                onNavigateToChats = { navToTab("chats") },
                 onNavigateToBrickognize = { navToTab("brickognize") },
                 onNavigateToPartDetail = { partBlId ->
                     navController.navigate("part_detail/$partBlId") { launchSingleTop = true }
@@ -551,6 +470,26 @@ fun BricklyApp() {
                 onNavigateToMinifigDetail = { minifigBlId ->
                     navController.navigate("minifig_detail/$minifigBlId") { launchSingleTop = true }
                 }
+            )
+        }
+
+        composable("chats") {
+            ChatsScreen(
+                onNavigateToMeetings = { navToTab("meetings") },
+                onNavigateToHome = { navToTab("home") },
+                onNavigateToProfile = { navToTab("profile") },
+                onNavigateToBrickognize = { navToTab("brickognize") },
+                onOpenChat = { otherUserId ->
+                    navController.navigate("chat_detail/$otherUserId") { launchSingleTop = true }
+                }
+            )
+        }
+
+        composable("chat_detail/{userId}") { backStackEntry ->
+            val otherUserId = backStackEntry.arguments?.getString("userId")?.toLongOrNull() ?: -1L
+            ChatDetailScreen(
+                otherUserId = otherUserId,
+                onBack = { navController.popBackStack() }
             )
         }
     }

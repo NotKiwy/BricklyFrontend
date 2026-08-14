@@ -33,7 +33,7 @@ fun FeedbacksScreen(
     targetUserId: Long,
     onBack: () -> Unit,
     onNavigateToMeetings: () -> Unit = {},
-    onNavigateToCart: () -> Unit = {},
+    onNavigateToChats: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {}
 ) {
@@ -114,7 +114,7 @@ fun FeedbacksScreen(
             BricklyBottomBar(currentRoute = "profile", onNavigate = { route ->
                 when (route) {
                     "meetings" -> onNavigateToMeetings()
-                    "cart" -> onNavigateToCart()
+                    "chats" -> onNavigateToChats()
                     "home" -> onNavigateToHome()
                     "brickognize" -> onNavigateToBrickognize()
                 }

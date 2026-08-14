@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 fun CatalogScreen(
     onNavigateToMeetings: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToCart: () -> Unit = {},
+    onNavigateToChats: () -> Unit = {},
     onNavigateToMeetingDetail: (Long) -> Unit = {},
     onNavigateToBrickognize: () -> Unit = {},
     onNavigateToCreateListing: () -> Unit = {},
@@ -154,7 +154,7 @@ fun CatalogScreen(
             BricklyBottomBar(currentRoute = "home", onNavigate = { route ->
                 when (route) {
                     "profile" -> onNavigateToProfile()
-                    "cart" -> onNavigateToCart()
+                    "chats" -> onNavigateToChats()
                     "meetings" -> onNavigateToMeetings()
                     "brickognize" -> onNavigateToBrickognize()
                 }
