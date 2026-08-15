@@ -1,6 +1,8 @@
 package com.example.bricklyfrontend.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,13 +12,17 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -196,45 +202,103 @@ fun ChatDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(messages, key = { it.id }) { message ->
-                    MessageBubble(message = message, isMine = message.author?.id == myId)
+                    MessageBubble(
+                        message = message,
+                        isMine = message.author?.id == myId,
+                        onDelete = {
+                            scope.launch {
+                                try {
+                                    val resp = RetrofitClient.api.deleteMessage(message.id)
+                                    if (resp.isSuccessful) messages = messages.filterNot { it.id == message.id }
+                                } catch (_: Exception) {}
+                            }
+                        }
+                    )
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MessageBubble(message: MessageDefaultDTO, isMine: Boolean) {
+private fun MessageBubble(
+    message: MessageDefaultDTO,
+    isMine: Boolean,
+    onDelete: () -> Unit
+) {
+    val text = message.text ?: ""
+    val time = message.date?.let { formatChatTime(it) } ?: ""
+    val inlineTime = time.isNotEmpty() && !text.contains('\n') && text.length <= 18
+    var menuExpanded by remember { mutableStateOf(false) }
+    val clipboard = LocalClipboardManager.current
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 280.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 18.dp,
-                        topEnd = 18.dp,
-                        bottomStart = if (isMine) 18.dp else 4.dp,
-                        bottomEnd = if (isMine) 4.dp else 18.dp
+        Box {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 280.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 18.dp,
+                            topEnd = 18.dp,
+                            bottomStart = if (isMine) 18.dp else 4.dp,
+                            bottomEnd = if (isMine) 4.dp else 18.dp
+                        )
                     )
+                    .background(if (isMine) Accent else Color.White)
+                    .combinedClickable(onClick = {}, onLongClick = { menuExpanded = true })
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+                if (inlineTime) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(text = text, color = TextPrimary, fontSize = 15.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = time,
+                            color = TextSecondary,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(bottom = 1.dp)
+                        )
+                    }
+                } else {
+                    Text(text = text, color = TextPrimary, fontSize = 15.sp)
+                    if (time.isNotEmpty()) {
+                        Text(
+                            text = time,
+                            color = TextSecondary,
+                            fontSize = 11.sp,
+                            modifier = Modifier.align(Alignment.End)
+                        )
+                    }
+                }
+            }
+
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Копировать") },
+                    leadingIcon = { Icon(Icons.Outlined.ContentCopy, null) },
+                    onClick = {
+                        clipboard.setText(AnnotatedString(text))
+                        menuExpanded = false
+                    }
                 )
-                .background(if (isMine) Accent else Color.White)
-                .padding(horizontal = 14.dp, vertical = 10.dp)
-        ) {
-            Text(
-                text = message.text ?: "",
-                color = TextPrimary,
-                fontSize = 15.sp
-            )
-            message.date?.let {
-                Text(
-                    text = formatChatTime(it),
-                    color = TextSecondary,
-                    fontSize = 11.sp,
-                    modifier = Modifier.align(Alignment.End)
-                )
+                if (isMine) {
+                    DropdownMenuItem(
+                        text = { Text("Удалить", color = ErrorColor) },
+                        leadingIcon = { Icon(Icons.Outlined.Delete, null, tint = ErrorColor) },
+                        onClick = {
+                            menuExpanded = false
+                            onDelete()
+                        }
+                    )
+                }
             }
         }
     }

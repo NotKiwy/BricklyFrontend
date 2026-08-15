@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -126,8 +127,12 @@ fun ChatsScreen(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
-                items(chats, key = { it.otherUser.id }) { chat ->
-                    ChatRow(chat = chat, onClick = { onOpenChat(chat.otherUser.id) })
+                itemsIndexed(chats, key = { _, it -> it.otherUser.id }) { index, chat ->
+                    ChatRow(
+                        chat = chat,
+                        showDivider = index < chats.lastIndex,
+                        onClick = { onOpenChat(chat.otherUser.id) }
+                    )
                 }
             }
         }
@@ -135,54 +140,62 @@ fun ChatsScreen(
 }
 
 @Composable
-private fun ChatRow(chat: ChatPreview, onClick: () -> Unit) {
+private fun ChatRow(chat: ChatPreview, showDivider: Boolean, onClick: () -> Unit) {
     val title = chat.otherUser.name?.takeIf { it.isNotBlank() } ?: chat.otherUser.username
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
+    Column(modifier = Modifier.clickable(onClick = onClick)) {
+        Row(
             modifier = Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(Accent),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = title.take(1).uppercase(),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(TextPrimary),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = title.take(1).uppercase(),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Accent
+                )
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = chat.lastMessage,
+                    fontSize = 14.sp,
+                    color = TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            chat.date?.let {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = formatChatTimestamp(it),
+                    fontSize = 12.sp,
+                    color = IconInactive
+                )
+            }
         }
-        Spacer(Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = TextPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = chat.lastMessage,
-                fontSize = 14.sp,
-                color = TextSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        chat.date?.let {
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = formatChatTimestamp(it),
-                fontSize = 12.sp,
-                color = IconInactive
+        if (showDivider) {
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 86.dp, end = 20.dp),
+                color = Divider,
+                thickness = 1.dp
             )
         }
     }
